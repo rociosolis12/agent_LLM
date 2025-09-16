@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+venv/
+.ipynb_checkpoints/
+
+# Node/Frontend
+frontend/node_modules/
+node_modules/
+*.log
+dist/
+build/
+.cache/
+
+# Claves y configuraciones
+.env
+*.env
+*.env.*
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Salidas/exports si no quieres subirlos
+exports/

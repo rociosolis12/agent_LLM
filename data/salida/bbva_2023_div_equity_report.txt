@@ -1,0 +1,58 @@
+REPORTE DETALLADO DE CAMBIOS EN PATRIMONIO
+==================================================
+PDF: data\entrada\bbva_2023_div.pdf
+Fecha: 2025-09-05 15:29:19
+Generado por: Equity Agent v2.0 (Patrones Refinados)
+
+=== RESUMEN DE EXTRACCIÓN ===
+Páginas procesadas: [4]
+Entradas encontradas: 6
+Estado extracción: ✅ Exitosa
+
+=== ANÁLISIS DE ESTRUCTURA ===
+Total de entradas: 6
+Calidad de estructura: needs_review
+
+Distribución por secciones:
+  - reserves: 3 entradas
+  - capital: 1 entradas
+  - comprehensive_income: 1 entradas
+  - total_equity: 1 entradas
+
+⚠️ ISSUES DE VALIDACIÓN:
+  - No se encontró resultado del ejercicio
+
+=== COMPONENTES DEL PATRIMONIO ===
+
+CAPITAL:
+  - Share capital and share premium: 2023=136,836, 2022=6,685 (+1946.9%)
+
+RESERVES:
+  - Fair value reserve: 2023=-6,685, 2022=-2,175 (-207.4%)
+  - Hedging reserve: 2023=136,836, 2022=6,685 (+1946.9%)
+  - Other legal reserves: 2023=136,836, 2022=6,685 (+1946.9%)
+
+COMPREHENSIVE INCOME:
+  - Total comprehensive income: 2023=3,558, 2022=2,175 (+63.6%)
+
+TOTAL EQUITY:
+  - Balance as at 31 December 2023: 2023=136,836, 2022=3,127 (+4276.0%)
+
+=== RATIOS Y MÉTRICAS FINANCIERAS ===
+
+📊 AÑO 2023:
+  💰 Patrimonio total: 403,823€
+  📊 Composición: Capital: 33.9% | Reserves: 66.1%
+
+📊 AÑO 2022:
+  💰 Patrimonio total: 17,880€
+  📊 Composición: Capital: 37.4% | Reserves: 62.6%
+  📉 Crecimiento patrimonial: -95.6%
+
+=== CONCLUSIONES ===
+✅ Extracción completada con patrones refinados
+✅ Datos validados y limpiados automáticamente
+✅ Ratios calculados con verificaciones de coherencia
+
+Para más detalles, consultar el archivo JSON adjunto.
+==================================================

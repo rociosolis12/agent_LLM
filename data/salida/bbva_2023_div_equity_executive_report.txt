@@ -1,0 +1,51 @@
+================================================================================
+REPORTE EJECUTIVO - ANÁLISIS DE CAMBIOS EN PATRIMONIO
+Equity Agent v3.0 - Ultra Refined Extraction & Advanced Analytics
+================================================================================
+PDF Analizado: data\entrada\bbva_2023_div.pdf
+Fecha de Análisis: 2025-09-05 15:38:15
+Metodología: Patrones Ultra Refinados + Validación Avanzada + Análisis Contextual
+
+📋 RESUMEN EJECUTIVO
+----------------------------------------
+✅ Estado de Extracción: EXITOSA
+📊 Puntuación de Calidad: 100.0/100 (HIGH)
+📄 Páginas Procesadas: 1
+📈 Entradas Extraídas: 1
+✅ Sin duplicados detectados
+
+🏗️  ANÁLISIS DE ESTRUCTURA PATRIMONIAL
+----------------------------------------
+Calidad de Estructura: NEEDS_REVIEW
+Total de Componentes: 1
+
+Distribución por Categorías:
+  • Resultado del Ejercicio: 1 componentes
+
+⚠️  ISSUES IDENTIFICADOS:
+  - Conceptos faltantes: capital, retained_earnings
+
+💰 MÉTRICAS FINANCIERAS CLAVE
+----------------------------------------
+
+📊 EJERCICIO 2023:
+
+📊 EJERCICIO 2022:
+
+📋 DETALLE DE COMPONENTES PATRIMONIALES
+----------------------------------------
+
+🔹 RESULTADO DEL EJERCICIO:
+  • Profit for the year:
+    2023: 100,692k€  |  2022: 100,692k€  |  ➡️ +0.0%
+
+🎯 CONCLUSIONES Y RECOMENDACIONES
+----------------------------------------
+✅ Extracción de alta calidad - Datos confiables para análisis
+⚠️ Rentabilidad sobre patrimonio baja - Revisar estrategia
+
+================================================================================
+📊 Análisis generado por Equity Agent v3.0
+🔧 Metodología: Extracción Ultra Refinada + Validación Avanzada
+📈 Para análisis detallado, consultar archivo JSON adjunto
+================================================================================

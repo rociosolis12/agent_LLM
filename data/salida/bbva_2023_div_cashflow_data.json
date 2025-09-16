@@ -1,0 +1,98 @@
+[
+  {
+    "concept": "Profit for the year",
+    "section": "operating",
+    "2023": 100692.0,
+    "2022": 40793.0
+  },
+  {
+    "concept": "Depreciation and amortisation",
+    "section": "operating",
+    "2023": 2818.0,
+    "2022": 2899.0
+  },
+  {
+    "concept": "Expected credit losses",
+    "section": "operating",
+    "2023": 1026.0,
+    "2022": 1779.0
+  },
+  {
+    "concept": "Tax expense",
+    "section": "operating",
+    "2023": 35945.0,
+    "2022": 14164.0
+  },
+  {
+    "concept": "Deposits from customers",
+    "section": "operating",
+    "2023": 690594.0,
+    "2022": 957491.0
+  },
+  {
+    "concept": "Income taxes paid",
+    "section": "operating",
+    "2023": -24254.0,
+    "2022": -3986.0
+  },
+  {
+    "concept": "Net cash from operating activities",
+    "section": "operating",
+    "2023": 881035.0,
+    "2022": 861272.0
+  },
+  {
+    "concept": "Acquisitions in investment portfolio",
+    "section": "investing",
+    "2023": -333878.0,
+    "2022": -410586.0
+  },
+  {
+    "concept": "Proceeds from investment portfolio",
+    "section": "investing",
+    "2023": 129236.0,
+    "2022": 431169.0
+  },
+  {
+    "concept": "Purchase of tangible and intangible assets",
+    "section": "investing",
+    "2023": -4319.0,
+    "2022": -2529.0
+  },
+  {
+    "concept": "Net cash from investing activities",
+    "section": "investing",
+    "2023": -208961.0,
+    "2022": -18054.0
+  },
+  {
+    "concept": "Net increase in cash and cash equivalents",
+    "section": "summary",
+    "2023": 670662.0,
+    "2022": 877352.0
+  },
+  {
+    "concept": "Cash and cash equivalents at beginning of period",
+    "section": "summary",
+    "2023": 1579446.0,
+    "2022": 702094.0
+  },
+  {
+    "concept": "Cash and cash equivalents at end of period",
+    "section": "summary",
+    "2023": 2250108.0,
+    "2022": 1579446.0
+  },
+  {
+    "concept": "Interest received",
+    "section": "additional",
+    "2023": 287992.0,
+    "2022": 130401.0
+  },
+  {
+    "concept": "Interest paid",
+    "section": "additional",
+    "2023": -86819.0,
+    "2022": -29829.0
+  }
+]

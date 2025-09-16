@@ -1,0 +1,100 @@
+================================================================================
+REPORTE BALANCEADO - ANÁLISIS DE CAMBIOS EN PATRIMONIO
+Equity Agent v3.1 - Extracción Balanceada: Cobertura + Precisión
+================================================================================
+PDF Analizado: data\entrada\bbva_2023_div.pdf
+Fecha de Análisis: 2025-09-05 15:46:07
+Metodología: Extracción Balanceada v3.1 (Prioriza cobertura completa)
+
+📋 RESUMEN EJECUTIVO
+----------------------------------------
+✅ Estado de Extracción: EXITOSA
+📊 Entradas Extraídas: 9 componentes patrimoniales
+🏆 Puntuación de Calidad: 47.3/100 (LOW)
+📄 Páginas Procesadas: 1
+🔄 Método de Extracción: balanced_v3.1
+📋 Cobertura de Conceptos: 45.5% (5 conceptos clave encontrados)
+
+💪 FORTALEZAS IDENTIFICADAS
+----------------------------------------
+✅ Buena cobertura de componentes
+✅ Diversidad de secciones
+
+🔧 ÁREAS DE MEJORA
+----------------------------------------
+⬆️ Mejorar calidad de datos
+
+💰 MÉTRICAS FINANCIERAS CALCULADAS
+----------------------------------------
+
+📊 EJERCICIO 2023:
+  💼 Resultado del Ejercicio: 100,692k€
+  💰 Patrimonio Total: 136,836k€
+  📈 ROE: 73.59% - Excelente
+  🏗️  Composición Patrimonial: Capital: 100.0% | Retained Earnings: 100.0% | Reserves: 295.1%
+  ⚠️  Advertencias: ROE muy alto (73.6%) - Revisar datos
+  📊 Completitud de Datos: Complete (5 ratios calculados)
+
+📊 EJERCICIO 2022:
+  💼 Resultado del Ejercicio: 100,692k€
+  💰 Patrimonio Total: 6,685k€
+  📈 ROE: 1506.24% - Excelente
+  🏗️  Composición Patrimonial: Capital: 100.0% | Retained Earnings: 100.0% | Reserves: 267.5%
+  ⚠️  Advertencias: ROE muy alto (1506.2%) - Revisar datos
+  📊 Completitud de Datos: Complete (5 ratios calculados)
+
+📈 ANÁLISIS DE TENDENCIAS
+----------------------------------------
+  📉 Tendencia ROE: Declining (-1432.7 puntos)
+  💹 Tendencia Patrimonial: Growing (+1946.9%)
+
+📋 COMPONENTES PATRIMONIALES EXTRAÍDOS
+----------------------------------------
+
+🔹 CAPITAL SOCIAL:
+  • Share capital and share premium
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+
+🔹 RESERVAS:
+  • Fair value reserve
+    2023: -6,685k€ | 2022: -2,175k€ 📉 -207.4%
+  • Hedging reserve
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+  • Other legal reserves (variant)
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+  • Legal reserves (variant)
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+
+🔹 RESULTADOS ACUMULADOS:
+  • Retained earnings
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+
+🔹 RESULTADO DEL EJERCICIO:
+  • Profit for the year
+    2023: 100,692k€ | 2022: 100,692k€ ➡️ Estable
+
+🔹 RESULTADO INTEGRAL:
+  • Total comprehensive income
+    2023: 3,558k€ | 2022: 2,175k€ 📈 +63.6%
+
+🔹 PATRIMONIO TOTAL:
+  • Total equity
+    2023: 136,836k€ | 2022: 6,685k€ 📈 +1946.9%
+
+🎯 CONCLUSIONES Y RECOMENDACIONES
+----------------------------------------
+📊 Extracción parcial - Componentes principales identificados
+🔍 Baja confiabilidad - Recomendable validación externa
+📈 Excelente rentabilidad sobre patrimonio
+
+📋 RECOMENDACIONES:
+  🔄 Para mejorar la precisión: Validar datos críticos manualmente
+  📊 Para análisis completo: Complementar con balance y cuenta de resultados
+  📈 Para seguimiento: Actualizar análisis con datos de períodos adicionales
+
+================================================================================
+📊 Reporte generado por Equity Agent v3.1 - Extracción Balanceada
+🎯 Filosofía: Cobertura completa + Precisión razonable
+🔧 Metodología: Extracción progresiva con validación inteligente
+📈 Para análisis detallado, consultar archivo JSON adjunto
+================================================================================

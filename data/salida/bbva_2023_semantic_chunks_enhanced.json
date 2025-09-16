@@ -1,0 +1,40 @@
+{
+  "chunks": [
+    "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+  ],
+  "semantic_analysis": {
+    "balance_section_0": [
+      {
+        "chunk_idx": 0,
+        "similarity": 0.7688354839031432,
+        "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+      }
+    ],
+    "balance_section_1": [
+      {
+        "chunk_idx": 0,
+        "similarity": 0.7770218884494368,
+        "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+      }
+    ],
+    "balance_section_2": [
+      {
+        "chunk_idx": 0,
+        "similarity": 0.7684372107129452,
+        "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+      }
+    ],
+    "balance_section_3": [
+      {
+        "chunk_idx": 0,
+        "similarity": 0.7577759050408257,
+        "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+      }
+    ]
+  },
+  "extraction_confidence": 0.475,
+  "pages_used": [
+    1,
+    2
+  ]
+}

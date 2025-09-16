@@ -1,0 +1,14 @@
+{
+  "extraction_timestamp": "2025-09-01T21:10:08.939343",
+  "document_processed": "bbva_2023.pdf",
+  "company_identified": "GarantiBank International N.V.",
+  "extraction_results": {
+    "extraction_data": "balance: 0.7, income: 0.4, changes_in_equity: 0.4, cash_flows: 0.4"
+  },
+  "files_created": [],
+  "summary_statistics": {
+    "total_pages_processed": 0,
+    "total_tables_extracted": 0,
+    "total_text_length": 0
+  }
+}

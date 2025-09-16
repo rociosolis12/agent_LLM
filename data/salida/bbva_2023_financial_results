@@ -1,0 +1,8 @@
+{
+  "document_id": "bbva_2023.pdf",
+  "extraction_timestamp": "2025-09-01T16:52:47.581200",
+  "statements_extracted": 4,
+  "extraction_summary": "4 estados financieros extraídos con éxito",
+  "confidence_avg": 0.85,
+  "consolidation_scope": "consolidated"
+}

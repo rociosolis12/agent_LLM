@@ -1,0 +1,225 @@
+=== PÁGINA 1 ===
+GarantiBank International N.V.                                                                            As of and for the Year Ended 31 December 2023 
+Notes to the Financial Statements                                                                                                          (Currency: Thousands of Euros) 
+ 
+ 
+ 
+79 
+Notes to the statement of financial position and statement of comprehensive 
+income 
+1. 
+Cash and cash equivalents 
+Cash and cash equivalents include cash balances on hand, loans and advances to banks with original 
+maturity periods of less than three months and other cash items. Cash and cash equivalents as of 31 
+December 2023 and 2022, included in the accompanying statements of cash flows are as follows: 
+ 
+31 December 
+2023 
+31 December 
+2022 
+Unrestricted balances with central banks 
+2,215,644 
+ 
+1,499,083 
+Loans and advances to banks  
+47,912 
+ 
+95,231 
+Deposits from banks  
+(13,448) 
+ 
+ (14,868) 
+ 
+2,250,108 
+ 
+1,579,446 
+2. 
+Related party disclosures 
+For the purpose of this report, the 100 percent shareholder Türkiye Garanti Bankasi A.Ş. (GBI’s parent 
+company), its controlling shareholder Banco Bilbao Vizcaya Argentaria S.A and all their subsidiaries and key 
+management personnel (being the members of the Supervisory Board and Managing Board of GBI, Garanti 
+BBVA or BBVA) are referred to as related parties. In the course of conducting its banking business, the Bank 
+engaged in various business transactions with its parent and other related parties. These transactions were 
+carried out on commercial terms and at market rates. Transactions conducted with group companies are 
+banking transactions including lending, borrowing funds, purchase and sale of financial assets, trade finance 
+transactions and rendering international payment, derivative transactions and other banking services. 
+The Bank had the following balances outstanding from and transactions with related parties. 
+Transactions with the parent 
+The outstanding balances and income and expense with the immediate parent and ultimate parent are as 
+follows: 
+ 
+31 December 
+2023 
+ 
+31 December 
+2022 
+Loans and advances to banks  
+60,574 
+ 
+62,002 
+Derivative financial instruments 
+1,988 
+ 
+4,253 
+Total assets 
+62,562 
+ 
+66,075 
+ 
+ 
+ 
+ 
+Deposits from banks 
+9,295 
+ 
+8,527 
+Derivative financial instruments 
+163 
+ 
+58 
+Total liabilities 
+9,458 
+ 
+8,585 
+ 
+ 
+ 
+ 
+Loan commitments, financial guarantees and other commitments  
+ 
+ 
+- 
+Notional amount of derivatives 
+193,876 
+ 
+193,420 
+ 
+ 
+2023 
+ 
+2022 
+Interest and similar income 
+4,157 
+ 
+2,699 
+Interest and similar expense 
+504 
+ 
+(21) 
+Fee and commission income 
+622 
+ 
+1,025 
+Fee and commission expense 
+(3,406) 
+ 
+(2,301) 
+Net trading income 
+101 
+ 
+(55) 
+Expected credit losses 
+65 
+ 
+45 
+Net income/expense 
+2,043 
+ 
+1,392 
+ 
+ 
+ 
+
+
+=== PÁGINA 4 ===
+GarantiBank International N.V.                                                                            As of and for the Year Ended 31 December 2023 
+Notes to the Financial Statements                                                                                                          (Currency: Thousands of Euros) 
+ 
+ 
+ 
+82 
+5. 
+Loans and advances to customers  
+Classification of financial assets as loans and advances to customers 
+Outstanding loans and advances to customers are recorded at amortised cost and are categorised as 
+follows: 
+ 
+31 December 
+2023 
+31 December 
+2022 
+Non-financial corporations 
+2,428,251  
+2,426,745 
+Non-bank financial corporations 
+220,138  
+119,792 
+Households 
+23,085 
+26,100 
+ECL allowance 
+(20,468) 
+(19,698) 
+ 
+2,651,006 
+ 
+2,552,939 
+ 
+ 
+ 
+ 
+Non-credit-impaired loans 
+2,644,403 
+2,557,090 
+Credit-impaired loans 
+27,071 
+15,547 
+ECL allowance 
+(20,468) 
+(19,698) 
+ 
+2,651,006 
+ 
+2,552,939 
+Expected credit loss and risk exposure 
+Information about the ECL allowance of loans and advances to customers, their credit quality and the 
+company’s exposure to credit risk can be found in the Risk Management section under Credit Risk. 
+Total loans and advances to customers includes non-cash loans amounting to EUR 1,218 (31 December 
+2022: EUR 41,567) for letter of credits that the Bank has provided (note 13), for which a contractual obligation 
+exists to deliver cash. 
+Write-offs 
+The Bank may write-off financial assets that might still be subject to enforcement activity. The Bank has not 
+written off any financial assets which are still subject to enforcement activity during the year ended 31 
+December 2023 and during the year ended 31 December 2022. This includes amounts that are written off as 
+a result of disposals as well as amounts that are owed in full by the Bank but which have been (partially) 
+written-off due to no reasonable expectation of full recovery. 
+6. 
+Financial investments at fair value through other comprehensive income  
+Financial instruments at fair value through other comprehensive income (FVOCI) comprise the following 
+investments in listed bonds having solely payments of principal and interest: 
+ 
+31 December 
+2023 
+31 December 
+2022 
+Bonds issued by financial corporations 
+48,348 
+31,607 
+Bonds issued by non-financial corporations 
+53,726 
+12,203 
+Bonds issued by central governments 
+327,927 
+176,752 
+ 
+430,001 
+ 
+220,562 
+Upon disposal of these debt investments, any balance within the OCI reserve for these debt investments is 
+reclassified to the statement of profit or loss. 
+Debt securities include securities pledged in relation to ECB’s targeted longer term refinancing operation. 
+Further information is disclosed in note 10 on deposits from banks and note 39 on asset encumbrance. 
+ 
+ 
+
+

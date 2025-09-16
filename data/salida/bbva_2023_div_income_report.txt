@@ -1,0 +1,25 @@
+REPORTE DE CUENTA DE RESULTADOS
+    PDF: data\entrada\bbva_2023_div.pdf
+    Fecha: 2025-09-05 14:54:37
+
+    === EXTRACCIÓN ===
+    Páginas procesadas: [1, 2, 3, 4, 5]
+    Entradas encontradas: 11
+    Estado extracción: ✅ Exitosa
+
+    === ARCHIVOS GENERADOS ===
+    CSV: ✅ Sí
+    JSON: ✅ Sí
+    Reporte: ✅ Sí
+
+    === DATOS ENCONTRADOS ===
+- Interest income (revenue): 2023=279194.0, 2022=116213.0
+- Fee and commission income (revenue): 2023=22689.0, 2022=22998.0
+- Net interest income (revenue): 2023=170475.0, 2022=85459.0
+- Total income (revenue): 2023=187921.0, 2022=98553.0
+- Interest expense (expenses): 2023=-108719.0, 2022=-30754.0
+- Personnel expenses (expenses): 2023=-32332.0, 2022=-29499.0
+- Operating expenses (expenses): 2023=-15108.0, 2022=-12977.0
+- Total expenses (expenses): 2023=-51284.0, 2022=-43596.0
+- Income before tax (profit): 2023=136637.0, 2022=54957.0
+- Net income (profit): 2023=100692.0, 2022=40793.0

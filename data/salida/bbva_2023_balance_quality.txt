@@ -1,0 +1,16 @@
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\bbva_2023.pdf
+Tipo: BALANCE (bbva_2023_div.pdf optimizado - Multi-Agent)
+Páginas seleccionadas: [54, 55, 56]
+Páginas procesadas: [54, 55, 56]
+Confianza extracción: 1.0
+Validación -> status: excellent | confidence: 1.0
+Componentes encontrados: {'assets': True, 'liabilities': True, 'equity': False}
+Issues: ['no_equity_found']
+Recomendaciones: ['Revisar extracción de componentes del balance.']
+
+=== CONFIGURACIÓN ===
+Modelo Groq: llama-3.3-70b-versatile
+Deployment Azure: gpt-4o
+PDF optimizado: bbva_2023_div.pdf
+Página principal: 55
+Sistema: Multi-Agent Balance Wrapper

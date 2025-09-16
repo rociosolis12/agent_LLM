@@ -1,0 +1,56 @@
+[
+  {
+    "concept": "Share capital and share premium",
+    "section": "capital",
+    "2023": 136836.0,
+    "2022": 6685.0
+  },
+  {
+    "concept": "Fair value reserve",
+    "section": "reserves",
+    "2023": -6685.0,
+    "2022": -2175.0
+  },
+  {
+    "concept": "Hedging reserve",
+    "section": "reserves",
+    "2023": 136836.0,
+    "2022": 6685.0
+  },
+  {
+    "concept": "Other legal reserves",
+    "section": "reserves",
+    "2023": 136836.0,
+    "2022": 6685.0
+  },
+  {
+    "concept": "Legal reserves",
+    "section": "reserves",
+    "2023": 136836.0,
+    "2022": 6685.0
+  },
+  {
+    "concept": "Retained earnings",
+    "section": "retained_earnings",
+    "2023": 136836.0,
+    "2022": 6685.0
+  },
+  {
+    "concept": "Profit for the year",
+    "section": "profit",
+    "2023": 100692.0,
+    "2022": 100692.0
+  },
+  {
+    "concept": "Total comprehensive income",
+    "section": "comprehensive_income",
+    "2023": 3558.0,
+    "2022": 2175.0
+  },
+  {
+    "concept": "Total equity",
+    "section": "total_equity",
+    "2023": 136836.0,
+    "2022": 6685.0
+  }
+]

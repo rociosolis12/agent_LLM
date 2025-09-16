@@ -1,0 +1,203 @@
+{
+  "pdf": "data\\entrada\\bbva_2023.pdf",
+  "type": "balance",
+  "version": "enhanced_v2.0",
+  "analysis": {
+    "success": true,
+    "language": "es",
+    "selected_pages": [
+      1,
+      2
+    ],
+    "top_candidates": [
+      {
+        "page_number": 1,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.7274523968899353
+      },
+      {
+        "page_number": 2,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.7274523968899353
+      },
+      {
+        "page_number": 3,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.7274523968899353
+      },
+      {
+        "page_number": 4,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.7274523968899353
+      },
+      {
+        "page_number": 5,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.7274523968899353
+      },
+      {
+        "page_number": 6,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.0
+      },
+      {
+        "page_number": 7,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.0
+      },
+      {
+        "page_number": 8,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.0
+      },
+      {
+        "page_number": 9,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.0
+      },
+      {
+        "page_number": 10,
+        "title_score": 0.0,
+        "consolidated_score": 0.0,
+        "content_score": 0.0,
+        "financial_table_score": 0.0,
+        "embedding_score": 0.0
+      }
+    ],
+    "embedding_matches": [
+      [
+        0,
+        0.7274523968899353,
+        ""
+      ],
+      [
+        1,
+        0.7274523968899353,
+        ""
+      ],
+      [
+        2,
+        0.7274523968899353,
+        ""
+      ],
+      [
+        3,
+        0.7274523968899353,
+        ""
+      ],
+      [
+        4,
+        0.7274523968899353,
+        ""
+      ]
+    ],
+    "notes": [
+      "Selección basada en heurísticas mejoradas + embeddings semánticos"
+    ]
+  },
+  "extraction": {
+    "success": true,
+    "language": "es",
+    "pages_used": [
+      1,
+      2
+    ],
+    "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V.",
+    "semantic_analysis": {
+      "balance_section_0": [
+        {
+          "chunk_idx": 0,
+          "similarity": 0.7688354839031432,
+          "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+        }
+      ],
+      "balance_section_1": [
+        {
+          "chunk_idx": 0,
+          "similarity": 0.7770218884494368,
+          "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+        }
+      ],
+      "balance_section_2": [
+        {
+          "chunk_idx": 0,
+          "similarity": 0.7684372107129452,
+          "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+        }
+      ],
+      "balance_section_3": [
+        {
+          "chunk_idx": 0,
+          "similarity": 0.7577759050408257,
+          "text": "=== PÁGINA 1 ===\n3202\nTROPER\nLAUNNA\n—\nLANOITANRETNI\nAVBB\nITNARAG\nANNUAL\nREPORT\n2023\n1\n\n=== PÁGINA 2 ===\nANNUAL\nREPORT\n2023\nGARANTIBANK\nINTERNATIONAL N.V."
+        }
+      ]
+    },
+    "confidence": 0.475,
+    "flags": [
+      "no_tables_extracted_with_pdfplumber—consider_tabula_camelot",
+      "semantic_chunks_extracted",
+      "enhanced_patterns_used"
+    ]
+  },
+  "validation": {
+    "success": true,
+    "language": "es",
+    "confidence": 0.438,
+    "status": "poor",
+    "issues": [
+      "no_assets_hint_found",
+      "no_liabilities_hint_found",
+      "no_equity_hint_found"
+    ],
+    "numbers_count": 9,
+    "financial_amounts_count": 0,
+    "semantic_bonus": 0.2,
+    "recommendations": [
+      "Integra tabula/camelot para extraer tablas contables limpias.",
+      "Revisar páginas adyacentes o ajustar parámetros de búsqueda.",
+      "Considerar usar anchor_page específica para documentos complejos.",
+      "Verificar que las páginas seleccionadas contienen el balance completo."
+    ],
+    "components_found": {
+      "assets": false,
+      "liabilities": false,
+      "equity": false
+    }
+  },
+  "generated_at": "2025-09-03 19:23:07",
+  "api_config": {
+    "groq_embeddings": true,
+    "azure_openai": true,
+    "enhanced_patterns": true,
+    "model": "llama-3.3-70b-versatile",
+    "deployment": "gpt-4o"
+  }
+}

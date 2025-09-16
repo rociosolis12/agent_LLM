@@ -1,0 +1,206 @@
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #2c3e50; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 14px; fill: #34495e; }
+      .phase-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #2c3e50; }
+      .component-text { font-family: Arial, sans-serif; font-size: 12px; fill: #2c3e50; text-anchor: middle; }
+      .small-text { font-family: Arial, sans-serif; font-size: 10px; fill: #7f8c8d; text-anchor: middle; }
+      .phase-box { fill: none; stroke: #f39c12; stroke-width: 2; stroke-dasharray: 8,4; }
+      .data-flow { stroke: #3498db; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .feedback-flow { stroke: #e74c3c; stroke-width: 2; fill: none; stroke-dasharray: 4,4; marker-end: url(#arrowhead-red); }
+      .component { fill: #ecf0f1; stroke: #34495e; stroke-width: 2; rx: 8; }
+      .agent { fill: #3498db; stroke: #2980b9; stroke-width: 2; rx: 12; }
+      .database { fill: #27ae60; stroke: #229954; stroke-width: 2; }
+      .model { fill: #9b59b6; stroke: #8e44ad; stroke-width: 2; rx: 8; }
+      .output { fill: #e74c3c; stroke: #c0392b; stroke-width: 2; rx: 8; }
+      .check { fill: #27ae60; }
+    </style>
+    
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3498db"/>
+    </marker>
+    
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#e74c3c"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="30" class="title" text-anchor="middle">Asistente Financiero Multiagente para Análisis Documental y Predicción de KPIs</text>
+  <text x="600" y="50" class="subtitle" text-anchor="middle">Sistema basado en RAG + ML para Bancos del IBEX 35</text>
+
+  <!-- Phase 1: Data Collection & Preprocessing -->
+  <rect x="20" y="80" width="280" height="200" class="phase-box"/>
+  <text x="30" y="100" class="phase-title">Fase 1: Recolección y Preprocesamiento</text>
+  
+  <!-- Input Documents -->
+  <rect x="40" y="120" width="80" height="40" class="component"/>
+  <text x="80" y="135" class="component-text">Memorias</text>
+  <text x="80" y="148" class="component-text">Anuales PDF</text>
+  <text x="80" y="160" class="small-text">(IBEX 35)</text>
+  
+  <!-- Document Processing -->
+  <circle cx="180" cy="140" r="25" class="agent"/>
+  <text x="180" y="135" class="component-text" fill="white">Doc</text>
+  <text x="180" y="148" class="component-text" fill="white">Processor</text>
+  
+  <!-- KPI Data -->
+  <rect x="40" y="180" width="80" height="40" class="component"/>
+  <text x="80" y="195" class="component-text">Datos KPIs</text>
+  <text x="80" y="208" class="component-text">Históricos</text>
+  <text x="80" y="220" class="small-text">(ROE, B.Neto, etc.)</text>
+  
+  <!-- Data Validation -->
+  <circle cx="180" cy="200" r="25" class="agent"/>
+  <text x="180" y="195" class="component-text" fill="white">Data</text>
+  <text x="180" y="208" class="component-text" fill="white">Validator</text>
+  
+  <!-- Check marks -->
+  <circle cx="235" cy="140" r="8" class="check"/>
+  <text x="235" y="145" class="component-text" fill="white">✓</text>
+  <circle cx="235" cy="200" r="8" class="check"/>
+  <text x="235" y="205" class="component-text" fill="white">✓</text>
+
+  <!-- Phase 2: RAG System -->
+  <rect x="320" y="80" width="280" height="200" class="phase-box"/>
+  <text x="330" y="100" class="phase-title">Fase 2: Sistema RAG</text>
+  
+  <!-- Text Chunking -->
+  <rect x="340" y="120" width="70" height="30" class="component"/>
+  <text x="375" y="138" class="component-text">Chunking</text>
+  
+  <!-- Embeddings -->
+  <rect x="340" y="160" width="70" height="30" class="component"/>
+  <text x="375" y="175" class="component-text">e5-large-v2</text>
+  <text x="375" y="185" class="small-text">Embeddings</text>
+  
+  <!-- Vector DB -->
+  <ellipse cx="480" cy="140" rx="40" ry="25" class="database"/>
+  <text x="480" y="135" class="component-text" fill="white">Qdrant</text>
+  <text x="480" y="148" class="component-text" fill="white">Vector DB</text>
+  
+  <!-- Retrieval -->
+  <rect x="440" y="180" width="80" height="30" class="component"/>
+  <text x="480" y="198" class="component-text">Semantic Search</text>
+  
+  <!-- RAG Agent -->
+  <circle cx="550" cy="200" r="25" class="agent"/>
+  <text x="550" y="195" class="component-text" fill="white">RAG</text>
+  <text x="550" y="208" class="component-text" fill="white">Agent</text>
+
+  <!-- Phase 3: ML Prediction -->
+  <rect x="620" y="80" width="280" height="200" class="phase-box"/>
+  <text x="630" y="100" class="phase-title">Fase 3: Predicción ML</text>
+  
+  <!-- Feature Engineering -->
+  <rect x="640" y="120" width="80" height="30" class="component"/>
+  <text x="680" y="138" class="component-text">Feature Engineering</text>
+  
+  <!-- ML Models -->
+  <rect x="640" y="160" width="60" height="25" class="model"/>
+  <text x="670" y="175" class="component-text" fill="white">XGBoost</text>
+  
+  <rect x="710" y="160" width="60" height="25" class="model"/>
+  <text x="740" y="175" class="component-text" fill="white">Prophet</text>
+  
+  <!-- Predictor Agent -->
+  <circle cx="800" cy="200" r="25" class="agent"/>
+  <text x="800" y="195" class="component-text" fill="white">ML</text>
+  <text x="800" y="208" class="component-text" fill="white">Predictor</text>
+
+  <!-- Phase 4: Multi-Agent Orchestration -->
+  <rect x="920" y="80" width="260" height="200" class="phase-box"/>
+  <text x="930" y="100" class="phase-title">Fase 4: Orquestación</text>
+  
+  <!-- Coordinator Agent -->
+  <circle cx="1050" cy="140" r="30" class="agent"/>
+  <text x="1050" y="130" class="component-text" fill="white">Coordinador</text>
+  <text x="1050" y="143" class="component-text" fill="white">LangGraph/</text>
+  <text x="1050" y="156" class="component-text" fill="white">CrewAI</text>
+  
+  <!-- Output -->
+  <rect x="1000" y="190" width="100" height="40" class="output"/>
+  <text x="1050" y="205" class="component-text" fill="white">Respuesta</text>
+  <text x="1050" y="218" class="component-text" fill="white">Integrada</text>
+
+  <!-- User Interface -->
+  <rect x="400" y="320" width="400" height="120" class="phase-box"/>
+  <text x="410" y="340" class="phase-title">Interface de Usuario</text>
+  
+  <!-- User Query -->
+  <rect x="420" y="360" width="120" height="30" class="component"/>
+  <text x="480" y="378" class="component-text">Query del Usuario</text>
+  
+  <!-- Response Display -->
+  <rect x="660" y="360" width="120" height="30" class="component"/>
+  <text x="720" y="378" class="component-text">Dashboard/Report</text>
+  
+  <!-- Tools/APIs -->
+  <rect x="420" y="400" width="360" height="25" class="component"/>
+  <text x="600" y="415" class="component-text">APIs: OpenAI GPT-4 | HuggingFace | Frameworks: LangChain, Pandas, Scikit-learn</text>
+
+  <!-- Validation & Feedback -->
+  <rect x="320" y="480" width="560" height="80" class="phase-box"/>
+  <text x="330" y="500" class="phase-title">Validación y Retroalimentación</text>
+  
+  <rect x="340" y="520" width="100" height="25" class="component"/>
+  <text x="390" y="535" class="component-text">Métricas RAG</text>
+  
+  <rect x="460" y="520" width="100" height="25" class="component"/>
+  <text x="510" y="535" class="component-text">Métricas ML</text>
+  
+  <rect x="580" y="520" width="120" height="25" class="component"/>
+  <text x="640" y="535" class="component-text">Validación Expertos</text>
+  
+  <rect x="720" y="520" width="140" height="25" class="component"/>
+  <text x="790" y="535" class="component-text">Feedback Retroalimentación</text>
+
+  <!-- Data Flow Arrows -->
+  <path d="M 120 140 L 155 140" class="data-flow"/>
+  <path d="M 120 200 L 155 200" class="data-flow"/>
+  <path d="M 205 140 L 340 135" class="data-flow"/>
+  <path d="M 205 200 L 640 135" class="data-flow"/>
+  <path d="M 410 135 L 440 140" class="data-flow"/>
+  <path d="M 410 175 L 440 165" class="data-flow"/>
+  <path d="M 520 140 L 545 175" class="data-flow"/>
+  <path d="M 520 195 L 545 200" class="data-flow"/>
+  <path d="M 575 200 L 1020 140" class="data-flow"/>
+  <path d="M 720 135 L 800 175" class="data-flow"/>
+  <path d="M 825 200 L 1020 160" class="data-flow"/>
+  <path d="M 1050 170 L 1050 190" class="data-flow"/>
+  <path d="M 540 375 L 660 375" class="data-flow"/>
+  <path d="M 1050 230 L 720 360" class="data-flow"/>
+  <path d="M 480 360 L 1020 180" class="data-flow"/>
+
+  <!-- Feedback arrows -->
+  <path d="M 390 520 L 375 165" class="feedback-flow"/>
+  <path d="M 510 520 L 670 185" class="feedback-flow"/>
+  <path d="M 790 520 L 1050 170" class="feedback-flow"/>
+
+  <!-- Legend -->
+  <rect x="20" y="600" width="200" height="180" fill="none" stroke="#bdc3c7" stroke-width="1"/>
+  <text x="25" y="620" class="phase-title">Leyenda</text>
+  
+  <rect x="30" y="630" width="20" height="15" class="component"/>
+  <text x="55" y="642" class="small-text">Componente/Proceso</text>
+  
+  <circle cx="40" cy="655" r="8" class="agent"/>
+  <text x="55" y="660" class="small-text">Agente Inteligente</text>
+  
+  <ellipse cx="40" cy="675" rx="12" ry="8" class="database"/>
+  <text x="55" y="680" class="small-text">Base de Datos</text>
+  
+  <rect x="30" y="690" width="20" height="15" class="model"/>
+  <text x="55" y="702" class="small-text">Modelo ML</text>
+  
+  <line x1="30" y1="715" x2="50" y2="715" class="data-flow"/>
+  <text x="55" y="720" class="small-text">Flujo de Datos</text>
+  
+  <line x1="30" y1="735" x2="50" y2="735" class="feedback-flow"/>
+  <text x="55" y="740" class="small-text">Retroalimentación</text>
+  
+  <rect x="30" y="750" width="20" height="15" class="phase-box"/>
+  <text x="55" y="762" class="small-text">Fase del Sistema</text>
+
+</svg>

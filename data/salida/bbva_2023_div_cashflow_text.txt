@@ -1,0 +1,118 @@
+=== PÁGINA 6 ===
+60 
+Statement of Cash flows 
+For the year ended 31 December 2023 
+Notes 
+1 January 
+2023 - 31 
+December 
+2023 
+1 January 
+2022 - 31 
+December 
+2022 
+Cash flows from operating activities: 
+Profit for the year 
+100,692 
+40,793 
+Adjustments for: 
+Depreciation and amortisation 
+7,8 
+2,818 
+2,899 
+Expected credit losses on financial instruments 
+28 
+1,026 
+(1,779) 
+Tax expense 
+12 
+35,945 
+14,164 
+140,481 
+56,077 
+Changes in: 
+Loans and advances to banks 
+4 
+297,821 
+(125,171) 
+Financial assets at fair value through profit or loss 
+37 
+2,295 
+875 
+Loans and advances to customers 
+5 
+(99,093) 
+(15,947) 
+Other assets 
+9 
+(506)
+(751) 
+Deposits from banks 
+10 
+(44,915) 
+(62,433) 
+Deposits from customers 
+11 
+690,594 
+957,491 
+Financial liabilities at fair value through profit or loss 
+37 
+5,158 
+(23,204)
+Other liabilities, accrued expenses and provisions 
+13 
+(86,546) 
+78,321 
+905,289 
+865,258 
+Income taxes paid 
+13 
+(24,254) 
+(3,986) 
+Net cash from / (used in) operating activities 
+881,035 
+861,272 
+Cash flows from investing activities: 
+Acquisitions in investment portfolio 
+6 
+(333,878) 
+(410,586) 
+Proceeds from investment portfolio 
+6 
+129,236 
+431,169 
+Purchase of tangible and intangible assets 
+7,8 
+(4,319) 
+(2,529) 
+Net cash from / (used in) investing activities 
+(208,961) 
+18,054 
+Effect of exchange rate changes 
+(1,411) 
+(1,974) 
+Net increase / (decrease) in cash and cash equivalents 
+670,662 
+877,352 
+Cash and cash equivalents at the beginning of the period 
+1 
+1,579,446 
+702,094 
+Cash and cash equivalents at the end of the period 
+1 
+2,250,108 
+1,579,446 
+Additional information on operational cash 
+flows from interest 
+Interest received 
+287,992 
+130,401 
+Interest paid 
+86,819 
+29,829 
+GarantiBank International N.V.  
+Notes to the Financial Statements  
+As of and for the Year Ended 31 December 2023 
+       (Currency: Thousands of Euros) 
+
+

@@ -1,0 +1,16 @@
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Tipo: BALANCE (bbva_2023_div.pdf optimizado - Multi-Agent AUTONOMOUS)
+Páginas seleccionadas: [1, 2, 3, 4, 5]
+Páginas procesadas: [1, 2, 3, 4, 5]
+Confianza extracción: 1.0
+Validación -> status: excellent | confidence: 1.0
+Componentes encontrados: {'assets': True, 'liabilities': True, 'equity': True}
+Issues: []
+Recomendaciones: []
+
+=== CONFIGURACIÓN ===
+Modelo Groq: llama-3.3-70b-versatile
+Deployment Azure: gpt-4o
+PDF optimizado: bbva_2023_div.pdf
+Página principal: 55
+Sistema: Multi-Agent Balance Wrapper AUTONOMOUS

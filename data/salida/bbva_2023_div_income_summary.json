@@ -1,0 +1,126 @@
+{
+  "pdf": "data\\entrada\\bbva_2023_div.pdf",
+  "type": "income_statement",
+  "extraction": {
+    "success": true,
+    "pages_processed": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "text": "=== PÁGINA 1 ===\n55 \nFinancial Statements \nStatement of Financial Position \nAs at 31 December 2023 \nNotes \n31 December \n2023 \n31 December \n2022 \nAssets \nCash and balances with central banks \n3 \n2,254,639 \n1,533,188 \nLoans and advances to banks \n4 \n405,051 \n753,633 \nFinancial assets at fair value through profit or loss \n-\nTrading derivatives\n37 \n2,068 \n3,917 \n-\n Non-trading derivatives \n37 \n4,401 \n5,141 \nFinancial assets at fair value through other comprehensive\nincome \n6 \n430,001 \n220,562 \nLoans and advances to customers \n5 \n2,651,006 \n2,552,939 \nProperty and equipment \n7 \n25,027 \n28,158 \nIntangible assets \n8 \n7,522 \n5,858 \nCurrent tax asset\n12 \n- \n- \nOther assets\n9 \n2,830 \n2,324 \nTotal Assets\n5,782,545 \n5,105,720 \nLiabilities \nDeposits from banks \n10 \n287,495 \n333,829 \nDeposits from customers \n11 \n4,685,907 \n3,995,313 \nFinancial liabilities at fair value through profit or loss \n-\nTrading derivatives\n37 \n1,746 \n3,282 \n-\n Non-trading derivatives\n37 \n7,163 \n469 \nCurrent tax liability \n12 \n19,199 \n 6,109  \nDeferred tax liability \n12 \n2,440 \n 3,434  \nOther liabilities \n13 \n23,416 \n 109,962  \nTotal Liabilities\n5,027,366 \n 4,452,398 \nEquity \nShare capital \n14 \n136,836 \n136,836 \nRetained earnings \n14 \n611,557 \n 511,210  \nOther reserves \n14 \n6,786 \n 5,276  \nTotal Equity attributable to owners of the Bank \n755,179 \n 653,322 \nTotal Liabilities and Equity \n5,782,545 \n5,105,720 \nCommitments and Contingencies \n16 \n806,177 \n551,543 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n=== PÁGINA 2 ===\n56 \nStatement of Comprehensive Income \nFor the Year Ended 31 December 2023 \nNotes \n2023 \n2022 \nStatement of Income: \nInterest income \n17 \n279,194 \n116,213 \nInterest expense \n17 \n(108,719) \n(30,754) \nNet interest income \n170,475 \n85,459 \nFee and commission income \n18 \n22,689 \n22,998 \nFee and commission expense \n18 \n(5,683) \n(5,080) \nNet fee and commission income \n17,006 \n17,918 \nValuation results and net trading income \n19 \n3,516 \n3,208 \nInvestment income \n20 \n(156) \n(4,678) \nOther income \n21 \n66 \n353 \nOther expenses \n21 \n(2,986) \n(3,707) \nTotal income \n187,921 \n98,553 \nExpected credit losses on financial instruments \n28 \n(1,026) \n1,779 \nPersonnel expenses  \n23 \n(32,332) \n(29,499) \nDepreciation and amortisation \n7/8 \n(2,818) \n(2,899) \nOther operating expenses \n22 \n(15,108) \n(12,977) \nTotal expenses \n(51,284) \n(43,596) \nIncome before tax \n136,637 \n54,957 \nIncome tax expense \n12 \n(35,945) \n(14,164) \nNet Income \n100,692 \n40,793 \nOther Comprehensive Income \nItems that will not be reclassified to profit or loss  \nProperty and equipment \nRevaluation \n7 \n(2,931) \n(2,082) \nTax effect (deferred) \n756 \n537 \nNet gain on revaluation of property and \nequipment \n(2,175) \n(1,545) \nItems that may subsequently be reclassified to \nprofit or loss:  \nCash flow hedges  \nEffective portion of changes in fair value \n  37 \n292 \n1,700 \nReclassified to profit or loss \n  37 \n(586) \n(296) \nTax effect (deferred) \n76 \n(362) \nNet gain on cash flow hedges  \n(218) \n1,042 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n=== PÁGINA 3 ===\n57 \nNotes \n2023 \n2022 \nDebt instruments at fair value through \nother comprehensive income \nValuation results   \n6 \n4,795 \n(9,054) \nTax effect (current) \n12 \n(1,237) \n2,336 \nNet gain/ (loss) on debt instruments at fair value \nthrough other comprehensive income  \n3,558 \n(6,718) \nTotal other comprehensive income for the year, \nnet of tax attributable to the shareholder \n1,165 \n(7,221) \nTotal comprehensive income for the year, net of \ntax attributable to the shareholder \n101,857 \n33,572 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n=== PÁGINA 4 ===\n58 \nStatement of Changes in Equity \nNotes \nShare \nCapital \nand Share \nPremium \nFair value \nreserve \nHedging \nReserve \nOther legal \nreserves \nRetained \nEarnings \nTotal \nEquity \nBalance as at 1 January 2023 \n136,836 \n(6,685) \n879 \n11,082 \n511,210 \n653,322 \nProfit for the year \n100,692 \n100,692 \nOther comprehensive income \nNet unrealised gains/(losses) on fair \nvalue assets portfolio \n3,548 \n3,548 \nNet gains/(losses) on fair value assets and \ncash flow hedges transferred to profit or loss \nForeign currency translation differences \non fair value portfolio \nNet fair value gains/(losses) from cash flow hedges \n(218) \n(218) \nNet change in expected credit losses on \nFVOCI instruments \n10 \n10 \nRevaluation surplus on building \n(2,175) \n(2,175) \nTotal comprehensive income \n3,558 \n(218)\n(2,175)\n100,692 \n101,857 \nTranslation differences \nOther movements \n345 \n(345) \nBalances as at 31 December 2023 \n14 \n136,836 \n(3,127) \n661 \n9,252 \n611,557 \n755,179 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n=== PÁGINA 5 ===\n59 \nNotes \nShare \nCapital and \nShare \nPremium \nFair value \nreserve \nHedging \nReserve \nOther legal \nreserves \nRetained \nEarnings \nTotal \nEquity \nBalance as at 1 January 2022 \n136,836 \n33 \n(163)\n12,990\n470,069 \n619,765 \nProfit for the year \n40,793 \n40,793 \nOther comprehensive income \nNet unrealised gains/(losses) on fair \nvalue assets portfolio \n(6,695) \n(6,695) \nNet gains/(losses) on fair value assets and cash flow hedges \ntransferred to profit or loss \nForeign currency translation differences on fair value portfolio \nNet fair value gains/(losses) from cash flow hedges \n1,042 \n1,042 \nNet change in expected credit losses on FVOCI instruments \n(23) \n(23) \nRevaluation surplus on building \n(1,545) \n(1,545) \nTotal comprehensive income \n-\n(6,718)\n1,042 \n(1,545) \n40,793 \n33,572 \nOther movements \n(363)\n348\n(15) \nBalances as at 31 December 2022 \n14 \n136,836 \n(6,685) \n879 \n11,082 \n511,210 \n653,322 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n",
+    "entries_found": 11,
+    "data": [
+      {
+        "concept": "Interest income",
+        "section": "revenue",
+        "2023": 279194.0,
+        "2022": 116213.0
+      },
+      {
+        "concept": "Fee and commission income",
+        "section": "revenue",
+        "2023": 22689.0,
+        "2022": 22998.0
+      },
+      {
+        "concept": "Net interest income",
+        "section": "revenue",
+        "2023": 170475.0,
+        "2022": 85459.0
+      },
+      {
+        "concept": "Total income",
+        "section": "revenue",
+        "2023": 187921.0,
+        "2022": 98553.0
+      },
+      {
+        "concept": "Interest expense",
+        "section": "expenses",
+        "2023": -108719.0,
+        "2022": -30754.0
+      },
+      {
+        "concept": "Personnel expenses",
+        "section": "expenses",
+        "2023": -32332.0,
+        "2022": -29499.0
+      },
+      {
+        "concept": "Operating expenses",
+        "section": "expenses",
+        "2023": -15108.0,
+        "2022": -12977.0
+      },
+      {
+        "concept": "Total expenses",
+        "section": "expenses",
+        "2023": -51284.0,
+        "2022": -43596.0
+      },
+      {
+        "concept": "Income before tax",
+        "section": "profit",
+        "2023": 136637.0,
+        "2022": 54957.0
+      },
+      {
+        "concept": "Net income",
+        "section": "profit",
+        "2023": 100692.0,
+        "2022": 40793.0
+      },
+      {
+        "concept": "Income tax expense",
+        "section": "expenses",
+        "2023": -35945.0,
+        "2022": -14164.0
+      }
+    ]
+  },
+  "analysis": {
+    "success": true,
+    "analysis": {
+      "total_entries": 11,
+      "sections": {
+        "expenses": 5,
+        "revenue": 4,
+        "profit": 2
+      },
+      "years_available": [
+        "2023",
+        "2022"
+      ],
+      "revenue_items": 4,
+      "expense_items": 5,
+      "profit_items": 2
+    },
+    "structure_quality": "good"
+  },
+  "ratios": {
+    "success": true,
+    "ratios": {
+      "2023": {
+        "gross_margin_pct": 136.86,
+        "profit_margin_pct": 35.94,
+        "expense_ratio_pct": -36.86,
+        "revenue": 660279.0,
+        "expenses": -243388.0,
+        "profit": 237329.0
+      },
+      "2022": {
+        "gross_margin_pct": 140.53,
+        "profit_margin_pct": 29.62,
+        "expense_ratio_pct": -40.53,
+        "revenue": 323223.0,
+        "expenses": -130990.0,
+        "profit": 95750.0
+      }
+    },
+    "years_analyzed": 2
+  },
+  "generated_at": "2025-09-05 14:54:37"
+}

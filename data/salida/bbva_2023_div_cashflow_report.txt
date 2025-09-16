@@ -1,0 +1,49 @@
+REPORTE DE FLUJOS DE EFECTIVO
+PDF: data\entrada\bbva_2023_div.pdf
+Fecha: 2025-09-05 15:15:35
+
+=== EXTRACCIÓN ===
+Páginas procesadas: [6]
+Entradas encontradas: 16
+Estado extracción: ✅ Exitosa
+
+=== ARCHIVOS GENERADOS ===
+CSV: ✅ Sí
+JSON: ✅ Sí
+Reporte: ✅ Sí
+
+=== DATOS DE FLUJOS DE EFECTIVO ===
+
+OPERATING ACTIVITIES:
+- Profit for the year: 2023=100,692.0, 2022=40,793.0
+- Depreciation and amortisation: 2023=2,818.0, 2022=2,899.0
+- Expected credit losses: 2023=1,026.0, 2022=1,779.0
+- Tax expense: 2023=35,945.0, 2022=14,164.0
+- Deposits from customers: 2023=690,594.0, 2022=957,491.0
+
+INVESTING ACTIVITIES:
+- Acquisitions in investment portfolio: 2023=-333,878.0, 2022=-410,586.0
+- Proceeds from investment portfolio: 2023=129,236.0, 2022=431,169.0
+- Purchase of tangible and intangible assets: 2023=-4,319.0, 2022=-2,529.0
+- Net cash from investing activities: 2023=-208,961.0, 2022=-18,054.0
+
+SUMMARY ACTIVITIES:
+- Net increase in cash and cash equivalents: 2023=670,662.0, 2022=877,352.0
+- Cash and cash equivalents at beginning of period: 2023=1,579,446.0, 2022=702,094.0
+- Cash and cash equivalents at end of period: 2023=2,250,108.0, 2022=1,579,446.0
+
+=== RATIOS Y MÉTRICAS ===
+Año 2023:
+  - Operating Cash Flow: 881,035
+  - Investing Cash Flow: -417,922
+  - Financing Cash Flow: 0
+  - Total Cash Flow: 463,113
+  - Free Cash Flow: 542,838
+  - Fcf Margin: 62
+Año 2022:
+  - Operating Cash Flow: 861,272
+  - Investing Cash Flow: 0
+  - Financing Cash Flow: 0
+  - Total Cash Flow: 861,272
+  - Free Cash Flow: 448,157
+  - Fcf Margin: 52

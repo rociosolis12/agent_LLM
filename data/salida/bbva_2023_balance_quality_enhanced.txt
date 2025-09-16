@@ -1,0 +1,18 @@
+PDF: data\entrada\bbva_2023.pdf
+Tipo: BALANCE (con análisis semántico mejorado v2.0)
+Páginas seleccionadas: [1, 2]
+Páginas procesadas: [1, 2]
+Confianza extracción: 0.475
+Validación -> status: poor | confidence: 0.438
+Bonus semántico: 0.2
+Componentes encontrados: {'assets': False, 'liabilities': False, 'equity': False}
+Cantidades numéricas: 9
+Cantidades financieras: 0
+Issues: ['no_assets_hint_found', 'no_liabilities_hint_found', 'no_equity_hint_found']
+Recomendaciones: ['Integra tabula/camelot para extraer tablas contables limpias.', 'Revisar páginas adyacentes o ajustar parámetros de búsqueda.', 'Considerar usar anchor_page específica para documentos complejos.', 'Verificar que las páginas seleccionadas contienen el balance completo.']
+
+=== CONFIGURACIÓN ===
+Modelo Groq: llama-3.3-70b-versatile
+Deployment Azure: gpt-4o
+Embeddings habilitados: Sí
+Patrones mejorados: Sí
