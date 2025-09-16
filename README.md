@@ -31,7 +31,11 @@ Procesamiento automático de los **4 estados financieros principales**:
 - **💸 Estado de Flujos de Efectivo** - Movimientos de efectivo
 
 ### 🤖 Arquitectura Multi-Agente Especializada
-Sistema coordinado por un **Financial Coordinator** que distribuye tareas entre agentes especializados según el estado financiero consultado.
+Sistema coordinado por un **Financial Coordinator** que:
+1. **Analiza la pregunta** del usuario
+2. **Selecciona el agente financiero** apropiado según el estado financiero
+3. **Evalúa si necesita predicciones** basado en palabras clave
+4. **Coordina la respuesta final** directa o con predicciones
 
 ### 📈 Predicción de KPIs Financieros
 Estimación inteligente de indicadores clave:
@@ -69,21 +73,15 @@ graph TB
         G -->|Cash Flow Questions| K[💸 Cash Flow Agent]
     end
     
-    subgraph "🛠️ SPECIALIZED PROCESSORS"
-        L[📝 Parser Agent]
-        M[🔍 Analysis Agent]
-        N[✅ Validation Agent]
-        O[🏗️ Structure Agent]
-    end
-    
     subgraph "🔮 AI LAYER"
-        P[🔮 Predictor Agent]
-        Q[🤖 LLM Orchestrator]
+        L{❓ Requires Prediction?}
+        M[🔮 Predictor Agent]
+        N[📤 Direct Response]
     end
     
     subgraph "🌐 OUTPUT LAYER"
-        R[📤 FastAPI Backend]
-        S[⚛️ React Frontend]
+        O[📤 FastAPI Backend]
+        P[⚛️ React Frontend]
     end
     
     %% Flujo principal
@@ -101,25 +99,22 @@ graph TB
     E -.->|PDF Content| J
     E -.->|PDF Content| K
     
-    %% Procesamiento especializado
+    %% Decisión de predicción
     H --> L
-    I --> M
-    J --> N
-    K --> O
+    I --> L
+    J --> L
+    K --> L
     
-    %% AI Layer
-    L --> P
-    M --> Q
-    N --> P
-    O --> Q
-    
-    %% Output
-    P --> R
-    Q --> S
+    %% Flujo condicional
+    L -->|Yes| M
+    L -->|No| N
+    M --> O
+    N --> O
+    O --> P
     
     style E fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px
     style F fill:#e1f5fe,stroke:#01579b,stroke-width:3px
-    style G fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
+    style L fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
 ```
 
 ### 🧠 Financial Coordinator - Distribución Inteligente
@@ -210,13 +205,7 @@ agent_LLM/
 │   │   ├── equity_agent.py          # 💰 Patrimonio Neto
 │   │   └── cashflow_agent.py        # 💸 Flujos de Efectivo
 │   │
-│   ├── 🔧 processing_agents/        # Agentes de Procesamiento
-│   │   ├── parser_agent.py          # 📝 Parsing de texto
-│   │   ├── analysis_agent.py        # 🔍 Análisis financiero
-│   │   ├── validation_agent.py      # ✅ Validaciones
-│   │   └── structure_agent.py       # 🏗️ Estructuración
-│   │
-│   └── predictor_agent.py           # 🔮 Predicción KPIs
+│   └── predictor_agent.py           # 🔮 Predicción KPIs (opcional)
 │
 ├── 🎨 frontend/                     # Interfaz React
 │   ├── src/
@@ -240,10 +229,24 @@ agent_LLM/
 │   │   ├── equity_statements/       # Estados patrimonio
 │   │   └── cashflow_statements/     # Estados flujo efectivo
 │   └── exports/                     # Resultados exportados
+│       ├── kpi_predictions/         # Predicciones generadas
+│       └── financial_analysis/      # Análisis completos
 │
 ├── 📝 logs/                         # Logs del sistema
+│   ├── main_system.log              # Logs principales
+│   ├── financial_coordinator.log    # Logs del coordinador
+│   ├── pdf_extractor.log            # Logs extracción PDF
+│   └── predictor_agent.log          # Logs predictor
+│
 ├── 🔧 tests/                        # Tests automatizados
+│   ├── test_agents/                 # Tests de agentes
+│   ├── test_api/                    # Tests de API
+│   └── test_integration/            # Tests integración
+│
 ├── 📋 docs/                         # Documentación
+│   ├── architecture.md              # Arquitectura detallada
+│   ├── agents_guide.md              # Guía de agentes
+│   └── api_reference.md             # Referencia API
 │
 ├── main_system.py                   # 🎯 Orquestador principal
 ├── question_router.py               # 🔀 Router de preguntas
@@ -413,18 +416,28 @@ coordinator = FinancialCoordinator(
 
 # 3. PROCESAR MÚLTIPLES PREGUNTAS CON EL MISMO PDF
 questions = [
-    "¿Cuál fue el ROE de GarantiBank?",
-    "¿Hay problemas de liquidez?", 
-    "¿Cómo evolucionó el patrimonio?"
+    {
+        "question": "¿Cuál fue el ROE de GarantiBank?",
+        "needs_prediction": False  # Respuesta directa del análisis
+    },
+    {
+        "question": "¿Cuál será el ROE proyectado para el próximo año?", 
+        "needs_prediction": True   # Requiere predictor agent
+    },
+    {
+        "question": "¿Hay problemas de liquidez?",
+        "needs_prediction": False  # Respuesta directa del análisis
+    }
 ]
 
-for question in questions:
+for q in questions:
     result = coordinator.process_question(
-        question=question,
+        question=q["question"],
         pdf_content=pdf_content  # Contenido ya extraído
     )
     print(f"🤖 Provider: {result['provider_used']}")
     print(f"🎯 Agente: {result['agent_used']}")
+    print(f"🔮 Predictor usado: {result['predictor_used']}")
     print(f"💡 Respuesta: {result['answer']}")
     print("─" * 50)
 ```
@@ -443,18 +456,21 @@ for question in questions:
 
 🤖 Provider: azure_openai (GPT-4o)
 🎯 Agente: Income Agent
+🔮 Predictor usado: No
 💡 Respuesta: El ROE de GarantiBank fue del 15.2%, mostrando una mejora 
              del 2.1% respecto al año anterior...
 
+🤖 Provider: azure_openai (GPT-4o)
+🎯 Agente: Income Agent → Predictor Agent
+🔮 Predictor usado: Sí
+💡 Respuesta: Basado en las tendencias actuales, el ROE proyectado para 2024
+             sería del 16.8% ±1.2%, considerando el crecimiento esperado...
+
 🤖 Provider: groq (Llama-3.3-70b)
 🎯 Agente: Cash Flow Agent
+🔮 Predictor usado: No
 💡 Respuesta: El ratio LCR es del 142%, superando ampliamente el mínimo
              regulatorio del 100%. La posición de liquidez es sólida...
-
-🤖 Provider: azure_openai (GPT-4o)
-🎯 Agente: Equity Agent
-💡 Respuesta: El patrimonio neto creció un 12.8% hasta 48.2B TL, 
-             principalmente por retención de beneficios...
 ```
 
 ### 💬 **Consultas en Lenguaje Natural**
@@ -665,7 +681,7 @@ AGENT_CONFIG = {
     "financial_coordinator": {
         "max_retries": 3,
         "timeout": 120,
-        "parallel_processing": True,
+        "decision_threshold": 0.8,
         "memory_limit": "2GB"
     },
     "pdf_extractor": {
@@ -674,20 +690,39 @@ AGENT_CONFIG = {
         "ocr_enabled": False,
         "supported_formats": ["pdf"]
     },
+    "balance_agent": {
+        "focus_metrics": ["solvency", "leverage", "capital_ratio"],
+        "timeout": 60
+    },
+    "income_agent": {
+        "focus_metrics": ["roe", "roa", "net_margin", "efficiency"],
+        "timeout": 60
+    },
+    "equity_agent": {
+        "focus_metrics": ["tier1", "capital_growth", "dividends"],
+        "timeout": 60
+    },
+    "cashflow_agent": {
+        "focus_metrics": ["lcr", "liquidity", "cash_ratio"],
+        "timeout": 60
+    },
     "predictor_agent": {
         "prediction_horizon": 12,  # months
         "confidence_threshold": 0.8,
-        "model_retrain_interval": 30  # days
+        "use_conditions": [
+            "forecast", "predict", "proyect", "future", 
+            "next year", "trend", "evolution"
+        ]
     }
 }
 
-# LLM Provider Strategy
-PROVIDER_STRATEGY = {
-    "financial_analysis": "azure_openai",  # Análisis complejo
-    "quick_responses": "groq",             # Respuestas rápidas
-    "predictions": "azure_openai",         # Predicciones avanzadas
-    "fallback": "openai"                   # Si otros fallan
-}
+# Decisión automática para usar Predictor
+PREDICTION_KEYWORDS = [
+    "predicción", "pronóstico", "proyección", "futuro",
+    "próximo año", "tendencia", "evolución", "forecast",
+    "predict", "será", "esperado"
+]
+```
 ```
 
 ## 🤝 Contribución
@@ -702,6 +737,19 @@ PROVIDER_STRATEGY = {
 6. **Push** a tu fork (`git push origin feature/mejora-agente-balance`)
 7. **Abre** un Pull Request con descripción detallada
 
+### 📋 Estándares de Código
+
+- **Python**: Seguir PEP 8
+- **JavaScript**: Usar ESLint y Prettier
+- **Commits**: Conventional Commits
+- **Testing**: Cobertura mínima del 80%
+- **Documentación**: Docstrings en todos los métodos
+
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🙏 Agradecimientos
 
 ### 🏆 Tecnologías Utilizadas
 
@@ -715,10 +763,18 @@ PROVIDER_STRATEGY = {
 
 Este proyecto se desarrolló como parte del **Trabajo de Fin de Máster (TFM)** enfocado en la aplicación de sistemas multi-agente para el análisis financiero automatizado.
 
+## 📞 Soporte y Contacto
+
+### 🆘 Obtener Ayuda
+
+- **📚 Documentación**: [Wiki del Proyecto](https://github.com/rociosolis12/agent_LLM/wiki)
+- **🐛 Issues**: [GitHub Issues](https://github.com/rociosolis12/agent_LLM/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/rociosolis12/agent_LLM/discussions)
+
 ### 📧 Contacto
 
-- **Email**: rociosolismartindesantaolalla@gmail.com
-- **LinkedIn**: [Rocío Solís](https://www.linkedin.com/in/roc%C3%ADo-sol%C3%ADs-mart%C3%ADn-de-santa-olalla/)
+- **Email**: rocio.solis@financialagent.com
+- **LinkedIn**: [Rocío Solís](https://linkedin.com/in/rociosolis12)
 
 ---
 
