@@ -763,18 +763,10 @@ Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENS
 
 Este proyecto se desarrolló como parte del **Trabajo de Fin de Máster (TFM)** enfocado en la aplicación de sistemas multi-agente para el análisis financiero automatizado.
 
-## 📞 Soporte y Contacto
-
-### 🆘 Obtener Ayuda
-
-- **📚 Documentación**: [Wiki del Proyecto](https://github.com/rociosolis12/agent_LLM/wiki)
-- **🐛 Issues**: [GitHub Issues](https://github.com/rociosolis12/agent_LLM/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/rociosolis12/agent_LLM/discussions)
-
 ### 📧 Contacto
 
 - **Email**: rocio.solis@financialagent.com
-- **LinkedIn**: [Rocío Solís](https://linkedin.com/in/rociosolis12)
+- **LinkedIn**: [Rocío Solís](https://www.linkedin.com/in/roc%C3%ADo-sol%C3%ADs-mart%C3%ADn-de-santa-olalla/)
 
 ---
 
