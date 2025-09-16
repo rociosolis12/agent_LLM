@@ -1,247 +1,159 @@
 🧠 Sistema Multi-Agente Financiero (agent_LLM)
 
 Este proyecto implementa un pipeline completo de Ingest & Retrieve orientado al análisis de documentos financieros, en particular la Memoria Anual de los bancos.
-El sistema lee el PDF completo, extrae y organiza los cuatro estados financieros principales (balance, cuenta de resultados, estado de cambios en el patrimonio neto y estado de flujos de efectivo) y permite generar predicciones sobre KPIs financieros relevantes.
+
+El sistema:
+
+Lee el PDF completo.
+
+Extrae y organiza los cuatro estados financieros principales:
+
+Balance
+
+Cuenta de resultados
+
+Estado de cambios en el patrimonio neto
+
+Estado de flujos de efectivo
+
+Permite generar predicciones sobre KPIs financieros relevantes.
 
 ✨ Características principales
 
-1. Extracción de informes financieros
-Procesamiento automático de la Memoria Anual de los bancos, focalizado en los 4 estados financieros.
+Extracción de informes financieros
+Procesamiento automático de la Memoria Anual, focalizado en los 4 estados financieros.
 
-2. Coordinación multi-agente
-Orquestada por un Financial Coordinator, que distribuye tareas de parsing, validación y análisis entre agentes.
+Coordinación multi-agente
+Orquestación mediante un Financial Coordinator, que distribuye tareas de parsing, validación y análisis entre agentes.
 
-3. Agentes especializados
-Dedicados a parsing de texto, análisis contable, validaciones regulatorias y estructuración de datos.
+Agentes especializados
 
-4. Predicción de KPIs
-Módulo predictor que estima indicadores financieros clave (rentabilidad, solvencia, liquidez, etc.).
+Parsing de texto
 
-🔍 Dos modos de interacción
+Análisis contable
 
-Preguntas libres: el usuario formula cuestiones abiertas y el sistema responde en base a la información extraída.
+Validaciones regulatorias
 
-Análisis detallado: ejecución directa de pipelines de análisis predefinidos sobre los estados financieros.
+Estructuración de datos
 
-⚙️ Arquitectura API + Frontend
+Predicción de KPIs
+Estimación de indicadores clave como rentabilidad, solvencia o liquidez.
 
-Backend: FastAPI para la lógica de negocio y exposición de endpoints.
+🔍 Modos de interacción
 
-Frontend: React + Material UI, interfaz moderna y responsiva para la interacción con los agentes.
+Preguntas libres → El usuario formula cuestiones abiertas y el sistema responde en base a la información extraída.
+
+Análisis detallado → Ejecución de pipelines de análisis predefinidos sobre los estados financieros.
+
+⚙️ Arquitectura
+
+Backend: FastAPI
+ (lógica de negocio + endpoints)
+
+Frontend: React + Material UI (interfaz moderna y responsiva)
 
 📂 Estructura del repositorio
 agent_LLM/
 ├─ api/                      # Backend (FastAPI)
-│  ├─ main_api.py            # Punto de entrada FastAPI (app)
+│  ├─ main_api.py            # Punto de entrada FastAPI
 │  └─ ...                    # Routers, servicios, utils
 │
 ├─ agents/                   # Lógica de agentes
 ├─ frontend/                 # Frontend (React)
-├─ exports/                  # Salidas / resultados
-├─ sessions/                 # Historias de ejecución / logs ligeros
+├─ exports/                  # Resultados generados
+├─ sessions/                 # Logs / historiales
 │
-├─ main_system.py            # Orquestación de alto nivel
+├─ main_system.py            # Orquestación principal
 ├─ financial_coordinator.py  # Coordinador de agentes
-├─ extractor_pdf_agent.py    # Extracción / parseo de PDFs
-├─ predictor_agent.py        # Predicción de KPIs (ML/Stats)
-├─ question_router.py        # Router de preguntas → agente
-├─ web_server.py             # (opcional) utilidades web
+├─ extractor_pdf_agent.py    # Extracción de PDFs
+├─ predictor_agent.py        # Predicción de KPIs
+├─ question_router.py        # Routing de preguntas
+├─ web_server.py             # Utilidades web (opcional)
 │
 ├─ config.py                 # Configuración central
 ├─ requirements.txt          # Dependencias Python
-├─ .env                      # Variables de entorno (NO subir)
+├─ .env                      # Variables de entorno (IGNORADO)
 └─ README.md                 # Este archivo
 
 ✅ Requisitos
 
 Python 3.10+ (recomendado 3.11)
 
-Node.js 18+ y npm 9+ (para el frontend)
+Node.js 18+ y npm 9+ (para frontend)
 
 Git
 
-Windows: se recomienda PowerShell o Git Bash.
+En Windows: PowerShell o Git Bash
 
 🔐 Variables de entorno
 
-Crea un archivo .env en la raíz con las claves que uses (modelos, APIs, etc.). Ejemplo mínimo:
+Crea un archivo .env en la raíz con las claves necesarias.
+
+Ejemplo mínimo:
 
 # Backend
 API_HOST=127.0.0.1
 API_PORT=8000
 
-# Modelos / claves (ejemplos)
+# Modelos / APIs
 OPENAI_API_KEY=...
 GROQ_API_KEY=...
 
 
-No subas .env a GitHub. Está ignorado en .gitignore.
+⚠️ No subas .env a GitHub (ya está en .gitignore).
 
 🚀 Puesta en marcha
 1) Backend (FastAPI)
-
-Ve a la raíz del proyecto y crea un entorno virtual:
-
-# Windows (PowerShell)
+# Crear entorno virtual
 python -m venv .venv
+# Windows
 .\.venv\Scripts\Activate.ps1
-
 # macOS / Linux
-python3 -m venv .venv
 source .venv/bin/activate
 
-
-Instala dependencias:
-
+# Instalar dependencias
 pip install -r requirements.txt
 
-
-Arranca la API:
-
+# Arrancar API
 python -m uvicorn api.main_api:app --host 127.0.0.1 --port 8000 --reload
 
 
-Comprueba la documentación interactiva:
+Accede a la documentación:
 
-Swagger UI: http://127.0.0.1:8000/docs
+Swagger UI → http://127.0.0.1:8000/docs
 
-ReDoc: http://127.0.0.1:8000/redoc
-
-Si cambias el puerto/host, recuerda alinear el frontend (ver variable API_BASE_URL).
+ReDoc → http://127.0.0.1:8000/redoc
 
 2) Frontend (React + MUI)
-
-Entra en la carpeta del frontend:
-
 cd frontend
-
-
-Instala dependencias:
-
 npm install
 
 
-Configura el endpoint del backend (según tu setup).
-Si el proyecto usa Vite, crea frontend/.env o frontend/.env.local:
+Configura el endpoint del backend:
+
+Vite → frontend/.env
 
 VITE_API_BASE_URL=http://127.0.0.1:8000
 
 
-Si es Create React App:
+Create React App (CRA) → frontend/.env
 
 REACT_APP_API_BASE_URL=http://127.0.0.1:8000
 
 
-Arranca el desarrollo:
+Inicia el servidor de desarrollo:
 
-# Si es Vite
-npm run dev
-
-# Si es Create React App
-npm start
-
-
-Abre el navegador:
-
-Vite (por defecto): http://127.0.0.1:5173
-
-CRA (por defecto): http://127.0.0.1:3000
-
-Si no estás seguro de si es Vite o CRA, mira el package.json (campo scripts):
-
-Vite suele tener "dev": "vite".
-
-CRA suele tener "start": "react-scripts start".
+# Vite
+npm run dev   # http://127.0.0.1:5173
+# CRA
+npm start     # http://127.0.0.1:3000
 
 🔗 Flujo de ejecución (resumen)
-Cliente (Frontend) ──► FastAPI (Backend)
-         │                 │
-         ▼                 ▼
-  main_system.py   financial_coordinator.py
-         │                 │
-         ├─► extractor_pdf_agent.py
-         ├─► agentes especializados (paralelo)
-         └─► predictor_agent.py
-         ▼
-      Respuesta JSON → Frontend (UI)
-
-🧪 Probar rápido (end-to-end)
-
-Levanta backend (uvicorn ...) y después frontend (npm run dev).
-
-Desde el frontend, lanza una consulta (sube un PDF o elige un caso de ejemplo, según tu UI).
-
-Verifica resultados en:
-
-UI del frontend
-
-Respuestas JSON de la API (/docs)
-
-Carpeta exports/ (si tu pipeline guarda salidas)
-
-🛠️ Comandos útiles
-# Backend (desde la raíz, con venv activo)
-pip install -r requirements.txt
-python -m uvicorn api.main_api:app --host 127.0.0.1 --port 8000 --reload
-
-# Frontend
-cd frontend
-npm install
-npm run dev     # Vite
-# o
-npm start       # CRA
-
-❗ Problemas frecuentes
-
-CORS: si el navegador bloquea peticiones, añade CORSMiddleware en FastAPI permitiendo el origen del frontend.
-
-Puerto en uso: cambia --port en uvicorn o el puerto del frontend (--port 5174 en Vite).
-
-.env no cargado: asegúrate de tenerlo en la raíz y que config.py lo lea (por ejemplo, con python-dotenv).
-
-node_modules gigantes: no se suben al repo; si lo hiciste, bórralos del control de versiones con:
-
-git rm -r --cached frontend/node_modules
-
-
-Avisos LF/CRLF (Windows): opcionalmente:
-
-git config --global core.autocrlf true
-
-🧹 .gitignore recomendado
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-env/
-venv/
-.ipynb_checkpoints/
-
-# Node / Frontend
-frontend/node_modules/
-node_modules/
-dist/
-build/
-*.log
-.cache/
-
-# Entornos / claves
-.env
-*.env
-*.env.*
-
-# SO / editores
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Salidas del proyecto
-exports/
-sessions/
-
-📄 Licencia
-
-Este repositorio se distribuye con fines académicos. Añade aquí tu licencia (MIT, Apache-2.0, etc.) si procede.
+flowchart TD
+  A[Frontend (React)] --> B[Backend (FastAPI)]
+  B --> C[main_system.py]
+  C --> D[financial_coordinator.py]
+  D --> E[extractor_pdf_agent.py]
+  D --> F[Agentes especializados]
+  D --> G[predictor_agent.py]
+  G --> H[Respuesta JSON → UI]
