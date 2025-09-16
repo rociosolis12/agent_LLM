@@ -1,38 +1,56 @@
-Sistema Multi-Agente Financiero (agent_LLM)
+🧠 Sistema Multi-Agente Financiero (agent_LLM)
 
-Pipeline completo de Ingest & Retrieve para documentos financieros con:
+Este proyecto implementa un pipeline completo de Ingest & Retrieve orientado al análisis de documentos financieros, en particular la Memoria Anual de los bancos.
+El sistema lee el PDF completo, extrae y organiza los cuatro estados financieros principales (balance, cuenta de resultados, estado de cambios en el patrimonio neto y estado de flujos de efectivo) y permite generar predicciones sobre KPIs financieros relevantes.
 
-Extracción y pre-procesado de PDF
+✨ Características principales
 
-Coordinación por un Financial Coordinator
+1. Extracción de informes financieros
+Procesamiento automático de la Memoria Anual de los bancos, focalizado en los 4 estados financieros.
 
-Agentes especializados (parsing, análisis contable, validaciones, etc.)
+2. Coordinación multi-agente
+Orquestada por un Financial Coordinator, que distribuye tareas de parsing, validación y análisis entre agentes.
 
-Módulo Predictor para KPIs
+3. Agentes especializados
+Dedicados a parsing de texto, análisis contable, validaciones regulatorias y estructuración de datos.
 
-API (FastAPI) y Frontend (React + MUI)
+4. Predicción de KPIs
+Módulo predictor que estima indicadores financieros clave (rentabilidad, solvencia, liquidez, etc.).
 
-Diagrama de alto nivel: tfm_solution_diagram.svg
+🔍 Dos modos de interacción
+
+Preguntas libres: el usuario formula cuestiones abiertas y el sistema responde en base a la información extraída.
+
+Análisis detallado: ejecución directa de pipelines de análisis predefinidos sobre los estados financieros.
+
+⚙️ Arquitectura API + Frontend
+
+Backend: FastAPI para la lógica de negocio y exposición de endpoints.
+
+Frontend: React + Material UI, interfaz moderna y responsiva para la interacción con los agentes.
 
 📂 Estructura del repositorio
 agent_LLM/
 ├─ api/                      # Backend (FastAPI)
 │  ├─ main_api.py            # Punto de entrada FastAPI (app)
 │  └─ ...                    # Routers, servicios, utils
+│
 ├─ agents/                   # Lógica de agentes
 ├─ frontend/                 # Frontend (React)
 ├─ exports/                  # Salidas / resultados
 ├─ sessions/                 # Historias de ejecución / logs ligeros
+│
 ├─ main_system.py            # Orquestación de alto nivel
 ├─ financial_coordinator.py  # Coordinador de agentes
-├─ extractor_pdf_agent.py    # Extracción/parseo de PDFs
+├─ extractor_pdf_agent.py    # Extracción / parseo de PDFs
 ├─ predictor_agent.py        # Predicción de KPIs (ML/Stats)
 ├─ question_router.py        # Router de preguntas → agente
 ├─ web_server.py             # (opcional) utilidades web
+│
 ├─ config.py                 # Configuración central
 ├─ requirements.txt          # Dependencias Python
 ├─ .env                      # Variables de entorno (NO subir)
-└─ README.md
+└─ README.md                 # Este archivo
 
 ✅ Requisitos
 
