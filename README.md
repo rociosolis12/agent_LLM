@@ -3,6 +3,8 @@
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
+[![Azure OpenAI](https://img.shields.io/badge/Azure%20OpenAI-GPT--4o-orange.svg)](https://azure.microsoft.com/en-us/services/cognitive-services/openai-service/)
+[![Groq](https://img.shields.io/badge/Groq-Llama--3.3--70b-purple.svg)](https://groq.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://postgresql.org/)
 [![Neo4j](https://img.shields.io/badge/Neo4j-5.0+-red.svg)](https://neo4j.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,6 +12,8 @@
 ## 📋 Descripción General
 
 **Sistema de IA Multi-Modal Avanzado** que combina análisis financiero automatizado, procesamiento de lenguaje natural y bases de datos multimodales. Desarrollado con arquitectura multi-agente para el procesamiento inteligente de documentos financieros complejos, con capacidades de **Text-to-SQL**, **Text-to-Cypher**, y **Memory Vector Store**.
+
+Utiliza **Azure OpenAI GPT-4o** para análisis financiero complejo y **Groq Llama-3.3-70b** para procesamiento de alta velocidad, garantizando tanto precisión como rendimiento empresarial.
 
 ### 🎯 Capacidades Principales
 
@@ -35,7 +39,7 @@
 
 ## ✨ Arquitectura del Sistema
 
-### 🏗️ Flujo Multi-Modal Completo
+### 🏗️ Flujo del Sistema - Arquitectura Real
 
 ```mermaid
 graph TB
@@ -45,99 +49,148 @@ graph TB
         C[📊 Financial Data]
     end
     
-    subgraph "🧠 PROCESSING CORE"
+    subgraph "🔄 PROCESSING CORE"
         D[🎭 main_system.py]
         E[📄 PDF Extractor Agent]
-        F[🤖 Financial Coordinator]
+        F[💾 Extracted PDF Content]
+    end
+    
+    subgraph "🧠 COORDINATION LAYER"
+        G[🤖 Financial Coordinator]
+        H{🔍 Question Analysis}
     end
     
     subgraph "🔀 INTELLIGENT ROUTING"
-        G{🔍 Question Router}
-        G -->|Financial Analysis| H[💼 Financial Agents]
-        G -->|SQL Query| I[🗃️ Text-to-SQL Agent]
-        G -->|Graph Query| J[🕸️ Text-to-Cypher Agent]
-        G -->|Semantic Search| K[🧠 Vector Store Agent]
+        H -->|Financial Analysis| I[💼 Financial Agents Decision]
+        H -->|SQL Query| J[🗃️ Text-to-SQL Decision]
+        H -->|Graph Query| K[🕸️ Text-to-Cypher Decision]
+        H -->|Semantic Search| L[🧠 Vector Store Decision]
     end
     
     subgraph "🏦 FINANCIAL AGENTS"
-        H --> L[🏦 Balance Agent]
-        H --> M[📈 Income Agent]
-        H --> N[💰 Equity Agent]
-        H --> O[💸 Cash Flow Agent]
+        I --> M[🏦 Balance Agent]
+        I --> N[📈 Income Agent]
+        I --> O[💰 Equity Agent]
+        I --> P[💸 Cash Flow Agent]
+    end
+    
+    subgraph "🗃️ DATA AGENTS"
+        J --> Q[🗃️ Text-to-SQL Agent]
+        K --> R[🕸️ Text-to-Cypher Agent]
+        L --> S[🧠 Vector Store Agent]
     end
     
     subgraph "🛠️ SPECIALIZED PROCESSORS"
-        P[📝 Parser Agent]
-        Q[🔍 Analysis Agent]
-        R[✅ Validation Agent]
-        S[🏗️ Structure Agent]
+        T[📝 Parser Agent]
+        U[🔍 Analysis Agent]
+        V[✅ Validation Agent]
+        W[🏗️ Structure Agent]
     end
     
     subgraph "🗄️ DATA LAYER"
-        T[(🐘 PostgreSQL)]
-        U[(🕸️ Neo4j Graph)]
-        V[(🧠 Vector Store)]
-        W[📁 File Storage]
+        X[(🐘 PostgreSQL)]
+        Y[(🕸️ Neo4j Graph)]
+        Z[(🧠 Vector Store)]
+        AA[📁 File Storage]
     end
     
     subgraph "🔮 AI LAYER"
-        X[🔮 Predictor Agent]
-        Y[🤖 LLM Orchestrator]
-        Z[📊 Analytics Engine]
+        BB[🔮 Predictor Agent]
+        CC[🤖 LLM Orchestrator]
+        DD[📊 Analytics Engine]
     end
     
     subgraph "🌐 OUTPUT LAYER"
-        AA[📤 FastAPI Backend]
-        BB[⚛️ React Frontend]
-        CC[📊 Interactive Dashboard]
+        EE[📤 FastAPI Backend]
+        FF[⚛️ React Frontend]
+        GG[📊 Interactive Dashboard]
     end
     
+    %% Flujo principal
     A --> D
     B --> E
-    C --> F
-    D --> G
+    D --> E
+    E --> F
+    F --> G
+    A --> G
+    G --> H
     
-    L --> P
-    M --> Q
-    N --> R
-    O --> S
-    I --> T
-    J --> U
-    K --> V
+    %% Los agentes usan el PDF extraído como input
+    F -.->|PDF Content Input| M
+    F -.->|PDF Content Input| N
+    F -.->|PDF Content Input| O
+    F -.->|PDF Content Input| P
+    F -.->|PDF Content Input| Q
+    F -.->|PDF Content Input| R
+    F -.->|PDF Content Input| S
     
-    P --> X
-    Q --> Y
-    R --> Z
-    S --> AA
+    %% Procesamiento especializado
+    M --> T
+    N --> U
+    O --> V
+    P --> W
+    Q --> X
+    R --> Y
+    S --> Z
     
-    X --> AA
-    Y --> BB
-    Z --> CC
+    %% AI Layer
+    T --> BB
+    U --> CC
+    V --> DD
+    W --> BB
     
-    style G fill:#e1f5fe,stroke:#01579b
-    style H fill:#f3e5f5,stroke:#4a148c
-    style I fill:#e8f5e8,stroke:#1b5e20
-    style J fill:#fff3e0,stroke:#e65100
-    style K fill:#fce4ec,stroke:#880e4f
+    %% Output
+    BB --> EE
+    CC --> FF
+    DD --> GG
+    
+    style F fill:#e8f5e8,stroke:#2e7d32,stroke-width:3px
+    style G fill:#e1f5fe,stroke:#01579b,stroke-width:3px
+    style H fill:#f3e5f5,stroke:#4a148c,stroke-width:3px
+```
+
+### 🔄 Secuencia de Ejecución Correcta
+
+#### **Paso 1: Extracción de PDF (Proceso Inicial)**
+```python
+# 📄 main_system.py inicia el proceso
+pdf_content = pdf_extractor_agent.extract_document(pdf_path)
+# El PDF se procesa y estructura ANTES de cualquier consulta
+```
+
+#### **Paso 2: Financial Coordinator Recibe la Pregunta**
+```python
+# 🤖 Financial Coordinator analiza la consulta del usuario
+user_question = "¿Cuál fue el ROE de GarantiBank?"
+coordinator = FinancialCoordinator(pdf_content=pdf_content)
+```
+
+#### **Paso 3: Decisión de Agente Basada en la Pregunta**
+```python
+# 🔍 Question Analysis determina el agente apropiado
+selected_agent = coordinator.analyze_question(user_question)
+# Resultado: "income_agent" (porque ROE está en cuenta de resultados)
+```
+
+#### **Paso 4: Agente Ejecuta con PDF Pre-extraído**
+```python
+# 📈 El agente seleccionado usa el PDF ya procesado
+income_agent = IncomeAgent(pdf_content=pdf_content)
+result = income_agent.calculate_roe()
 ```
 
 ### 🎯 Sistema de Routing Inteligente
 
 El **Question Router** analiza cada consulta y determina el mejor agente para procesarla:
 
-| Tipo de Consulta | Agente Responsable | Tecnología | Ejemplo |
-|------------------|-------------------|------------|---------|
-| **📊 Análisis Financiero** | Financial Agents | Multi-Agent | "¿Cuál es el ROE del banco?" |
-| **🗃️ Consultas SQL** | Text-to-SQL Agent | SQL Generation | "Muestra ingresos por trimestre" |
-| **🕸️ Relaciones Complejas** | Text-to-Cypher Agent | Neo4j Graph | "¿Qué bancos están conectados?" |
-| **🔍 Búsqueda Semántica** | Vector Store Agent | Embeddings | "Documentos similares a este informe" |
-
 ## 🔧 Tecnologías y Arquitectura
 
 ### 🖥️ Stack Tecnológico Completo
 
 **🧠 AI & Machine Learning**
-- **OpenAI GPT-4/3.5**: Agentes LLM principales
+- **Azure OpenAI GPT-4o**: Agente LLM principal (enterprise-grade)
+- **Groq Llama-3.3-70b**: Agente LLM de alta velocidad  
+- **OpenAI**: Backup LLM provider
 - **Sentence Transformers**: Generación de embeddings
 - **LangChain**: Orquestación de agentes
 - **Pinecone/ChromaDB**: Vector database
@@ -169,12 +222,6 @@ El **Question Router** analiza cada consulta y determina el mejor agente para pr
 agent_LLM/
 ├── 🚀 api/                              # Backend FastAPI
 │   ├── main_api.py                      # Entry point principal
-│   ├── routers/
-│   │   ├── financial.py                 # Endpoints financieros
-│   │   ├── sql_agent.py                 # Text-to-SQL endpoints
-│   │   ├── graph_agent.py               # Text-to-Cypher endpoints
-│   │   ├── vector_store.py              # Vector search endpoints
-│   │   └── upload.py                    # File upload endpoints
 │   ├── services/
 │   │   ├── sql_generator.py             # SQL generation logic
 │   │   ├── cypher_generator.py          # Cypher query logic
@@ -202,12 +249,6 @@ agent_LLM/
 │   │   ├── equity_agent.py              # Patrimonio Neto
 │   │   ├── cashflow_agent.py            # Flujos de Efectivo
 │   │   └── predictor_agent.py           # Predicciones KPIs
-│   │
-│   ├── 🗃️ data_agents/                  # Agentes de Datos
-│   │   ├── sql_agent.py                 # Text-to-SQL
-│   │   ├── cypher_agent.py              # Text-to-Cypher
-│   │   ├── vector_agent.py              # Vector Store Search
-│   │   └── embedding_agent.py           # Generación Embeddings
 │   │
 │   ├── 🔧 processing_agents/            # Agentes de Procesamiento
 │   │   ├── extractor_pdf_agent.py       # Extracción PDF
@@ -397,33 +438,68 @@ cd ..
 
 ```bash
 # .env file
-# API Keys
-OPENAI_API_KEY=sk-your-openai-key
-HUGGINGFACE_API_KEY=hf_your-huggingface-key
 
-# Database URLs
-DATABASE_URL=postgresql://user:password@localhost:5432/financial_agent_db
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=password123
-REDIS_URL=redis://localhost:6379
+# ===== AZURE OPENAI CONFIGURATION =====
+AZURE_OPENAI_ENDPOINT="https://llmcoeiberia-openai.openai.azure.com/"
+AZURE_OPENAI_API_KEY="your-azure-openai-key"
+AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+AZURE_OPENAI_API_VERSION="2024-10-21"
 
-# Vector Store
-PINECONE_API_KEY=your-pinecone-key
-PINECONE_ENVIRONMENT=us-west1-gcp
+# ===== GROQ CONFIGURATION =====
+GROQ_API_KEY="your-groq-api-key"
+GROQ_MODEL="llama-3.3-70b-versatile"
 
-# Application Settings
-API_HOST=127.0.0.1
+# ===== ALTERNATIVE LLM PROVIDERS =====
+# OpenAI Direct (Backup)
+OPENAI_API_KEY="sk-your-openai-key-backup"
+OPENAI_MODEL="gpt-4-turbo-preview"
+
+# HuggingFace for Embeddings
+HUGGINGFACE_API_KEY="hf_your-huggingface-key"
+EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
+
+# ===== DATABASE CONFIGURATION =====
+DATABASE_URL="postgresql://user:password@localhost:5432/financial_agent_db"
+NEO4J_URI="bolt://localhost:7687"
+NEO4J_USERNAME="neo4j"
+NEO4J_PASSWORD="password123"
+REDIS_URL="redis://localhost:6379/0"
+
+# ===== VECTOR STORE CONFIGURATION =====
+VECTOR_STORE_TYPE="pinecone"  # pinecone|chroma|weaviate
+PINECONE_API_KEY="your-pinecone-key"
+PINECONE_ENVIRONMENT="us-west1-gcp"
+PINECONE_INDEX_NAME="financial-embeddings"
+
+# ===== APPLICATION SETTINGS =====
+API_HOST="127.0.0.1"
 API_PORT=8000
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL="http://localhost:3000"
 DEBUG=True
-LOG_LEVEL=INFO
+LOG_LEVEL="INFO"
 
-# Agent Configuration
-MAX_AGENTS=10
+# ===== AGENT CONFIGURATION =====
+PRIMARY_LLM_PROVIDER="azure_openai"  # azure_openai|groq|openai
+BACKUP_LLM_PROVIDER="groq"
+MAX_CONCURRENT_AGENTS=10
 AGENT_TIMEOUT=300
-EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-LLM_MODEL=gpt-4-turbo-preview
+RETRY_ATTEMPTS=3
+BATCH_SIZE=100
+
+# ===== SECURITY =====
+SECRET_KEY="your-secret-key"
+JWT_EXPIRATION=3600
+CORS_ORIGINS=["http://localhost:3000"]
+
+# ===== FILE PROCESSING =====
+MAX_FILE_SIZE="50MB"
+SUPPORTED_FORMATS=["pdf", "docx", "xlsx", "csv"]
+TEMP_DIR="/tmp/agent_uploads"
+
+# ===== MONITORING =====
+ENABLE_METRICS=true
+PROMETHEUS_PORT=9090
+GRAFANA_URL="http://localhost:3001"
 ```
 
 ## 🎯 Uso del Sistema
@@ -457,87 +533,78 @@ celery -A api.tasks worker --loglevel=info
 
 ### 🏦 1. Análisis Financiero Multi-Agente
 
-#### **Caso Real: GarantiBank**
+#### **🤖 Sistema Multi-Provider LLM**
 
 ```python
-# Cargar y analizar memoria anual
+# El sistema selecciona automáticamente el mejor provider para cada tarea
 from agents.financial_coordinator import FinancialCoordinator
 
-coordinator = FinancialCoordinator()
-
-# Procesamiento automático
-result = coordinator.analyze_annual_report(
-    pdf_path="data/uploads/GarantiBank_Annual_Report.pdf",
-    analysis_type="comprehensive"
+# Azure OpenAI para análisis financiero complejo
+coordinator = FinancialCoordinator(
+    primary_provider="azure_openai",    # GPT-4o para razonamiento complejo
+    speed_provider="groq",              # Llama-3.3-70b para respuestas rápidas
+    backup_provider="openai"            # GPT-4 como fallback
 )
 
-print(f"ROE: {result['kpis']['roe']}%")
-print(f"Tier 1 Ratio: {result['kpis']['tier1_ratio']}%")
-print(f"Risk Assessment: {result['risk_analysis']['overall_score']}")
+# Ejemplos de uso optimizado por provider:
+questions = [
+    "¿Cuál fue el ROE de GarantiBank?",           # → Azure OpenAI (análisis complejo)
+    "Genera SQL: bancos con ROE > 15%",          # → Groq (generación rápida)
+    "¿Qué bancos están conectados a GarantiBank?" # → Groq (consulta directa)
+]
+
+for question in questions:
+    result = coordinator.process_question(question, pdf_content)
+    print(f"🤖 Provider usado: {result['provider_used']}")
+    print(f"⚡ Tiempo: {result['response_time']}ms")
+    print(f"💡 Respuesta: {result['answer']}")
+    print("─" * 50)
 ```
 
-#### **Consultas en Lenguaje Natural**
-
+**Resultado Esperado:**
 ```
-Usuario: "¿Cuál fue la evolución de la cartera crediticia de GarantiBank en los últimos 3 años?"
+🤖 Provider usado: azure_openai (GPT-4o)
+⚡ Tiempo: 2,340ms
+💡 Respuesta: El ROE de GarantiBank fue del 15.2%...
 
-🤖 Agente Respuesta:
-┌─────────────────────────────────────────────┐
-│ 📊 EVOLUCIÓN CARTERA CREDITICIA GARANTI     │
-├─────────────────────────────────────────────┤
-│ 2021: 187.2B TL (+12.5%)                   │
-│ 2022: 218.9B TL (+16.9%)                   │
-│ 2023: 245.8B TL (+12.3%)                   │
-│                                             │
-│ 📈 Crecimiento promedio: 14.2% anual       │
-│ 🎯 Morosidad actual: 2.8%                  │
-│ ⚠️  Alerta: Crecimiento acelerado          │
-└─────────────────────────────────────────────┘
+🤖 Provider usado: groq (Llama-3.3-70b)  
+⚡ Tiempo: 450ms
+💡 Respuesta: SELECT name, roe FROM banks WHERE roe > 15...
+
+🤖 Provider usado: groq (Llama-3.3-70b)
+⚡ Tiempo: 680ms  
+💡 Respuesta: MATCH (g:Bank {name: 'GarantiBank'})-[r]-(connected)...
 ```
 
-### 🗃️ 2. Text-to-SQL Inteligente
+#### **Resultado del Procesamiento**
 
-#### **Generación Automática de Consultas**
+```
+📄 EXTRACCIÓN COMPLETADA - GarantiBank Annual Report
+═══════════════════════════════════════════════════
+✅ Balance General → Páginas 45-47 (extraído)
+✅ Cuenta de Resultados → Páginas 48-50 (extraído)  
+✅ Patrimonio Neto → Páginas 51-52 (extraído)
+✅ Flujos de Efectivo → Páginas 53-55 (extraído)
 
-```python
-from agents.data_agents.sql_agent import SQLAgent
+💬 PROCESANDO CONSULTAS...
 
-sql_agent = SQLAgent()
+Pregunta: ¿Cuál fue el ROE de GarantiBank?
+Agente: Income Agent (usando contenido pre-extraído)
+Respuesta: El ROE de GarantiBank fue del 15.2%, mostrando una mejora 
+          del 2.1% respecto al año anterior...
 
-# Consulta en lenguaje natural
-query = "Muestra los ingresos trimestrales del último año por línea de negocio"
+Pregunta: ¿Hay problemas de liquidez?
+Agente: Cash Flow Agent (usando contenido pre-extraído)
+Respuesta: El ratio LCR es del 142%, superando ampliamente el mínimo
+          regulatorio del 100%. La posición de liquidez es sólida...
 
-sql_result = sql_agent.generate_sql(
-    natural_query=query,
-    database_schema="financial_data"
-)
-
-print("SQL Generado:")
-print(sql_result['sql_query'])
-print("\nResultados:")
-print(sql_result['data'])
+Pregunta: ¿Cómo evolucionó el patrimonio?
+Agente: Equity Agent (usando contenido pre-extraído)
+Respuesta: El patrimonio neto creció un 12.8% hasta 48.2B TL, 
+          principalmente por retención de beneficios...
 ```
 
-**SQL Generado:**
-```sql
-SELECT 
-    business_line,
-    EXTRACT(QUARTER FROM date) as quarter,
-    EXTRACT(YEAR FROM date) as year,
-    SUM(revenue) as quarterly_revenue
-FROM financial_statements 
-WHERE date >= DATE_SUB(CURRENT_DATE, INTERVAL 1 YEAR)
-GROUP BY business_line, quarter, year
-ORDER BY year, quarter, business_line;
 ```
-
-#### **Ejemplos de Consultas Soportadas**
-
-| Consulta Natural | SQL Generado | Complejidad |
-|------------------|--------------|-------------|
-| "Bancos con ROE > 15%" | `SELECT * FROM banks WHERE roe > 15` | 🟢 Simple |
-| "Top 5 bancos por rentabilidad último trimestre" | `SELECT name, roe FROM banks WHERE quarter = 'Q4' ORDER BY roe DESC LIMIT 5` | 🟡 Medio |
-| "Análisis comparativo de solvencia vs liquidez por región" | `SELECT region, AVG(solvency_ratio), AVG(liquidity_ratio) FROM bank_metrics GROUP BY region` | 🔴 Complejo |
 
 ### 🕸️ 3. Text-to-Cypher para Análisis de Grafos
 
@@ -665,37 +732,6 @@ Response: {
   "efficiency_ratio": 45.3
 }
 ```
-
-### 🗃️ Text-to-SQL Endpoints
-
-#### Generar SQL desde Lenguaje Natural
-```http
-POST /api/sql/generate
-Content-Type: application/json
-
-{
-  "query": "Muestra los 10 bancos más rentables",
-  "database": "financial_db",
-  "format": "json|csv|table"
-}
-
-Response: {
-  "sql_query": "SELECT name, roe FROM banks ORDER BY roe DESC LIMIT 10",
-  "data": [...],
-  "execution_time": 0.045,
-  "row_count": 10
-}
-```
-
-#### Ejecutar SQL Personalizada
-```http
-POST /api/sql/execute
-Content-Type: application/json
-
-{
-  "sql_query": "SELECT * FROM banks WHERE country = 'Turkey'",
-  "parameters": {"country": "Turkey"}
-}
 ```
 
 ### 🕸️ Graph Database Endpoints
@@ -748,135 +784,35 @@ Content-Type: application/json
 }
 ```
 
-#### Añadir Documentos
-```http
-POST /api/vector/add-documents
-Content-Type: application/json
-
-{
-  "documents": [
-    {
-      "content": "...",
-      "metadata": {"type": "report", "bank": "garanti"}
-    }
-  ],
-  "collection": "financial_documents"
-}
-```
-
-## 🧪 Testing y Validación
-
-### 🔬 Suite de Tests Completa
-
-```bash
-# Tests unitarios
-pytest tests/unit/ -v
-
-# Tests de integración
-pytest tests/integration/ -v
-
-# Tests de API
-pytest tests/api/ -v
-
-# Tests end-to-end
-pytest tests/e2e/ -v
-
-# Tests con coverage
-pytest --cov=. --cov-report=html tests/
-```
-
-### 📊 Performance Testing
-
-```bash
-# Load testing para API
-locust -f tests/load/locustfile.py --host=http://localhost:8000
-
-# Database performance
-python tests/performance/db_benchmark.py
-
-# Vector search performance
-python tests/performance/vector_benchmark.py
-```
-
-### ✅ Validación de Agentes
-
-```python
-# Test individual de agentes
-from tests.agent_tests import AgentValidator
-
-validator = AgentValidator()
-
-# Test Financial Coordinator
-validator.test_financial_coordinator(
-    test_case="garanti_annual_report",
-    expected_kpis={"roe": 15.2, "tier1": 16.8}
-)
-
-# Test SQL Agent
-validator.test_sql_agent(
-    natural_query="Top 5 banks by ROE",
-    expected_sql_pattern="SELECT.*ORDER BY roe DESC LIMIT 5"
-)
-
-# Test Cypher Agent
-validator.test_cypher_agent(
-    natural_query="Banks connected to GarantiBank",
-    expected_cypher_pattern="MATCH.*GarantiBank.*connected"
-)
-```
-
 ## 🔧 Configuración Avanzada
 
-### ⚙️ Variables de Entorno Completas
+### ⚙️ Variables de Entorno 
 
 ```bash
-# AI Models Configuration
-OPENAI_API_KEY=sk-your-key
-OPENAI_MODEL=gpt-4-turbo-preview
-EMBEDDING_MODEL=text-embedding-ada-002
-HUGGINGFACE_API_KEY=hf_your-key
+# ===== AZURE OPENAI CONFIGURATION (PRIMARY) =====
+AZURE_OPENAI_ENDPOINT="https://llmcoeiberia-openai.openai.azure.com/"
+AZURE_OPENAI_API_KEY="your-azure-openai-key"
+AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+AZURE_OPENAI_API_VERSION="2024-10-21"
 
-# Database Configuration
-DATABASE_URL=postgresql://user:pass@localhost:5432/financial_agent
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USERNAME=neo4j
-NEO4J_PASSWORD=password123
-REDIS_URL=redis://localhost:6379/0
+# ===== GROQ CONFIGURATION (HIGH-SPEED) =====
+GROQ_API_KEY="your-groq-api-key"
+GROQ_MODEL="llama-3.3-70b-versatile"
 
-# Vector Store Configuration
-VECTOR_STORE_TYPE=pinecone|chroma|weaviate
-PINECONE_API_KEY=your-pinecone-key
-PINECONE_ENVIRONMENT=us-west1-gcp
-PINECONE_INDEX_NAME=financial-embeddings
+# ===== BACKUP LLM PROVIDERS =====
+OPENAI_API_KEY="sk-your-openai-key"
+OPENAI_MODEL="gpt-4-turbo-preview"
+ANTHROPIC_API_KEY="your-anthropic-key"
 
-# Application Settings
-API_HOST=127.0.0.1
-API_PORT=8000
-FRONTEND_URL=http://localhost:3000
-DEBUG=True
-LOG_LEVEL=INFO
+# ===== EMBEDDING MODELS =====
+EMBEDDING_MODEL="text-embedding-ada-002"  # Azure OpenAI
+EMBEDDING_MODEL_BACKUP="sentence-transformers/all-MiniLM-L6-v2"  # Local
+HUGGINGFACE_API_KEY="hf_your-key"
 
-# Agent Configuration
-MAX_CONCURRENT_AGENTS=10
-AGENT_TIMEOUT=300
-RETRY_ATTEMPTS=3
-BATCH_SIZE=100
-
-# Security
-SECRET_KEY=your-secret-key
-JWT_EXPIRATION=3600
-CORS_ORIGINS=["http://localhost:3000"]
-
-# File Processing
-MAX_FILE_SIZE=50MB
-SUPPORTED_FORMATS=["pdf", "docx", "xlsx", "csv"]
-TEMP_DIR=/tmp/agent_uploads
-
-# Monitoring
-ENABLE_METRICS=true
-PROMETHEUS_PORT=9090
-GRAFANA_URL=http://localhost:3001
-```
+# ===== DATABASE CONFIGURATION =====
+DATABASE_URL="postgresql://user:pass@localhost:5432/financial_agent"
+NEO4J_URI="bolt://localhost:7687"
+NEO4J_USERNAME="neo4j"
 
 ### 🏗️ Configuración de Agentes
 
@@ -914,89 +850,44 @@ AGENT_CONFIG = {
     }
 }
 
-# LLM Configuration
+# LLM Configuration with Multiple Providers
 LLM_CONFIG = {
+    "azure_openai": {
+        "endpoint": "https://llmcoeiberia-openai.openai.azure.com/",
+        "deployment": "gpt-4o",
+        "api_version": "2024-10-21",
+        "temperature": 0.1,
+        "max_tokens": 4000,
+        "top_p": 0.9,
+        "priority": 1  # Primary provider
+    },
+    "groq": {
+        "model": "llama-3.3-70b-versatile",
+        "temperature": 0.2,
+        "max_tokens": 8000,
+        "top_p": 0.9,
+        "priority": 2  # High-speed provider
+    },
     "openai": {
         "model": "gpt-4-turbo-preview",
         "temperature": 0.1,
         "max_tokens": 4000,
-        "top_p": 0.9
-    },
-    "backup_model": {
-        "model": "gpt-3.5-turbo-16k",
-        "temperature": 0.2,
-        "max_tokens": 8000
+        "top_p": 0.9,
+        "priority": 3  # Backup provider
     }
+}
+
+# Provider Selection Strategy
+PROVIDER_STRATEGY = {
+    "financial_analysis": "azure_openai",  # Complex financial reasoning
+    "text_to_sql": "groq",                # Fast SQL generation
+    "text_to_cypher": "groq",             # Fast Cypher generation  
+    "vector_search": "azure_openai",      # Semantic understanding
+    "prediction": "azure_openai",         # Advanced analytics
+    "fallback": "openai"                  # If others fail
 }
 ```
 
-## 🚨 Troubleshooting Avanzado
-
-### 🔍 Diagnóstico del Sistema
-
-```bash
-# Health check completo
-curl http://localhost:8000/health/detailed
-
-# Status de todas las bases de datos
-python scripts/check_databases.py
-
-# Verificar conectividad de agentes
-python scripts/agent_connectivity_test.py
-
-# Monitor de performance en tiempo real
-python scripts/system_monitor.py
-```
-
-### 🐛 Problemas Comunes y Soluciones
-
-#### **Error: "Database connection failed"**
-```bash
-# Verificar PostgreSQL
-pg_isready -h localhost -p 5432
-
-# Verificar Neo4j
-cypher-shell -a bolt://localhost:7687 -u neo4j -p password123
-
-# Reinicializar conexiones
-python scripts/reset_connections.py
-```
-
-#### **Error: "Vector store not accessible"**
-```bash
-# Verificar Pinecone
-python -c "import pinecone; pinecone.init(api_key='your-key'); print('OK')"
-
-# Verificar índices
-python scripts/check_vector_indices.py
-
-# Recrear colecciones
-python scripts/recreate_vector_collections.py
-```
-
-#### **Error: "Agent timeout"**
-```bash
-# Verificar carga del sistema
-htop
-
-# Aumentar timeouts
-export AGENT_TIMEOUT=600
-
-# Monitorear agentes
-python scripts/agent_monitor.py
-```
-
-#### **Error: "LLM API rate limit"**
-```bash
-# Verificar cuotas de API
-python scripts/check_api_quotas.py
-
-# Configurar rate limiting
-export OPENAI_REQUESTS_PER_MINUTE=60
-
-# Usar modelo de backup
-export USE_BACKUP_MODEL=true
-```
 
 ### 📊 Logs y Monitoring
 
@@ -1015,291 +906,6 @@ docker exec -it grafana grafana-cli admin reset-admin-password admin123
 # Alertas personalizadas
 python scripts/setup_alerts.py
 ```
-
-## 🚀 Despliegue en Producción
-
-### 🐳 Docker Compose para Producción
-
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-services:
-  api:
-    build: 
-      context: .
-      dockerfile: docker/Dockerfile.api
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL}
-    deploy:
-      replicas: 3
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1'
-    
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: ../docker/Dockerfile.frontend
-    environment:
-      - NODE_ENV=production
-    
-  postgresql:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=financial_agent
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    deploy:
-      resources:
-        limits:
-          memory: 4G
-          cpus: '2'
-  
-  neo4j:
-    image: neo4j:5.0-enterprise
-    environment:
-      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
-      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
-    volumes:
-      - neo4j_data:/data
-    
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/ssl/certs
-
-volumes:
-  postgres_data:
-  neo4j_data:
-  redis_data:
-```
-
-### ☁️ Despliegue en AWS
-
-```bash
-# Usar Terraform para infraestructura
-cd infrastructure/terraform
-terraform init
-terraform plan
-terraform apply
-
-# Desplegar con ECS
-aws ecs create-service --cli-input-json file://ecs-service.json
-
-# Configurar RDS y ElastiCache
-aws rds create-db-instance --db-instance-identifier financial-agent-db
-aws elasticache create-cache-cluster --cache-cluster-id financial-agent-redis
-```
-
-### 📈 Escalado y Performance
-
-```python
-# Configuración de escalado automático
-AUTO_SCALING_CONFIG = {
-    "api_instances": {
-        "min": 2,
-        "max": 10,
-        "target_cpu": 70,
-        "scale_up_cooldown": 300,
-        "scale_down_cooldown": 600
-    },
-    "agent_workers": {
-        "min": 5,
-        "max": 50,
-        "queue_threshold": 100,
-        "memory_threshold": 80
-    }
-}
-
-# Load balancing configuration
-LOAD_BALANCER_CONFIG = {
-    "algorithm": "round_robin",
-    "health_check": "/health",
-    "timeout": 30,
-    "max_retries": 3
-}
-```
-
-## 🤝 Contribución y Desarrollo
-
-### 🔄 Workflow de Contribución
-
-1. **Fork** el repositorio
-2. **Crea** una rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. **Desarrolla** siguiendo los estándares de código
-4. **Ejecuta** todos los tests (`pytest tests/`)
-5. **Commit** con mensaje descriptivo (`git commit -am 'Add: nueva funcionalidad'`)
-6. **Push** a tu fork (`git push origin feature/nueva-funcionalidad`)
-7. **Abre** un Pull Request con descripción detallada
-
-### 📋 Estándares de Código
-
-```python
-# Pre-commit hooks
-repos:
-  - repo: https://github.com/psf/black
-    hooks:
-      - id: black
-        language_version: python3.10
-  
-  - repo: https://github.com/pycqa/flake8
-    hooks:
-      - id: flake8
-        args: [--max-line-length=88]
-  
-  - repo: https://github.com/pycqa/isort
-    hooks:
-      - id: isort
-        args: [--profile=black]
-```
-
-### 🧪 Guía de Testing
-
-```python
-# Estructura de tests
-tests/
-├── unit/
-│   ├── test_agents/
-│   ├── test_api/
-│   └── test_services/
-├── integration/
-│   ├── test_database/
-│   ├── test_llm_integration/
-│   └── test_agent_coordination/
-└── e2e/
-    ├── test_complete_workflows/
-    └── test_user_scenarios/
-
-# Ejemplo de test de agente
-def test_financial_coordinator():
-    coordinator = FinancialCoordinator()
-    result = coordinator.analyze_document("test_data/sample_report.pdf")
-    
-    assert result['status'] == 'success'
-    assert 'roe' in result['kpis']
-    assert result['kpis']['roe'] > 0
-```
-
-### 🚀 Roadmap de Desarrollo
-
-#### **Q1 2025: Funcionalidades Core**
-- [x] ✅ Sistema multi-agente financiero
-- [x] ✅ Text-to-SQL básico
-- [x] ✅ Text-to-Cypher básico
-- [x] ✅ Vector store con embeddings
-- [ ] 🔄 Optimización de performance
-- [ ] 📱 API móvil
-
-#### **Q2 2025: IA Avanzada**
-- [ ] 🤖 Fine-tuning de modelos específicos
-- [ ] 🧠 Agentes con memoria a largo plazo
-- [ ] 📊 Predicciones avanzadas con ML
-- [ ] 🔍 Análisis de sentimientos en documentos
-
-#### **Q3 2025: Integración y Escalado**
-- [ ] 🔗 Integración con Bloomberg API
-- [ ] 📈 Dashboard en tiempo real
-- [ ] ☁️ Despliegue multi-cloud
-- [ ] 🌍 Soporte multi-idioma
-
-#### **Q4 2025: Funcionalidades Empresariales**
-- [ ] 👥 Sistema de usuarios y roles
-- [ ] 🔒 Auditoría y compliance
-- [ ] 📊 Reportes regulatorios automáticos
-- [ ] 🤝 Integraciones con sistemas bancarios
-
-## 📄 Licencia
-
-Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-```
-MIT License
-
-Copyright (c) 2024 Rocío Solís
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
-## 🙏 Agradecimientos
-
-### 🏆 Tecnologías y Frameworks
-
-- **[OpenAI](https://openai.com/)** - Por las APIs de GPT que potencian nuestros agentes
-- **[FastAPI](https://fastapi.tiangolo.com/)** - Por el excelente framework web asíncrono
-- **[React](https://reactjs.org/)** - Por la biblioteca de UI moderna y eficiente
-- **[PostgreSQL](https://postgresql.org/)** - Por la robusta base de datos relacional
-- **[Neo4j](https://neo4j.com/)** - Por la potente base de datos de grafos
-- **[LangChain](https://langchain.com/)** - Por las herramientas de orquestación de LLMs
-
-### 👥 Comunidad Open Source
-
-- **[Sentence Transformers](https://www.sbert.net/)** - Por los modelos de embeddings
-- **[Hugging Face](https://huggingface.co/)** - Por el ecosistema de ML/NLP
-- **[Material-UI](https://mui.com/)** - Por los componentes de diseño
-- **[Docker](https://docker.com/)** - Por la plataforma de containerización
-
-### 🎓 Instituciones Académicas
-
-- **Universidad Complutense de Madrid** - Por el apoyo en la investigación
-- **Comunidad FinTech** - Por la retroalimentación y casos de uso reales
-
-### 💡 Inspiración
-
-Este proyecto se inspiró en la necesidad de democratizar el análisis financiero avanzado y hacer que las herramientas de IA sean accesibles para analistas financieros, investigadores y desarrolladores.
-
-## 📞 Soporte y Contacto
-
-### 🆘 Obtener Ayuda
-
-- **📚 Documentación**: [Wiki del Proyecto](https://github.com/rociosolis12/agent_LLM/wiki)
-- **🐛 Issues**: [GitHub Issues](https://github.com/rociosolis12/agent_LLM/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/rociosolis12/agent_LLM/discussions)
-- **📺 Tutoriales**: [Canal de YouTube](https://youtube.com/@agent-llm-tutorials)
-
-### 📧 Contacto Directo
-
-- **Email Principal**: rocio.solis@financialagent.com
-- **LinkedIn**: [Rocío Solís](https://linkedin.com/in/rociosolis12)
-- **Twitter**: [@rociosolis_dev](https://twitter.com/rociosolis_dev)
-
-### 🏢 Uso Empresarial
-
-Para consultas sobre licencias empresariales, integración personalizada o soporte premium:
-- **Email Empresarial**: enterprise@financialagent.com
-- **Teléfono**: +34 xxx xxx xxx
-- **Calendly**: [Agendar Reunión](https://calendly.com/rociosolis12)
-
----
-
-<div align="center">
-
-### 🌟 **¿Te gusta el proyecto? ¡Dale una ⭐ en GitHub!**
-
-[🐛 Reportar Bug](https://github.com/rociosolis12/agent_LLM/issues/new?template=bug_report.md) · [✨ Solicitar Feature](https://github.com/rociosolis12/agent_LLM/issues/new?template=feature_request.md) · [📚 Documentación](https://github.com/rociosolis12/agent_LLM/wiki) · [💬 Discussions](https://github.com/rociosolis12/agent_LLM/discussions)
-
----
 
 **🚀 Sistema Multi-Agente Financiero** | **🤖 IA para Finanzas** | **🔬 Open Source**
 
