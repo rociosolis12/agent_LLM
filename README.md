@@ -232,22 +232,6 @@ agent_LLM/
 │       ├── kpi_predictions/         # Predicciones generadas
 │       └── financial_analysis/      # Análisis completos
 │
-├── 📝 logs/                         # Logs del sistema
-│   ├── main_system.log              # Logs principales
-│   ├── financial_coordinator.log    # Logs del coordinador
-│   ├── pdf_extractor.log            # Logs extracción PDF
-│   └── predictor_agent.log          # Logs predictor
-│
-├── 🔧 tests/                        # Tests automatizados
-│   ├── test_agents/                 # Tests de agentes
-│   ├── test_api/                    # Tests de API
-│   └── test_integration/            # Tests integración
-│
-├── 📋 docs/                         # Documentación
-│   ├── architecture.md              # Arquitectura detallada
-│   ├── agents_guide.md              # Guía de agentes
-│   └── api_reference.md             # Referencia API
-│
 ├── main_system.py                   # 🎯 Orquestador principal
 ├── question_router.py               # 🔀 Router de preguntas
 ├── config.py                        # ⚙️ Configuración
