@@ -1,7 +1,7 @@
 """
 CashFlows Agent REACT - Versión Multi-Agente AUTÓNOMA COMPLETA
 Especializado en análisis de estado de flujos de efectivo con patrón REACT exitoso
-CARACTERÍSTICAS: Tool calls, detección robusta, completamente autónomo, compatible con coordinador
+CARACTERÍSTICAS: Tool calls, análisis detallado con LLM, respuestas extensas de 600-800 palabras
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ print("🔧 ----- Groq Configuration -----")
 print(f"🔑 API Key: {'✓' if GROQ_API_KEY else '✗'}")
 print(f"🤖 Model: {GROQ_MODEL}")
 
-# ===== CLIENTE CHAT =====
+# ===== CLIENTE CHAT ORIGINAL (MANTENIDO) =====
 class ChatClient:
     def __init__(self):
         self.azure_client = AzureOpenAI(
@@ -93,45 +93,54 @@ class ChatClient:
 # ===== INICIALIZACIÓN =====
 chat_client = ChatClient()
 
-# ===== HERRAMIENTAS ESPECÍFICAS PARA CASHFLOWS =====
+# ===== HERRAMIENTAS ESPECÍFICAS PARA CASHFLOWS CON EXTRACCIÓN MEJORADA =====
 
 @dataclass
 class AnalyzeCashflowStructureTool:
     name: str = "analyzecashflowstructure"
     description: str = "Analiza estructura del PDF para localizar el estado de flujos de efectivo"
     
-    def run(self, pdf_path: str, anchor_page: int = 10, max_pages: int = 25, extend: int = 2, **kwargs) -> Dict[str, Any]:
+    def run(self, pdf_path: str, anchor_page: int = 8, max_pages: int = 25, extend: int = 3, **kwargs) -> Dict[str, Any]:
         try:
             print(f"🔍 Analizando estructura de flujos de efectivo - página ancla: {anchor_page}")
             
-            # Páginas objetivo más probables para flujos de efectivo
+            # Páginas objetivo más probables para flujos de efectivo (ampliado)
             target_pages = list(range(max(1, anchor_page - extend), min(max_pages, anchor_page + extend + 1)))
             
             with pdfplumber.open(pdf_path) as pdf:
                 found_cashflow = False
+                best_pages = []
                 for page_num in target_pages:
                     if page_num <= len(pdf.pages):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         text_lower = text.lower()
                         
-                        # Buscar indicadores de flujos de efectivo
+                        # Indicadores expandidos de flujos de efectivo
                         cashflow_indicators = [
                             "statement of cash flows", "cash flow statement", "flujos de efectivo",
                             "operating activities", "investing activities", "financing activities",
-                            "net cash provided", "net cash used", "cash and cash equivalents"
+                            "net cash provided", "net cash used", "cash and cash equivalents",
+                            "actividades operativas", "actividades de inversión", "actividades de financiación",
+                            "efectivo generado", "efectivo utilizado", "flujo de caja"
                         ]
                         
-                        if any(indicator in text_lower for indicator in cashflow_indicators):
-                            print(f"✅ Flujos de efectivo encontrados en página {page_num}")
+                        score = sum(1 for indicator in cashflow_indicators if indicator in text_lower)
+                        if score > 0:
+                            best_pages.append((page_num, score))
+                            print(f"✅ Flujos de efectivo encontrados en página {page_num} (score: {score})")
                             found_cashflow = True
-                            break
+                
+                # Ordenar páginas por relevancia
+                best_pages.sort(key=lambda x: x[1], reverse=True)
+                selected_pages = [page for page, score in best_pages[:6]]  # Top 6 páginas
             
             return {
                 "success": True,
-                "pages_selected": target_pages[:5],  # Primeras 5 páginas para procesar
+                "pages_selected": selected_pages or target_pages[:6],
                 "cashflow_found": found_cashflow,
-                "anchor_page_used": anchor_page
+                "anchor_page_used": anchor_page,
+                "relevance_scores": dict(best_pages)
             }
             
         except Exception as e:
@@ -140,15 +149,16 @@ class AnalyzeCashflowStructureTool:
 @dataclass
 class ExtractCashflowStatementTool:
     name: str = "extractcashflowstatement"
-    description: str = "Extrae el contenido del estado de flujos de efectivo"
+    description: str = "Extrae el contenido del estado de flujos de efectivo con análisis avanzado"
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
-            pages_to_process = analysis_json.get("pages_selected", [5, 6, 7, 8, 9]) if analysis_json else [5, 6, 7, 8, 9]
-            print(f"📄 Extrayendo páginas: {pages_to_process}")
+            pages_to_process = analysis_json.get("pages_selected", [6, 7, 8, 9, 10]) if analysis_json else [6, 7, 8, 9, 10]
+            print(f"📄 Extrayendo páginas con análisis avanzado: {pages_to_process}")
             
             extracted_text = ""
             total_chars = 0
+            financial_data = {}
             
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
@@ -160,40 +170,36 @@ class ExtractCashflowStatementTool:
                         text_lower = text.lower()
                         cashflow_keywords = [
                             "cash", "flow", "operating", "investing", "financing", 
-                            "activities", "net cash", "efectivo", "flujo"
+                            "activities", "net cash", "efectivo", "flujo", "actividades"
                         ]
                         
                         if any(keyword in text_lower for keyword in cashflow_keywords):
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
                             print(f"✅ Página {page_num}: {len(text)} caracteres extraídos")
+                            
+                            # NUEVO: Extracción avanzada de datos financieros
+                            page_data = self._extract_financial_numbers(text)
+                            for key, values in page_data.items():
+                                if key not in financial_data:
+                                    financial_data[key] = []
+                                financial_data[key].extend(values)
             
             if not extracted_text:
                 # Fallback: extraer todas las páginas en el rango
                 with pdfplumber.open(pdf_path) as pdf:
-                    for page_num in range(1, min(15, len(pdf.pages) + 1)):
+                    for page_num in range(1, min(20, len(pdf.pages) + 1)):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                         total_chars += len(text)
             
-            # Crear chunks semánticos
+            # Crear chunks semánticos mejorados
             chunks = []
             if extract_semantic_chunks and extracted_text:
-                lines = extracted_text.split('\n')
-                current_chunk = ""
-                
-                for line in lines:
-                    if len(current_chunk) > 800:
-                        chunks.append(current_chunk.strip())
-                        current_chunk = line
-                    else:
-                        current_chunk += "\n" + line
-                
-                if current_chunk.strip():
-                    chunks.append(current_chunk.strip())
+                chunks = self._create_semantic_chunks(extracted_text)
             
-            confidence = 1.0 if total_chars > 1000 else 0.8
+            confidence = 1.0 if total_chars > 2000 else 0.8 if total_chars > 1000 else 0.6
             
             return {
                 "success": True,
@@ -201,65 +207,154 @@ class ExtractCashflowStatementTool:
                 "total_characters": total_chars,
                 "chunks": chunks,
                 "confidence": confidence,
-                "pages_processed": pages_to_process
+                "pages_processed": pages_to_process,
+                "financial_data": financial_data  # NUEVO: Datos financieros específicos
             }
             
         except Exception as e:
             return {"success": False, "error": str(e)}
+    
+    def _extract_financial_numbers(self, text: str) -> Dict[str, List[float]]:
+        """NUEVA FUNCIÓN: Extrae números financieros específicos del texto"""
+        patterns = {
+            'operating_cash': [
+                r'operating.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'actividades.*operativas.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'cash.*from.*operations.*€?\s*([0-9.,]+)',
+                r'€\s*([0-9.,]+).*operativ'
+            ],
+            'investing_cash': [
+                r'investing.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'actividades.*inversión.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'cash.*from.*investing.*€?\s*([0-9.,]+)',
+                r'€\s*([0-9.,]+).*invers'
+            ],
+            'financing_cash': [
+                r'financing.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'actividades.*financiación.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
+                r'cash.*from.*financing.*€?\s*([0-9.,]+)',
+                r'€\s*([0-9.,]+).*financi'
+            ],
+            'net_change_cash': [
+                r'net.*increase.*cash.*€?\s*([0-9.,]+)',
+                r'net.*change.*cash.*€?\s*([0-9.,]+)',
+                r'variación.*neta.*efectivo.*€?\s*([0-9.,]+)',
+                r'€\s*([0-9.,]+).*variación.*neta'
+            ]
+        }
+        
+        extracted_data = {}
+        for category, pattern_list in patterns.items():
+            values = []
+            for pattern in pattern_list:
+                matches = re.findall(pattern, text, re.IGNORECASE)
+                for match in matches:
+                    try:
+                        # Limpiar y convertir números
+                        clean_number = re.sub(r'[^\d,.]', '', match)
+                        if clean_number:
+                            number = float(clean_number.replace(',', '.'))
+                            values.append(number)
+                    except ValueError:
+                        continue
+            extracted_data[category] = values
+        
+        return extracted_data
+    
+    def _create_semantic_chunks(self, text: str) -> List[str]:
+        """NUEVA FUNCIÓN: Crear chunks semánticos más inteligentes"""
+        lines = text.split('\n')
+        chunks = []
+        current_chunk = ""
+        
+        section_headers = [
+            'operating activities', 'investing activities', 'financing activities',
+            'actividades operativas', 'actividades de inversión', 'actividades de financiación',
+            'cash flow', 'flujo de efectivo'
+        ]
+        
+        for line in lines:
+            line_lower = line.lower()
+            
+            # Si encontramos una nueva sección importante, guardar chunk anterior
+            if any(header in line_lower for header in section_headers) and current_chunk:
+                if len(current_chunk) > 100:
+                    chunks.append(current_chunk.strip())
+                current_chunk = line
+            else:
+                current_chunk += "\n" + line
+                
+                # También dividir por tamaño
+                if len(current_chunk) > 1200:
+                    chunks.append(current_chunk.strip())
+                    current_chunk = ""
+        
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+        
+        return chunks
 
 @dataclass
 class ValidateCashflowQualityTool:
     name: str = "validatecashflowquality"
-    description: str = "Valida la calidad de los datos extraídos de flujos de efectivo"
+    description: str = "Valida la calidad de los datos extraídos de flujos de efectivo con análisis avanzado"
     
     def run(self, extraction: Dict, **kwargs) -> Dict[str, Any]:
         try:
             text = extraction.get("text", "")
             confidence = extraction.get("confidence", 0.0)
+            financial_data = extraction.get("financial_data", {})
             
-            # Criterios de validación para flujos de efectivo
+            # Criterios de validación mejorados para flujos de efectivo
             quality_score = 0
             validation_details = []
             
             text_lower = text.lower()
             
-            # Verificar secciones principales
-            if "operating" in text_lower:
+            # Verificar secciones principales (peso: 25 cada una)
+            if "operating" in text_lower or "operativ" in text_lower:
                 quality_score += 25
                 validation_details.append("✅ Actividades operativas encontradas")
             
-            if "investing" in text_lower:
+            if "investing" in text_lower or "inversión" in text_lower:
                 quality_score += 25
                 validation_details.append("✅ Actividades de inversión encontradas")
             
-            if "financing" in text_lower:
+            if "financing" in text_lower or "financiación" in text_lower:
                 quality_score += 25
                 validation_details.append("✅ Actividades de financiación encontradas")
             
             if "cash and cash equivalents" in text_lower or "efectivo y equivalentes" in text_lower:
-                quality_score += 25
+                quality_score += 15
                 validation_details.append("✅ Efectivo y equivalentes encontrados")
             
+            # NUEVO: Bonificaciones por datos financieros específicos encontrados
+            if financial_data:
+                data_bonus = min(10, len(financial_data) * 2)  # Máximo 10 puntos extra
+                quality_score += data_bonus
+                validation_details.append(f"✅ Datos financieros específicos: {len(financial_data)} categorías")
+            
             # Determinar calidad
-            if quality_score >= 75:
+            if quality_score >= 80:
                 quality = "excellent"
-            elif quality_score >= 50:
+            elif quality_score >= 60:
                 quality = "good"
-            elif quality_score >= 25:
+            elif quality_score >= 40:
                 quality = "fair"
             else:
                 quality = "poor"
             
-            final_confidence = min(confidence + (quality_score / 100), 1.0)
+            final_confidence = min(confidence + (quality_score / 100 * 0.2), 1.0)
             
-            print(f"✅ Validación completada: {quality} (confianza: {final_confidence:.3f})")
+            print(f"✅ Validación completada: {quality} (puntuación: {quality_score}/100, confianza: {final_confidence:.3f})")
             
             return {
                 "success": True,
                 "quality": quality,
                 "confidence": final_confidence,
                 "score": quality_score,
-                "details": validation_details
+                "details": validation_details,
+                "financial_data_found": len(financial_data) if financial_data else 0
             }
             
         except Exception as e:
@@ -268,7 +363,7 @@ class ValidateCashflowQualityTool:
 @dataclass
 class SaveCashflowResultsTool:
     name: str = "savecashflowresults"
-    description: str = "Guarda los resultados del análisis de flujos de efectivo"
+    description: str = "Guarda los resultados del análisis de flujos de efectivo con información extendida"
     
     def run(self, output_dir: str, pdf_name: str, analysis: Dict, extraction: Dict, validation: Dict, **kwargs) -> Dict[str, Any]:
         try:
@@ -278,16 +373,22 @@ class SaveCashflowResultsTool:
             base_name = Path(pdf_name).stem
             files_created = 0
             
-            # 1. Guardar resumen JSON
+            # 1. Guardar resumen JSON extendido
             summary = {
                 "analysis": analysis,
                 "extraction": {
                     "total_characters": extraction.get("total_characters", 0),
                     "confidence": extraction.get("confidence", 0),
-                    "pages_processed": extraction.get("pages_processed", [])
+                    "pages_processed": extraction.get("pages_processed", []),
+                    "financial_data": extraction.get("financial_data", {})  # NUEVO
                 },
                 "validation": validation,
-                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "extraction_quality_metrics": {  # NUEVO
+                    "data_categories_found": validation.get("financial_data_found", 0),
+                    "quality_score": validation.get("score", 0),
+                    "final_confidence": validation.get("confidence", 0.8)
+                }
             }
             
             summary_file = output_path / f"{base_name}_cashflow_summary.json"
@@ -302,25 +403,32 @@ class SaveCashflowResultsTool:
                     json.dump(extraction["chunks"], f, indent=2, ensure_ascii=False)
                 files_created += 1
             
-            # 3. Guardar reporte de calidad
+            # 3. Guardar reporte de calidad extendido
             quality_report = f"""
-REPORTE DE CALIDAD - FLUJOS DE EFECTIVO
-=====================================
+REPORTE DE CALIDAD EXTENDIDO - FLUJOS DE EFECTIVO
+=================================================
 PDF: {pdf_name}
 Fecha: {time.strftime("%Y-%m-%d %H:%M:%S")}
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: {validation.get('quality', 'unknown')}
-- Confianza: {validation.get('confidence', 0):.3f}
 - Puntuación: {validation.get('score', 0)}/100
+- Confianza final: {validation.get('confidence', 0):.3f}
+- Datos financieros encontrados: {validation.get('financial_data_found', 0)} categorías
 
-DETALLES:
+DETALLES DE VALIDACIÓN:
 {chr(10).join(validation.get('details', []))}
 
-EXTRACCIÓN:
+EXTRACCIÓN DETALLADA:
 - Caracteres procesados: {extraction.get('total_characters', 0)}
 - Páginas procesadas: {extraction.get('pages_processed', [])}
 - Chunks generados: {len(extraction.get('chunks', []))}
+- Datos financieros extraídos: {extraction.get('financial_data', {})}
+
+MÉTRICAS DE CALIDAD:
+- Cobertura de secciones: {'Completa' if validation.get('score', 0) >= 75 else 'Parcial' if validation.get('score', 0) >= 50 else 'Limitada'}
+- Precisión de extracción: {validation.get('confidence', 0.8)*100:.1f}%
+- Recomendación: {'Análisis confiable' if validation.get('score', 0) >= 60 else 'Requiere revisión manual'}
 """
             
             quality_file = output_path / f"{base_name}_cashflow_quality.txt"
@@ -336,7 +444,8 @@ EXTRACCIÓN:
             return {
                 "success": True,
                 "files_created": files_created,
-                "output_directory": str(output_path)
+                "output_directory": str(output_path),
+                "summary_data": summary  # NUEVO: Devolver resumen para uso posterior
             }
             
         except Exception as e:
@@ -356,30 +465,28 @@ Eres un agente especializado en extraer estados de flujos de efectivo.
 
 OBJETIVO: Extraer el Statement of Cash Flows de GarantiBank International N.V.
 
-REGLAS IMPORTANTES:
-1. Ejecuta UNA SOLA herramienta por respuesta
-2. NO planifiques múltiples herramientas a la vez
-3. NO digas "CASHFLOWEXTRACTIONCOMPLETED" hasta completar TODAS las herramientas
-4. Responde SOLO con el nombre de la herramienta a ejecutar
+INSTRUCCIONES SIMPLES:
+1. Usa "analyzecashflowstructure" para localizar el estado de flujos de efectivo
+2. Usa "extractcashflowstatement" para extraer el contenido
+3. Usa "validatecashflowquality" para validar los datos
+4. Usa "savecashflowresults" para guardar los resultados
+5. Al terminar, responde "CASHFLOWEXTRACTIONCOMPLETED"
 
-SECUENCIA OBLIGATORIA:
-1. PRIMERA RESPUESTA: "analyzecashflowstructure" 
-2. SEGUNDA RESPUESTA: "extractcashflowstatement"
-3. TERCERA RESPUESTA: "validatecashflowquality"
-4. CUARTA RESPUESTA: "savecashflowresults"  
-5. QUINTA RESPUESTA: "CASHFLOWEXTRACTIONCOMPLETED"
+IMPORTANTE:
+- Menciona CLARAMENTE el nombre de la herramienta que quieres usar
+- NO uses JSON - solo menciona el nombre de la herramienta
+- Ejecuta las 4 herramientas en orden secuencial
 
-EMPEZAR AHORA - Responde SOLO con: analyzecashflowstructure
+EMPEZAR AHORA con analyzecashflowstructure.
 """
 
-
-# ===== CLASE CASHFLOWS REACT AGENT =====
+# ===== CLASE CASHFLOWS REACT AGENT CON ANÁLISIS MEJORADO =====
 class CashFlowsREACTAgent:
-    """Agente REACT especializado en flujos de efectivo - Patrón exitoso del Balance Agent"""
+    """Agente REACT especializado en flujos de efectivo con análisis detallado"""
     
     def __init__(self):
         self.agent_type = "cashflows"
-        self.max_steps = 10  # Reducido para evitar loops
+        self.max_steps = 10
         self.chat_client = chat_client
     
     def run_final_financial_extraction_agent(self, pdf_path: str, question: str = None) -> Dict[str, Any]:
@@ -432,8 +539,8 @@ class CashFlowsREACTAgent:
                     "specific_answer": "El análisis de flujos de efectivo fue interrumpido por límite de pasos."
                 }
             
-            # Generar respuesta específica
-            specific_answer = self.generate_specific_response(question, tools_ctx)
+            # Generar respuesta específica MEJORADA
+            specific_answer = self.generate_enhanced_analysis(question, tools_ctx)
             
             print("✅ Análisis completado exitosamente")
             print("✅ Cashflow extraction completed successfully (AUTÓNOMO)")
@@ -461,99 +568,120 @@ class CashFlowsREACTAgent:
             }
     
     def execute_react_step(self, history: List[Dict[str, str]], tools_ctx: Dict[str, Any]) -> Tuple[List[Dict[str, str]], bool]:
+        """Ejecuta un paso del patrón REACT - MISMA LÓGICA EXITOSA"""
         try:
             assistant_text = self.chat_client.chat(history, max_tokens=100)
             history.append({"role": "assistant", "content": assistant_text})
             
-            print(f"🤖 Respuesta: {assistant_text.strip()}")
+            print(f"🤖 Asistente respondió: {len(assistant_text)} caracteres")
+            print(f"📝 RESPUESTA COMPLETA:")
+            print(assistant_text)
+            print("=" * 50)
             
-            # FINALIZACIÓN: Solo si es respuesta específica y corta
-            if (len(assistant_text.strip()) < 50 and 
-                "cashflowextractioncompleted" in assistant_text.lower()):
-                print(f"🎉 FINALIZACIÓN CORRECTA DETECTADA")
-                return history, True
+            # DETECCIÓN DE FRASES DE FINALIZACIÓN
+            completion_phrases = [
+                "cashflowextractioncompleted", "extraction completed successfully",
+                "archivos guardados exitosamente", "task completed", "analysis completed"
+            ]
             
-            # TOOL DETECTION: Buscar herramienta específica
+            for phrase in completion_phrases:
+                if phrase.lower() in assistant_text.lower():
+                    print(f"🎉 FRASE DE FINALIZACIÓN DETECTADA: '{phrase}'")
+                    return history, True
+            
+            # DETECCIÓN ROBUSTA DE TOOL CALLS
             tool_name = None
-            tool_names = ["analyzecashflowstructure", "extractcashflowstatement", 
-                        "validatecashflowquality", "savecashflowresults"]
-            
-            assistant_clean = assistant_text.lower().strip()
+            tool_names = ["analyzecashflowstructure", "extractcashflowstatement", "validatecashflowquality", "savecashflowresults"]
             
             for tool in tool_names:
-                if tool == assistant_clean or (tool in assistant_clean and len(assistant_text) < 200):
+                if tool in assistant_text.lower():
                     tool_name = tool
+                    print(f"🔧 Tool detectada: {tool_name}")
                     break
             
             if not tool_name:
-                if len(assistant_text) > 200:
-                    feedback = "Responde SOLO con el nombre de la herramienta: analyzecashflowstructure"
-                else:
-                    feedback = "Herramienta no reconocida. Usa: analyzecashflowstructure"
-                history.append({"role": "user", "content": feedback})
+                print("⏭️ No hay tool_call detectado, continuando flujo")
                 return history, False
             
-            # EJECUTAR HERRAMIENTA
-            print(f"🚀 EJECUTANDO: {tool_name}")
-            
-            # Preparar parámetros según herramienta
+            # Preparar parámetros según la herramienta
             if tool_name == "analyzecashflowstructure":
                 params = {
                     "pdf_path": tools_ctx["pdfpath"],
                     "anchor_page": tools_ctx.get("anchorpage", 8),
-                    "max_pages": 25, "extend": 2
+                    "max_pages": 25,
+                    "extend": 3  # MEJORADO: Búsqueda más amplia
                 }
+                
             elif tool_name == "extractcashflowstatement":
                 params = {
                     "pdf_path": tools_ctx["pdfpath"],
                     "analysis_json": tools_ctx.get("lastanalysis", {}),
                     "extract_semantic_chunks": True
                 }
+                
             elif tool_name == "validatecashflowquality":
                 params = {
-                    "extraction": tools_ctx.get("lastextraction", {"text": "test", "confidence": 0.8})
+                    "extraction": tools_ctx.get("lastextraction", {"text": assistant_text, "confidence": 0.8})
                 }
+                
             elif tool_name == "savecashflowresults":
                 params = {
-                    "output_dir": tools_ctx["outputdir"], "pdf_name": tools_ctx["pdfpath"],
+                    "output_dir": tools_ctx["outputdir"],
+                    "pdf_name": str(tools_ctx["pdfpath"]),
                     "analysis": tools_ctx.get("lastanalysis", {}),
                     "extraction": tools_ctx.get("lastextraction", {}),
                     "validation": tools_ctx.get("lastvalidation", {})
                 }
             
-            # Ejecutar herramienta
+            # EJECUTAR HERRAMIENTA
             tool_obj = TOOLS_REGISTRY.get(tool_name)
-            result = tool_obj.run(**params)
+            if not tool_obj:
+                print(f"❌ Herramienta no encontrada: {tool_name}")
+                return history, False
             
-            if result.get("success"):
-                print(f"✅ {tool_name} exitoso")
+            try:
+                print(f"🚀 EJECUTANDO {tool_name} con parámetros mejorados")
+                result = tool_obj.run(**params)
                 
-                # Actualizar contexto
-                if tool_name == "analyzecashflowstructure":
-                    tools_ctx["lastanalysis"] = result
-                    feedback = f"✅ Estructura analizada. Siguiente herramienta: extractcashflowstatement"
-                elif tool_name == "extractcashflowstatement":
-                    tools_ctx["lastextraction"] = result
-                    feedback = f"✅ Datos extraídos. Siguiente herramienta: validatecashflowquality"
-                elif tool_name == "validatecashflowquality":
-                    tools_ctx["lastvalidation"] = result
-                    feedback = f"✅ Validación completa. Siguiente herramienta: savecashflowresults"
-                elif tool_name == "savecashflowresults":
-                    tools_ctx["files_created"] = result.get("files_created", 3)
-                    feedback = f"✅ Archivos guardados. Responde con: CASHFLOWEXTRACTIONCOMPLETED"
-            else:
-                feedback = f"❌ Error en {tool_name}: {result.get('error')}"
-            
-            history.append({"role": "user", "content": feedback})
-            return history, False
-            
+                if result.get("success", False):
+                    print(f"✅ {tool_name} ejecutado EXITOSAMENTE")
+                    
+                    # Actualizar contexto
+                    if tool_name == "analyzecashflowstructure":
+                        tools_ctx["lastanalysis"] = result
+                        
+                    elif tool_name == "extractcashflowstatement":
+                        tools_ctx["lastextraction"] = result
+                        
+                    elif tool_name == "validatecashflowquality":
+                        tools_ctx["lastvalidation"] = result
+                        
+                    elif tool_name == "savecashflowresults":
+                        tools_ctx["files_created"] = result.get("files_created", 0)
+                        # FORZAR FINALIZACIÓN después de guardar
+                        feedback = "✅ Archivos del flujo de efectivo guardados exitosamente. CASHFLOW_EXTRACTION_COMPLETED."
+                        history.append({"role": "user", "content": feedback})
+                        return history, False
+                    
+                    feedback = f"✅ {tool_name} ejecutado correctamente."
+                else:
+                    feedback = f"❌ Error en {tool_name}: {result.get('error', 'Error desconocido')}"
+                
+                history.append({"role": "user", "content": feedback})
+                return history, False
+                
+            except Exception as e:
+                print(f"❌ Error ejecutando {tool_name}: {str(e)}")
+                error_feedback = f"Error ejecutando {tool_name}: {str(e)}"
+                history.append({"role": "user", "content": error_feedback})
+                return history, False
+        
         except Exception as e:
-            print(f"❌ Error: {str(e)}")
+            print(f"❌ Error en execute_react_step: {str(e)}")
             return history, False
-
     
-    def generate_specific_response(self, question: str, tools_ctx: Dict[str, Any]) -> str:
-        """Genera respuesta específica basada en los datos extraídos"""
+    def generate_enhanced_analysis(self, question: str, tools_ctx: Dict[str, Any]) -> str:
+        """NUEVA FUNCIÓN: Genera análisis extendido y detallado con LLM especializado"""
         try:
             extraction = tools_ctx.get("lastextraction", {})
             validation = tools_ctx.get("lastvalidation", {})
@@ -561,36 +689,174 @@ class CashFlowsREACTAgent:
             if not extraction or not extraction.get("success"):
                 return "No se pudieron extraer datos de flujos de efectivo del documento."
             
-            # Extraer información clave del texto
+            # Extraer el contenido real del PDF
             text = extraction.get("text", "")
             confidence = validation.get("confidence", 0.8)
             quality = validation.get("quality", "unknown")
+            financial_data = extraction.get("financial_data", {})
             
-            # Generar respuesta específica
-            response_parts = ["📊 **RESUMEN DE FLUJOS DE EFECTIVO EXTRAÍDOS**"]
+            if not text or len(text.strip()) < 200:
+                return "El contenido extraído de flujos de efectivo es insuficiente para realizar un análisis detallado."
             
-            # Buscar cifras clave en el texto
-            text_lower = text.lower()
-            
-            if "operating activities" in text_lower or "actividades operativas" in text_lower:
-                response_parts.append("• **Actividades Operativas**: Datos identificados y procesados")
-            
-            if "investing activities" in text_lower or "actividades de inversión" in text_lower:
-                response_parts.append("• **Actividades de Inversión**: Información extraída")
-            
-            if "financing activities" in text_lower or "actividades de financiación" in text_lower:
-                response_parts.append("• **Actividades de Financiación**: Datos capturados")
-            
-            if "cash and cash equivalents" in text_lower or "efectivo y equivalentes" in text_lower:
-                response_parts.append("• **Efectivo y Equivalentes**: Posiciones inicial y final identificadas")
-            
-            response_parts.append(f"**Calidad de Extracción**: {quality.title()} (confianza: {confidence:.1%})")
-            response_parts.append("**Fuente**: Estado de flujos de efectivo consolidado de GarantiBank International N.V.")
-            
-            return "\n".join(response_parts)
-            
+            # ANÁLISIS INTELIGENTE CON LLM - PROMPT ESPECIALIZADO
+            analysis_prompt = f"""
+Actúa como un analista financiero senior especializado en banca internacional con 15 años de experiencia. 
+
+Analiza de forma EXHAUSTIVA y DETALLADA el siguiente contenido extraído del estado de flujos de efectivo de GarantiBank International N.V.:
+
+CONTENIDO EXTRAÍDO DEL PDF:
+{text[:4000]}
+
+DATOS FINANCIEROS ESPECÍFICOS IDENTIFICADOS:
+{json.dumps(financial_data, indent=2) if financial_data else "No se identificaron datos específicos"}
+
+INSTRUCCIONES PARA ANÁLISIS PROFESIONAL:
+1. **Estructura tu análisis en las siguientes secciones obligatorias:**
+   - Resumen ejecutivo de la posición de liquidez
+   - Análisis detallado de actividades operativas
+   - Evaluación de actividades de inversión
+   - Análisis de actividades de financiación
+   - Análisis de variaciones en efectivo y equivalentes
+   - Ratios de liquidez y gestión de efectivo (si calculable)
+   - Identificación de riesgos y oportunidades
+   - Comparación con períodos anteriores (si disponible)
+   - Conclusiones estratégicas y recomendaciones
+
+2. **Utiliza ÚNICAMENTE las cifras y datos presentes en el texto extraído**
+   - NO inventes números que no aparezcan en el contenido
+   - Si una cifra no está disponible, menciona específicamente que "requiere análisis adicional"
+   - Cita cifras exactas cuando estén disponibles
+
+3. **Proporciona interpretación profesional y contextual:**
+   - Explica el significado de las tendencias observadas
+   - Relaciona los flujos con la estrategia bancaria
+   - Identifica implicaciones para la solidez financiera
+   - Menciona aspectos regulatorios relevantes si aplicables
+
+4. **Formato profesional:**
+   - Usa terminología técnica apropiada para banca
+   - Estructura clara con subtítulos
+   - Párrafos bien desarrollados
+   - Longitud objetivo: 700-900 palabras
+
+5. **Enfoque específico bancario:**
+   - Considera las particularidades de las entidades financieras
+   - Analiza impacto en ratios de liquidez bancarios
+   - Evalúa calidad de los flujos operativos
+   - Comenta sobre gestión de riesgo de liquidez
+
+Genera un análisis que demuestre expertise profesional y que sea útil tanto para stakeholders internos como externos de la entidad bancaria.
+"""
+
+            try:
+                # Usar el LLM para generar análisis inteligente
+                analysis_response = self.chat_client.chat([
+                    {"role": "system", "content": "Eres un analista financiero senior especializado en banca internacional con amplia experiencia en análisis de flujos de efectivo."},
+                    {"role": "user", "content": analysis_prompt}
+                ], max_tokens=2000)  # Aumentado para respuestas más extensas
+                
+                # Construir respuesta final con información técnica
+                response_parts = [
+                    "📊 **ANÁLISIS PROFESIONAL DE FLUJOS DE EFECTIVO - GarantiBank International N.V.**",
+                    "=" * 85,
+                    "",
+                    analysis_response,
+                    "",
+                    "### 📋 **INFORMACIÓN TÉCNICA DEL ANÁLISIS**",
+                    f"• **Calidad de extracción**: {quality.title()} (puntuación: {validation.get('score', 0)}/100)",
+                    f"• **Confianza en datos**: {confidence:.1%}",
+                    f"• **Caracteres analizados**: {len(text):,} del documento original",
+                    f"• **Páginas procesadas**: {len(extraction.get('pages_processed', []))} páginas del estado financiero",
+                    f"• **Datos financieros específicos**: {len(financial_data)} categorías identificadas" if financial_data else "• **Datos financieros**: Análisis basado en contenido textual",
+                    "• **Metodología**: Extracción automática + análisis con IA especializada en banca",
+                    "• **Fuente**: Estado de flujos de efectivo consolidado de GarantiBank International N.V.",
+                    "",
+                    "=" * 85,
+                    "📊 *Análisis generado por sistema de IA especializada en análisis financiero bancario*"
+                ]
+                
+                return "\n".join(response_parts)
+                
+            except Exception as llm_error:
+                print(f"Error en análisis LLM: {str(llm_error)}")
+                # Fallback: análisis básico si el LLM falla
+                return self.generate_fallback_analysis(text, confidence, quality, financial_data)
+                
         except Exception as e:
-            return f"Se completó la extracción de flujos de efectivo, pero hubo un error al generar la respuesta específica: {str(e)}"
+            return f"Error al generar análisis específico de flujos de efectivo: {str(e)}"
+
+    def generate_fallback_analysis(self, text: str, confidence: float, quality: str, financial_data: Dict) -> str:
+        """Análisis de respaldo basado en extracción de datos específicos del texto"""
+        
+        response_parts = []
+        response_parts.append("📊 **ANÁLISIS DE FLUJOS DE EFECTIVO - GarantiBank International N.V.**")
+        response_parts.append("=" * 75)
+        
+        text_lower = text.lower()
+        
+        # Análisis por secciones con datos específicos encontrados
+        response_parts.append("\n### 💼 **ACTIVIDADES OPERATIVAS**")
+        if "operating" in text_lower or "operativ" in text_lower:
+            if financial_data.get('operating_cash'):
+                amounts = financial_data['operating_cash']
+                response_parts.append(f"• Flujos operativos identificados: {amounts} (miles de euros)")
+            else:
+                response_parts.append("• Los flujos de actividades operativas han sido identificados en el documento")
+            
+            response_parts.append("• Las actividades operativas reflejan la capacidad del banco para generar efectivo")
+            response_parts.append("• Incluye depósitos de clientes, préstamos, y operaciones comerciales principales")
+        else:
+            response_parts.append("• Los flujos operativos requieren análisis adicional detallado")
+        
+        response_parts.append("\n### 🏗️ **ACTIVIDADES DE INVERSIÓN**")
+        if "investing" in text_lower or "inversión" in text_lower:
+            if financial_data.get('investing_cash'):
+                amounts = financial_data['investing_cash']
+                response_parts.append(f"• Flujos de inversión identificados: {amounts} (miles de euros)")
+            else:
+                response_parts.append("• Actividades de inversión detectadas en el estado financiero")
+                
+            response_parts.append("• Incluye inversiones en valores, adquisiciones de activos fijos")
+            response_parts.append("• Refleja la estrategia de crecimiento y expansión del banco")
+        else:
+            response_parts.append("• Las actividades de inversión requieren análisis específico adicional")
+        
+        response_parts.append("\n### 💰 **ACTIVIDADES DE FINANCIACIÓN**")
+        if "financing" in text_lower or "financiación" in text_lower:
+            if financial_data.get('financing_cash'):
+                amounts = financial_data['financing_cash']
+                response_parts.append(f"• Flujos de financiación identificados: {amounts} (miles de euros)")
+            else:
+                response_parts.append("• Actividades de financiación detectadas en el documento")
+                
+            response_parts.append("• Incluye emisión de deuda, dividendos pagados, y cambios en capital")
+            response_parts.append("• Indica la política de estructura de capital del banco")
+        else:
+            response_parts.append("• Las actividades de financiación requieren análisis detallado")
+        
+        response_parts.append("\n### 💧 **POSICIÓN DE EFECTIVO**")
+        if financial_data.get('net_change_cash'):
+            amounts = financial_data['net_change_cash']
+            response_parts.append(f"• Variación neta en efectivo: {amounts} (miles de euros)")
+        
+        response_parts.append("• La gestión de liquidez es crítica para operaciones bancarias")
+        response_parts.append("• El efectivo y equivalentes garantizan solvencia operacional")
+        
+        response_parts.append("\n### 📊 **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
+        response_parts.append(f"• **Calidad del análisis**: {quality.title()} con {confidence:.1%} de confianza")
+        response_parts.append(f"• **Contenido procesado**: {len(text):,} caracteres de estado financiero")
+        
+        if financial_data:
+            total_categories = len(financial_data)
+            response_parts.append(f"• **Datos específicos**: {total_categories} categorías financieras identificadas")
+        else:
+            response_parts.append("• **Recomendación**: Se requiere acceso a cifras numéricas específicas para análisis cuantitativo completo")
+        
+        response_parts.append("\n• **Metodología**: Análisis automatizado basado en contenido extraído del PDF")
+        response_parts.append("• **Fuente**: Estado de flujos de efectivo de GarantiBank International N.V.")
+        response_parts.append("• **Nota**: Para análisis más profundo se recomienda revisión manual de cifras específicas")
+        
+        return "\n".join(response_parts)
 
 # ===== FUNCIONES DE COMPATIBILIDAD =====
 def run_cashflow_agent(pdf_path: Path, output_dir: Path, max_steps: int = 10) -> Dict[str, Any]:
@@ -622,22 +888,26 @@ DEFAULT_CONFIG = {
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CashFlows Agent AUTÓNOMO especializado en Estado de Flujos de Efectivo - Multi-Agent System",
+        description="CashFlows Agent AUTÓNOMO con Análisis Detallado - Multi-Agent System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplo de uso:
   python agents/cashflows_agent.py                    # Usa configuración predefinida
   python agents/cashflows_agent.py --pdf otro.pdf    # Sobreescribe PDF
 
-CARACTERÍSTICAS AUTÓNOMAS:
-  - Patrón REACT exitoso del Balance Agent
-  - Detección robusta de tool calls  
-  - Herramientas específicas para flujos de efectivo
-  - Respuestas detalladas y elaboradas
-  - Fallback robusto con respuestas basadas en datos extraídos
+CARACTERÍSTICAS AVANZADAS:
+  - Análisis detallado de 700-900 palabras generado por LLM especializado
+  - Extracción avanzada de datos financieros específicos
+  - Validación mejorada con puntuación de calidad
+  - Chunks semánticos inteligentes por secciones
+  - Fallback robusto con análisis basado en datos extraídos
 
-Sistema Multi-Agente:
-  Esta versión incluye CashFlowsREACTAgent AUTÓNOMO para integración con main_system.py
+MEJORAS IMPLEMENTADAS:
+  - Búsqueda ampliada de páginas relevantes
+  - Identificación automática de cifras financieras
+  - Análisis profesional con terminología bancaria
+  - Informes de calidad extendidos
+  - Respuestas estructuradas y contextualizadas
 """
     )
     
@@ -654,13 +924,12 @@ Sistema Multi-Agente:
     args = parser.parse_args()
     
     # MOSTRAR CONFIGURACIÓN
-    print("🚀 Cashflows Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
+    print("🚀 CashFlows Agent v4.0 AUTÓNOMO Multi-Agent - Análisis Detallado")
     print(f"📄 PDF: {args.pdf}")
     print(f"📁 Salida: {args.out}")
-    print(f"⚙️ Azure OpenAI: {AZURE_OPENAI_DEPLOYMENT}")
+    print(f"⚙️ Groq/Azure OpenAI: Configuración dual")
     print(f"🔧 Max steps: {args.maxsteps}")
-    print(f"🤖 Multi-Agent: CashFlowsREACTAgent AUTÓNOMO class available")
-    print("🆕 CARACTERÍSTICAS: Patrón REACT exitoso, detección robusta tool calls, respuestas elaboradas")
+    print("🆕 CARACTERÍSTICAS: Análisis extenso con LLM, extracción avanzada, respuestas 700-900 palabras")
     
     try:
         # VERIFICAR PDF
@@ -688,14 +957,15 @@ Sistema Multi-Agente:
         print(f"Archivos generados: {result.get('files_generated', 0)}")
         
         if result.get('status') == 'task_completed':
-            print("📋 ==== RESPUESTA ESPECÍFICA ====")
-            print(result.get("specific_answer", "No hay respuesta específica disponible"))
+            print("📋 ==== ANÁLISIS DETALLADO GENERADO ====")
+            analysis = result.get("specific_answer", "No hay respuesta específica disponible")
+            print(f"Longitud del análisis: {len(analysis)} caracteres")
+            print("✅ Análisis detallado con LLM especializado completado")
         else:
             print(f"❌ Error: {result.get('error_details', 'Error desconocido')}")
         
         print("🎉 Análisis de flujos de efectivo completado!")
-        print("🤖 Clase CashFlowsREACTAgent AUTÓNOMA disponible para sistema multi-agente")
-        print("🆕 Versión autónoma con patrón REACT exitoso y respuestas específicas usando LLM")
+        print("🤖 CashFlowsREACTAgent con análisis detallado disponible para sistema multi-agente")
         
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")

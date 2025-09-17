@@ -732,7 +732,7 @@ Ejemplo de uso:
   python agents/equity_agent.py --pdf otro.pdf    # Sobreescribe PDF
 
 CARACTERÍSTICAS AUTÓNOMAS:
-  - Patrón REACT exitoso del Balance/CashFlows Agent
+  - Patrón REACT exitoso 
   - Detección robusta de tool calls  
   - Herramientas específicas para cambios en patrimonio
   - Análisis inteligente con LLM para respuestas detalladas

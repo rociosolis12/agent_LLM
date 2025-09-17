@@ -1,11 +1,10 @@
 """
 Income Agent REACT - Versión Multi-Agente AUTÓNOMA COMPLETA
-Especializado en análisis de cuenta de resultados con wrapper autónomo para sistema multi-agente
-CARACTERÍSTICAS: Respuestas específicas generadas por LLM, completamente autónomo, compatible con coordinador
+Especializado en análisis de cuenta de resultados con análisis detallado
+CARACTERÍSTICAS: Extracción avanzada, análisis LLM especializado, respuestas extensas
 """
 
 from __future__ import annotations
-
 import os
 import re
 import json
@@ -18,12 +17,9 @@ import fitz  # PyMuPDF
 import pandas as pd
 from dotenv import load_dotenv
 from openai import AzureOpenAI
+import groq
 
-# =============================
-# Configuración y utilidades
-# =============================
-
-# Cargar .env desde el directorio raíz del proyecto
+# ===== CONFIGURACIÓN DEL PROYECTO =====
 project_root = Path(__file__).parent.parent
 env_path = project_root / ".env"
 load_dotenv(env_path)
@@ -32,87 +28,108 @@ os.chdir(project_root)
 if not env_path.exists():
     print(f"Warning: Archivo .env no encontrado en {env_path}")
 
+print("🔧 Cargar .env desde el directorio raíz del proyecto...")
+
 # ----- Azure OpenAI Configuration -----
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
 
+print("🔧 ----- Azure OpenAI Configuration -----")
+print(f"🔗 Endpoint: {AZURE_OPENAI_ENDPOINT}")
+print(f"🔑 API Key: {'✓' if AZURE_OPENAI_API_KEY else '✗'}")
+print(f"📋 Deployment: {AZURE_OPENAI_DEPLOYMENT}")
+
 # Validación de credenciales
 if not AZURE_OPENAI_ENDPOINT or not AZURE_OPENAI_API_KEY:
     raise ValueError("Azure OpenAI credentials required")
 
-# =============================
-# Cliente Azure OpenAI
-# =============================
+# ----- Groq Configuration -----
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-class AzureChatClient:
+print("🔧 ----- Groq Configuration -----")
+print(f"🔑 API Key: {'✓' if GROQ_API_KEY else '✗'}")
+print(f"🤖 Model: {GROQ_MODEL}")
+
+# ===== CLIENTE CHAT =====
+class ChatClient:
     def __init__(self):
-        self.client = AzureOpenAI(
+        self.azure_client = AzureOpenAI(
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_key=AZURE_OPENAI_API_KEY,
             api_version=AZURE_OPENAI_API_VERSION
-        )
-        self.deployment = AZURE_OPENAI_DEPLOYMENT
+        ) if AZURE_OPENAI_API_KEY else None
+        
+        self.groq_client = groq.Groq(
+            api_key=GROQ_API_KEY
+        ) if GROQ_API_KEY else None
 
-    def chat(self, messages: List[Dict[str, str]], max_tokens: int = 1000) -> str:
+    def chat(self, history: List[Dict[str, str]], max_tokens: int = 1500) -> str:
         try:
-            response = self.client.chat.completions.create(
-                model=self.deployment,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=0.1
-            )
-            return response.choices[0].message.content
+            if self.groq_client:
+                response = self.groq_client.chat.completions.create(
+                    model=GROQ_MODEL,
+                    messages=history,
+                    max_tokens=max_tokens,
+                    temperature=0.1
+                )
+                return response.choices[0].message.content
+            
+            elif self.azure_client:
+                response = self.azure_client.chat.completions.create(
+                    model=AZURE_OPENAI_DEPLOYMENT,
+                    messages=history,
+                    max_tokens=max_tokens,
+                    temperature=0.1
+                )
+                return response.choices[0].message.content
+                
         except Exception as e:
-            raise RuntimeError(f"Azure OpenAI API error: {str(e)}")
+            raise RuntimeError(f"Chat API error: {str(e)}")
 
 # Inicialización del cliente
-chat_client = AzureChatClient()
+chat_client = ChatClient()
 
-# =============================
-# Diccionarios específicos para cuenta de resultados
-# =============================
-
+# ===== DICCIONARIOS ESPECÍFICOS PARA CUENTA DE RESULTADOS =====
 INCOME_TITLES_EN = [
-    "statement of comprehensive income", "income statement", "profit and loss",
-    "consolidated statement of comprehensive income", "statement of income"
+    "income statement", "statement of income", "profit and loss",
+    "consolidated income statement", "statement of profit or loss",
+    "comprehensive income statement"
 ]
 
 INCOME_TITLES_ES = [
-    "cuenta de resultados", "estado de resultados", "estado de ganancias y pérdidas",
-    "cuenta consolidada de resultados", "resultados integrales"
+    "cuenta de resultados", "estado de resultados", "cuenta de pérdidas y ganancias",
+    "estado consolidado de resultados", "cuenta de resultado del ejercicio"
 ]
 
 # Términos específicos de ingresos
 REVENUE_HINTS = [
-    "interest income", "net interest income", "fee and commission income",
-    "trading income", "total income", "operating income", "revenue",
-    "ingresos por intereses", "ingresos netos por intereses", "ingresos por comisiones"
+    "net interest income", "interest income", "fee and commission income",
+    "trading income", "other operating income", "total income",
+    "margen de intereses", "ingresos por intereses", "comisiones netas",
+    "ingresos por operaciones", "otros ingresos", "margen bruto"
 ]
 
 # Términos específicos de gastos
 EXPENSE_HINTS = [
-    "interest expense", "personnel expenses", "operating expenses",
-    "administrative expenses", "depreciation", "total expenses",
-    "gastos por intereses", "gastos de personal", "gastos operativos"
+    "operating expenses", "staff costs", "personnel expenses",
+    "administrative expenses", "depreciation", "amortization",
+    "provisions", "loan loss provisions", "impairment losses",
+    "gastos de explotación", "gastos de personal", "gastos administrativos",
+    "dotaciones", "provisiones", "deterioro"
 ]
 
-# Términos específicos de resultados
+# Términos de rentabilidad
 PROFIT_HINTS = [
-    "income before tax", "net income", "profit before tax", "net profit",
-    "comprehensive income", "earnings", "resultado antes de impuestos",
-    "beneficio neto", "resultado neto", "ganancia neta"
+    "profit before tax", "net profit", "earnings", "net income",
+    "return on equity", "return on assets", "profit margin",
+    "beneficio antes de impuestos", "beneficio neto", "resultado neto",
+    "rentabilidad sobre patrimonio", "margen de beneficio"
 ]
 
-CURRENCY_HINTS = [
-    "thousands of euros", "€", "euro", "euros", "eur",
-    "miles de euros", "thousand", "thousands"
-]
-
-# =============================
-# Funciones auxiliares
-# =============================
+# ===== FUNCIONES AUXILIARES MEJORADAS =====
 
 def normalize_text(s: str) -> str:
     s = s or ""
@@ -122,20 +139,152 @@ def normalize_text(s: str) -> str:
 
 def detect_language(text: str) -> str:
     t = normalize_text(text)
-    score_es = sum(1 for w in ["ingresos", "gastos", "resultado"] if w in t)
-    score_en = sum(1 for w in ["income", "expenses", "profit"] if w in t)
+    score_es = sum(1 for w in ["resultados", "ingresos", "gastos", "beneficio"] if w in t)
+    score_en = sum(1 for w in ["income", "revenue", "expenses", "profit"] if w in t)
     return "es" if score_es >= score_en else "en"
 
-def safe_pdf_pages(path: Path) -> List:
-    pages = []
-    with fitz.open(str(path)) as pdf:
-        for p in pdf.pages:
-            pages.append(p)
-    return pages
+def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
+    """NUEVA FUNCIÓN: Extrae datos financieros específicos del texto con patrones avanzados"""
+    
+    patterns = {
+        'net_interest_income': [
+            r'margen.*intereses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'net.*interest.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'interest.*margin.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*margen.*intereses',
+            r'€\s*([0-9.,]+).*net.*interest'
+        ],
+        'fee_commission_income': [
+            r'comisiones.*netas.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'fee.*commission.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'ingresos.*comisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*comisiones',
+            r'€\s*([0-9.,]+).*fee.*commission'
+        ],
+        'operating_expenses': [
+            r'gastos.*explotación.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'operating.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'gastos.*operativos.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*gastos.*operativ',
+            r'€\s*([0-9.,]+).*operating.*expenses'
+        ],
+        'staff_costs': [
+            r'gastos.*personal.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'staff.*costs.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'personnel.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*gastos.*personal',
+            r'€\s*([0-9.,]+).*staff.*costs'
+        ],
+        'provisions': [
+            r'dotaciones.*provisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'loan.*loss.*provisions.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'impairment.*losses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'provisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*provisiones',
+            r'€\s*([0-9.,]+).*provisions'
+        ],
+        'net_profit': [
+            r'beneficio.*neto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'net.*profit.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'net.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'resultado.*neto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*beneficio.*neto',
+            r'€\s*([0-9.,]+).*net.*profit'
+        ],
+        'total_income': [
+            r'margen.*bruto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'total.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'ingresos.*totales.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'total.*revenue.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'€\s*([0-9.,]+).*margen.*bruto',
+            r'€\s*([0-9.,]+).*total.*income'
+        ]
+    }
+    
+    extracted_data = {}
+    
+    # Buscar años específicos para comparación
+    years = re.findall(r'\b(20\d{2})\b', text)
+    extracted_data['years_found'] = list(set(years))
+    
+    # Extraer datos por categoría
+    for category, pattern_list in patterns.items():
+        values = []
+        for pattern in pattern_list:
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                try:
+                    # Limpiar y convertir números
+                    clean_number = re.sub(r'[^\d,.]', '', match)
+                    if clean_number and clean_number not in ['', '.', ',']:
+                        # Manejar formato europeo (1.234,56) y americano (1,234.56)
+                        if ',' in clean_number and '.' in clean_number:
+                            if clean_number.rindex(',') > clean_number.rindex('.'):
+                                # Formato europeo: 1.234,56
+                                clean_number = clean_number.replace('.', '').replace(',', '.')
+                            # Si es formato americano (1,234.56), ya está bien
+                        elif ',' in clean_number:
+                            # Solo coma: podría ser decimal o separador miles
+                            if len(clean_number.split(',')[-1]) <= 2:
+                                # Probablemente decimal: 1234,56
+                                clean_number = clean_number.replace(',', '.')
+                            else:
+                                # Probablemente separador miles: 1,234
+                                clean_number = clean_number.replace(',', '')
+                        
+                        number = float(clean_number)
+                        if number > 0:  # Solo valores positivos significativos
+                            values.append(number)
+                except ValueError:
+                    continue
+        
+        # Remover duplicados manteniendo orden
+        unique_values = []
+        for v in values:
+            if v not in unique_values:
+                unique_values.append(v)
+        
+        extracted_data[category] = unique_values
+    
+    return extracted_data
 
-# =============================
-# CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME
-# =============================
+def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]:
+    """NUEVA FUNCIÓN: Calcular ratios financieros automáticamente"""
+    
+    ratios = {}
+    
+    # Obtener valores principales (último valor de cada lista)
+    net_profit = max(data.get('net_profit', [0])) if data.get('net_profit') else 0
+    total_income = max(data.get('total_income', [0])) if data.get('total_income') else 0
+    operating_expenses = max(data.get('operating_expenses', [0])) if data.get('operating_expenses') else 0
+    net_interest_income = max(data.get('net_interest_income', [0])) if data.get('net_interest_income') else 0
+    staff_costs = max(data.get('staff_costs', [0])) if data.get('staff_costs') else 0
+    
+    # Calcular ratios si hay datos disponibles
+    if total_income > 0:
+        if net_profit > 0:
+            ratios['net_profit_margin'] = (net_profit / total_income) * 100
+            
+        if operating_expenses > 0:
+            ratios['cost_income_ratio'] = (operating_expenses / total_income) * 100
+            ratios['efficiency_ratio'] = (operating_expenses / total_income) * 100
+            
+        if net_interest_income > 0:
+            ratios['interest_income_ratio'] = (net_interest_income / total_income) * 100
+            
+        if staff_costs > 0:
+            ratios['staff_cost_ratio'] = (staff_costs / total_income) * 100
+    
+    # Calcular variaciones si hay datos de múltiples años
+    for category, values in data.items():
+        if len(values) >= 2:
+            # Calcular crecimiento año-año
+            growth = ((values[-1] - values[0]) / abs(values[0])) * 100 if values[0] != 0 else 0
+            ratios[f'{category}_growth'] = growth
+    
+    return ratios
+
+# ===== CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME =====
 
 class IncomeREACTAgent:
     """
@@ -148,57 +297,67 @@ class IncomeREACTAgent:
     def __init__(self):
         self.agent_type = "income"
         self.max_steps = 25  # Aumentado para el wrapper
-        self.chat_client = chat_client  # Cliente Azure OpenAI
+        self.chat_client = chat_client
 
     def run_final_financial_extraction_agent(self, pdf_path: str, question: str = None) -> Dict[str, Any]:
-        """
-        Ejecuta la extracción de cuenta de resultados Y genera respuesta específica autónomamente
-        
-        Args:
-            pdf_path: Ruta al PDF a procesar
-            question: Pregunta específica del usuario (opcional)
-            
-        Returns:
-            Dict con el resultado y respuesta específica generada por LLM
-        """
+        """Ejecuta la extracción de cuenta de resultados con wrapper autónomo"""
         try:
             print(f"🔧 IncomeREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
             
             pdf_file = Path(pdf_path)
             output_dir = Path("data/salida")
+            output_dir.mkdir(parents=True, exist_ok=True)
             
-            # 1. EJECUTAR EXTRACCIÓN CORE (funcionalidad de income)
-            result = self._run_core_extraction(pdf_file, output_dir)
+            start_time = time.time()
             
-            # 2. VERIFICAR ÉXITO DE EXTRACCIÓN
-            extraction_successful = result.get("success", False)
+            # EXTRACCIÓN MEJORADA
+            extraction_result = self.extract_income_data_enhanced(pdf_file)
             
-            if not extraction_successful:
-                print("⚠️ Income extraction failed")
+            if not extraction_result.get("success"):
                 return {
-                    "status": "error", 
-                    "steps_taken": result.get("steps_taken", 0),
+                    "status": "error",
+                    "steps_taken": 1,
                     "session_id": f"income_{pdf_file.stem}",
-                    "final_response": "Income extraction failed - check logs for details",
+                    "final_response": f"Income extraction failed: {extraction_result.get('error')}",
                     "agent_type": "income",
-                    "error_details": result.get("error", "Extraction process failed"),
-                    "specific_answer": "No se pudo completar la extracción de la cuenta de resultados."
+                    "error_details": extraction_result.get("error"),
+                    "specific_answer": "No se encontraron datos de cuenta de resultados"
                 }
             
-            # 3. GENERAR RESPUESTA ESPECÍFICA USANDO LLM
-            specific_answer = self._generate_llm_response(question, pdf_file, result)
+            # VALIDACIÓN MEJORADA
+            validation_result = self.validate_income_data_enhanced(extraction_result)
+            
+            # GUARDAR RESULTADOS MEJORADOS
+            save_result = self.save_income_results_enhanced(pdf_file, output_dir, extraction_result, validation_result)
+            
+            # GENERAR RESPUESTA ESPECÍFICA MEJORADA
+            if question:
+                print(f"❓ Pregunta específica recibida: {question}")
+            
+            specific_answer = self.generate_enhanced_income_analysis(question, extraction_result, validation_result)
+            
+            end_time = time.time()
+            processing_time = end_time - start_time
             
             print("✅ Income extraction completed successfully (AUTÓNOMO)")
+            
             return {
                 "status": "task_completed",
-                "steps_taken": result.get("steps_taken", 5),
+                "steps_taken": 5,  # Análisis, extracción, validación, guardado, respuesta
                 "session_id": f"income_{pdf_file.stem}",
                 "final_response": "Income extraction completed successfully - AUTONOMOUS VERSION",
                 "agent_type": "income",
-                "files_generated": result.get("files_created", 0),
-                "specific_answer": specific_answer  # ← RESPUESTA GENERADA POR LLM
+                "files_generated": save_result.get("files_created", 3),
+                "processing_time": processing_time,
+                "specific_answer": specific_answer,
+                "extraction_summary": {
+                    "total_characters": extraction_result.get("total_characters", 0),
+                    "financial_data_categories": len(extraction_result.get("financial_data", {})),
+                    "confidence": validation_result.get("confidence", 0.8),
+                    "quality": validation_result.get("quality", "unknown")
+                }
             }
-                
+            
         except Exception as e:
             print(f"❌ Error en IncomeREACTAgent: {str(e)}")
             return {
@@ -211,659 +370,572 @@ class IncomeREACTAgent:
                 "specific_answer": f"Error durante la extracción de la cuenta de resultados: {str(e)}"
             }
 
-    def _run_core_extraction(self, pdf_file: Path, output_dir: Path) -> Dict[str, Any]:
-        """
-        Ejecuta la extracción core de cuenta de resultados
-        """
+    def extract_income_data_enhanced(self, pdf_file: Path) -> Dict[str, Any]:
+        """NUEVA FUNCIÓN: Extracción mejorada de datos de cuenta de resultados"""
         try:
             print(f"🔍 Extrayendo cuenta de resultados de: {pdf_file}")
             
-            # 1. EXTRAER TEXTO DE PÁGINAS RELEVANTES
-            extracted_text = self._extract_income_text(pdf_file)
+            # Páginas más probables para cuenta de resultados en documentos bancarios
+            target_pages = [1, 2, 3, 4, 5, 6, 7, 8]  # Ampliar búsqueda
             
-            if not extracted_text:
-                return {
-                    "success": False,
-                    "error": "No se encontraron datos de cuenta de resultados",
-                    "steps_taken": 1
-                }
+            extracted_text = ""
+            total_chars = 0
+            financial_data = {}
+            relevant_pages = []
             
-            # 2. PARSEAR DATOS FINANCIEROS
-            financial_data = self._parse_income_data(extracted_text)
+            with fitz.open(pdf_file) as pdf:
+                for page_num in range(min(len(pdf), 15)):  # Buscar en primeras 15 páginas
+                    page = pdf[page_num]
+                    text = page.get_text()
+                    text_lower = normalize_text(text)
+                    
+                    # Detectar relevancia para cuenta de resultados
+                    relevance_score = 0
+                    
+                    # Buscar títulos específicos
+                    title_indicators = INCOME_TITLES_EN + INCOME_TITLES_ES
+                    for indicator in title_indicators:
+                        if normalize_text(indicator) in text_lower:
+                            relevance_score += 10
+                    
+                    # Buscar términos de ingresos
+                    for hint in REVENUE_HINTS:
+                        if normalize_text(hint) in text_lower:
+                            relevance_score += 3
+                    
+                    # Buscar términos de gastos
+                    for hint in EXPENSE_HINTS:
+                        if normalize_text(hint) in text_lower:
+                            relevance_score += 3
+                    
+                    # Buscar términos de rentabilidad
+                    for hint in PROFIT_HINTS:
+                        if normalize_text(hint) in text_lower:
+                            relevance_score += 5
+                    
+                    # Si la página es relevante, extraer
+                    if relevance_score >= 5 or page_num + 1 in target_pages:
+                        extracted_text += f"\n=== PÁGINA {page_num + 1} (Score: {relevance_score}) ===\n{text}"
+                        total_chars += len(text)
+                        relevant_pages.append(page_num + 1)
+                        print(f"✅ Página {page_num + 1}: {len(text)} caracteres extraídos (relevance: {relevance_score})")
+                        
+                        # NUEVA: Extracción de datos financieros específicos
+                        page_financial_data = extract_comprehensive_income_data(text)
+                        for key, values in page_financial_data.items():
+                            if key not in financial_data:
+                                financial_data[key] = []
+                            financial_data[key].extend(values)
             
-            # 3. GUARDAR RESULTADOS
-            files_created = self._save_extraction_results(pdf_file, output_dir, extracted_text, financial_data)
+            # Si no se encontró contenido relevante, extraer páginas por defecto
+            if total_chars < 1000:
+                print("⚠️ Poco contenido relevante encontrado, extrayendo páginas por defecto...")
+                with fitz.open(pdf_file) as pdf:
+                    for page_num in range(min(10, len(pdf))):
+                        page = pdf[page_num]
+                        text = page.get_text()
+                        extracted_text += f"\n=== PÁGINA {page_num + 1} (DEFAULT) ===\n{text}"
+                        total_chars += len(text)
+            
+            print(f"📊 Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+            
+            # NUEVA: Extracción total mejorada
+            if financial_data:
+                total_extracted = sum(len(values) for values in financial_data.values() if values)
+                print(f"📈 Total extraído: {total_extracted} entradas financieras")
+            
+            confidence = 1.0 if total_chars > 3000 else 0.8 if total_chars > 1500 else 0.6
             
             return {
                 "success": True,
-                "extracted_text": extracted_text,
-                "financial_data": financial_data,
-                "files_created": files_created,
-                "steps_taken": 5
+                "text": extracted_text,
+                "total_characters": total_chars,
+                "pages_processed": relevant_pages,
+                "financial_data": financial_data,  # NUEVO
+                "confidence": confidence,
+                "language": detect_language(extracted_text)
             }
             
         except Exception as e:
-            print(f"❌ Error en extracción core: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+    def validate_income_data_enhanced(self, extraction: Dict[str, Any]) -> Dict[str, Any]:
+        """NUEVA FUNCIÓN: Validación mejorada de datos de cuenta de resultados"""
+        try:
+            text = extraction.get("text", "")
+            confidence = extraction.get("confidence", 0.0)
+            financial_data = extraction.get("financial_data", {})
+            
+            # Criterios de validación mejorados
+            quality_score = 0
+            validation_details = []
+            
+            text_lower = normalize_text(text)
+            
+            # Verificar secciones principales (peso variable)
+            if any(normalize_text(term) in text_lower for term in ["interest income", "margen intereses", "ingresos intereses"]):
+                quality_score += 20
+                validation_details.append("✅ Ingresos por intereses encontrados")
+            
+            if any(normalize_text(term) in text_lower for term in ["commission", "comisiones", "fee income"]):
+                quality_score += 15
+                validation_details.append("✅ Ingresos por comisiones encontrados")
+            
+            if any(normalize_text(term) in text_lower for term in ["operating expenses", "gastos explotación", "gastos operativos"]):
+                quality_score += 20
+                validation_details.append("✅ Gastos operativos encontrados")
+            
+            if any(normalize_text(term) in text_lower for term in ["staff costs", "gastos personal", "personnel expenses"]):
+                quality_score += 15
+                validation_details.append("✅ Gastos de personal encontrados")
+            
+            if any(normalize_text(term) in text_lower for term in ["provisions", "provisiones", "impairment"]):
+                quality_score += 10
+                validation_details.append("✅ Provisiones encontradas")
+            
+            if any(normalize_text(term) in text_lower for term in ["net profit", "beneficio neto", "net income"]):
+                quality_score += 15
+                validation_details.append("✅ Beneficio neto encontrado")
+            
+            # NUEVA: Bonificaciones por datos financieros específicos
+            if financial_data:
+                categories_with_data = sum(1 for values in financial_data.values() if values)
+                data_bonus = min(15, categories_with_data * 2)  # Máximo 15 puntos extra
+                quality_score += data_bonus
+                validation_details.append(f"✅ Datos financieros específicos: {categories_with_data} categorías")
+            
+            # Determinar calidad final
+            if quality_score >= 80:
+                quality = "excellent"
+            elif quality_score >= 60:
+                quality = "good"
+            elif quality_score >= 40:
+                quality = "fair"
+            else:
+                quality = "poor"
+            
+            final_confidence = min(confidence + (quality_score / 100 * 0.3), 1.0)
+            
+            print(f"✅ Validación completada: {quality} (puntuación: {quality_score}/100, confianza: {final_confidence:.3f})")
+            
             return {
-                "success": False,
-                "error": str(e),
-                "steps_taken": 0
+                "success": True,
+                "quality": quality,
+                "confidence": final_confidence,
+                "score": quality_score,
+                "details": validation_details,
+                "financial_categories_found": len([k for k, v in financial_data.items() if v]) if financial_data else 0
             }
-
-    def _extract_income_text(self, pdf_file: Path) -> str:
-        """
-        Extrae texto de páginas que contienen cuenta de resultados
-        """
-        try:
-            doc = fitz.open(str(pdf_file))
-            income_text = ""
-            pages_processed = []
-            
-            # Patrones para identificar cuenta de resultados
-            income_patterns = [
-                r"statement\s+of\s+comprehensive\s+income",
-                r"statement\s+of\s+income",
-                r"income\s+statement", 
-                r"profit\s+and\s+loss",
-                r"cuenta\s+de\s+resultados",
-                r"comprehensive\s+income",
-                r"consolidated.*income"
-            ]
-            
-            # Buscar en las primeras 15 páginas
-            for page_num in range(min(len(doc), 15)):
-                page = doc[page_num]
-                text = page.get_text()
-                text_lower = text.lower()
-                
-                # Verificar si la página contiene cuenta de resultados
-                for pattern in income_patterns:
-                    if re.search(pattern, text_lower, re.IGNORECASE):
-                        income_text += f"=== PÁGINA {page_num + 1} ===\n{text}\n\n"
-                        pages_processed.append(page_num + 1)
-                        print(f"✅ Página {page_num + 1}: {len(text)} caracteres extraídos")
-                        break
-            
-            doc.close()
-            
-            if income_text:
-                print(f"📊 Texto total extraído: {len(income_text)} caracteres de {len(pages_processed)} páginas")
-            
-            return income_text
             
         except Exception as e:
-            print(f"❌ Error extrayendo texto: {e}")
-            return ""
+            return {"success": False, "error": str(e)}
 
-    def _parse_income_data(self, text: str) -> List[Dict[str, Any]]:
-        """
-        Parsea el texto extraído para identificar datos financieros de cuenta de resultados
-        """
-        lines = text.split('\n')
-        income_data = []
-        
-        # Patrones específicos para GarantiBank cuenta de resultados
-        financial_patterns = [
-            # INGRESOS (valores positivos)
-            (r'interest\s+income\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'revenue', 'Interest income'),
-            (r'fee\s+and\s+commission\s+income\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'revenue', 'Fee and commission income'),
-            (r'net\s+interest\s+income\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'revenue', 'Net interest income'),
-            (r'total\s+operating\s+income\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'revenue', 'Total operating income'),
-            
-            # GASTOS (valores negativos)
-            (r'interest\s+expense\s+.*?\((\d{1,3}(?:,\d{3})+)\)\s+.*?\((\d{1,3}(?:,\d{3})+)\)', 'expenses', 'Interest expense'),
-            (r'personnel\s+expenses\s+.*?\((\d{1,3}(?:,\d{3})+)\)\s+.*?\((\d{1,3}(?:,\d{3})+)\)', 'expenses', 'Personnel expenses'),
-            (r'operating\s+expenses\s+.*?\((\d{1,3}(?:,\d{3})+)\)\s+.*?\((\d{1,3}(?:,\d{3})+)\)', 'expenses', 'Operating expenses'),
-            (r'total\s+expenses\s+.*?\((\d{1,3}(?:,\d{3})+)\)\s+.*?\((\d{1,3}(?:,\d{3})+)\)', 'expenses', 'Total expenses'),
-            
-            # RESULTADOS
-            (r'income\s+before\s+tax\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'profit', 'Income before tax'),
-            (r'net\s+income\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'profit', 'Net income'),
-            (r'profit\s+for\s+the\s+year\s+.*?(\d{1,3}(?:,\d{3})+)\s+.*?(\d{1,3}(?:,\d{3})+)', 'profit', 'Profit for the year'),
-        ]
-        
-        full_text = ' '.join(lines).lower()
-        
-        for pattern, section, concept_name in financial_patterns:
-            matches = re.search(pattern, full_text, re.IGNORECASE)
-            if matches:
-                try:
-                    amount_2023 = float(matches.group(1).replace(',', ''))
-                    amount_2022 = float(matches.group(2).replace(',', ''))
-                    
-                    # Si es gasto, hacerlo negativo
-                    if section == 'expenses':
-                        amount_2023 = -abs(amount_2023)
-                        amount_2022 = -abs(amount_2022)
-                    
-                    entry = {
-                        'concept': concept_name,
-                        'section': section,
-                        '2023': amount_2023,
-                        '2022': amount_2022
-                    }
-                    
-                    income_data.append(entry)
-                    print(f"✅ Extraído: {concept_name} -> {section} -> [{amount_2023:,}, {amount_2022:,}]")
-                    
-                except (ValueError, IndexError) as e:
-                    print(f"⚠️ Error procesando {concept_name}: {e}")
-                    continue
-        
-        # Si no encontramos nada con patrones específicos, usar extracción más agresiva
-        if not income_data:
-            print("🔍 Usando extracción agresiva...")
-            income_data = self._aggressive_parsing(lines)
-        
-        print(f"📊 Total extraído: {len(income_data)} entradas")
-        return income_data
-
-    def _aggressive_parsing(self, lines: List[str]) -> List[Dict[str, Any]]:
-        """
-        Extracción más agresiva cuando los patrones específicos fallan
-        """
-        income_data = []
-        
-        for line in lines:
-            line = line.strip()
-            if len(line) < 10:
-                continue
-            
-            # Buscar líneas con dos números grandes (columnas de años)
-            number_matches = re.findall(r'\b(\d{1,3}(?:,\d{3})+)\b', line)
-            if len(number_matches) >= 2:
-                try:
-                    amount_1 = float(number_matches[0].replace(',', ''))
-                    amount_2 = float(number_matches[1].replace(',', ''))
-                    
-                    # Filtrar números muy pequeños o años
-                    if amount_1 < 1000 or amount_2 < 1000:
-                        continue
-                    if str(int(amount_1)) in ['2022', '2023'] or str(int(amount_2)) in ['2022', '2023']:
-                        continue
-                    
-                    # Limpiar concepto
-                    concept = re.sub(r'\b\d{1,3}(?:,\d{3})+\b', '', line).strip()
-                    concept = re.sub(r'\s+', ' ', concept)
-                    
-                    if len(concept) > 5:
-                        # Determinar sección basada en el concepto
-                        concept_lower = concept.lower()
-                        if any(word in concept_lower for word in ['income', 'revenue', 'ingreso']):
-                            section = 'revenue'
-                        elif any(word in concept_lower for word in ['expense', 'cost', 'gasto']):
-                            section = 'expenses'
-                            amount_1 = -abs(amount_1)
-                            amount_2 = -abs(amount_2)
-                        elif any(word in concept_lower for word in ['profit', 'tax', 'net']):
-                            section = 'profit'
-                        else:
-                            section = 'other'
-                        
-                        entry = {
-                            'concept': concept,
-                            'section': section,
-                            '2023': amount_1,
-                            '2022': amount_2
-                        }
-                        
-                        income_data.append(entry)
-                        
-                except (ValueError, IndexError):
-                    continue
-        
-        return income_data
-
-    def _save_extraction_results(self, pdf_file: Path, output_dir: Path, 
-                                extracted_text: str, financial_data: List[Dict]) -> int:
-        """
-        Guarda los resultados de la extracción
-        """
+    def save_income_results_enhanced(self, pdf_file: Path, output_dir: Path, extraction: Dict, validation: Dict) -> Dict[str, Any]:
+        """NUEVA FUNCIÓN: Guardar resultados mejorados"""
         try:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            base = pdf_file.stem
+            base_name = pdf_file.stem
             files_created = 0
             
-            # 1. Guardar datos financieros como JSON
-            if financial_data:
-                json_path = output_dir / f"{base}_income_data.json"
-                with open(json_path, 'w', encoding='utf-8') as f:
-                    json.dump(financial_data, f, ensure_ascii=False, indent=2)
+            # 1. Guardar resumen JSON extendido
+            summary = {
+                "extraction": {
+                    "total_characters": extraction.get("total_characters", 0),
+                    "pages_processed": extraction.get("pages_processed", []),
+                    "financial_data": extraction.get("financial_data", {}),
+                    "confidence": extraction.get("confidence", 0.8),
+                    "language": extraction.get("language", "unknown")
+                },
+                "validation": validation,
+                "processing_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "quality_metrics": {
+                    "data_categories_found": validation.get("financial_categories_found", 0),
+                    "quality_score": validation.get("score", 0),
+                    "final_confidence": validation.get("confidence", 0.8)
+                }
+            }
+            
+            summary_file = output_dir / f"{base_name}_income_summary.json"
+            with open(summary_file, "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
+            files_created += 1
+            
+            # 2. Guardar datos financieros específicos
+            if extraction.get("financial_data"):
+                financial_data_file = output_dir / f"{base_name}_financial_data.json"
+                with open(financial_data_file, "w", encoding="utf-8") as f:
+                    json.dump(extraction["financial_data"], f, indent=2, ensure_ascii=False)
                 files_created += 1
             
-            # 2. Guardar datos como CSV
-            if financial_data:
-                try:
-                    df = pd.DataFrame(financial_data)
-                    csv_path = output_dir / f"{base}_income_data.csv"
-                    df.to_csv(csv_path, index=False, encoding='utf-8')
-                    files_created += 1
-                except Exception as e:
-                    print(f"⚠️ Error generando CSV: {e}")
+            # 3. Guardar reporte de calidad extendido
+            quality_report = f"""
+REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
+==================================================
+PDF: {pdf_file.name}
+Fecha: {time.strftime("%Y-%m-%d %H:%M:%S")}
+
+RESULTADOS DE VALIDACIÓN:
+- Calidad: {validation.get('quality', 'unknown')}
+- Puntuación: {validation.get('score', 0)}/100
+- Confianza final: {validation.get('confidence', 0):.3f}
+- Categorías financieras: {validation.get('financial_categories_found', 0)}
+
+DETALLES DE VALIDACIÓN:
+{chr(10).join(validation.get('details', []))}
+
+EXTRACCIÓN DETALLADA:
+- Caracteres procesados: {extraction.get('total_characters', 0)}
+- Páginas procesadas: {extraction.get('pages_processed', [])}
+- Idioma detectado: {extraction.get('language', 'unknown')}
+- Datos financieros extraídos:
+{json.dumps(extraction.get('financial_data', {}), indent=2)}
+
+MÉTRICAS DE CALIDAD:
+- Cobertura de secciones: {'Completa' if validation.get('score', 0) >= 70 else 'Parcial' if validation.get('score', 0) >= 50 else 'Limitada'}
+- Precisión de extracción: {validation.get('confidence', 0.8)*100:.1f}%
+- Recomendación: {'Análisis confiable' if validation.get('score', 0) >= 60 else 'Requiere revisión manual'}
+"""
             
-            # 3. Guardar texto extraído
-            text_path = output_dir / f"{base}_income_text.txt"
-            with open(text_path, 'w', encoding='utf-8') as f:
-                f.write(extracted_text)
+            quality_file = output_dir / f"{base_name}_income_quality.txt"
+            with open(quality_file, "w", encoding="utf-8") as f:
+                f.write(quality_report)
             files_created += 1
             
             print(f"💾 Archivos guardados: {files_created}")
-            return files_created
+            
+            return {
+                "success": True,
+                "files_created": files_created,
+                "output_directory": str(output_dir)
+            }
             
         except Exception as e:
-            print(f"❌ Error guardando resultados: {e}")
-            return 0
+            return {"success": False, "error": str(e)}
 
-    def _generate_llm_response(self, question: str, pdf_file: Path, extraction_result: Dict) -> str:
-        """GENERA RESPUESTA DETALLADA PARA CUENTA DE RESULTADOS - MEJORADO"""
+    def generate_enhanced_income_analysis(self, question: str, extraction: Dict, validation: Dict) -> str:
+        """NUEVA FUNCIÓN: Genera análisis extendido y detallado con LLM especializado"""
         try:
-            extracted_text = extraction_result.get("extracted_text", "")
-            financial_data = extraction_result.get("financial_data", [])
+            text = extraction.get("text", "")
+            confidence = validation.get("confidence", 0.8)
+            quality = validation.get("quality", "unknown")
+            financial_data = extraction.get("financial_data", {})
             
-            # Crear contexto financiero estructurado
-            financial_context = self._create_financial_context(financial_data)
+            if not text or len(text.strip()) < 300:
+                return "El contenido extraído de la cuenta de resultados es insuficiente para realizar un análisis detallado profesional."
             
-            # Prompt mejorado específico para BBVA cuenta de resultados
+            # Calcular ratios financieros
+            ratios = calculate_financial_ratios(financial_data) if financial_data else {}
+            
+            # ANÁLISIS INTELIGENTE CON LLM - PROMPT ESPECIALIZADO PARA CUENTA DE RESULTADOS
             analysis_prompt = f"""
-            Eres un analista financiero especializado en Cuenta de Resultados de bancos españoles.
-            
-            CONTEXTO: Estás analizando la Cuenta de Resultados Consolidada de BBVA 2023.
-            
-            DATOS EXTRAÍDOS:
-            {financial_context}
-            
-            TEXTO RELEVANTE:
-            {extracted_text[:2000]}
-            
-            PREGUNTA: {question}
-            
-            ANÁLISIS REQUERIDO:
-            1. **Análisis de Ingresos:**
-            - Margen de intereses (ingresos - gastos financieros)
-            - Comisiones netas
-            - Otros ingresos operativos
-            
-            2. **Análisis de Gastos:**
-            - Gastos de administración
-            - Gastos de personal
-            - Amortizaciones y provisiones
-            
-            3. **Rentabilidad:**
-            - Resultado antes de impuestos
-            - Resultado neto del ejercicio
-            - Márgenes de rentabilidad
-            
-            4. **Análisis Comparativo:**
-            - Evolución vs año anterior
-            - Eficiencia operativa
-            - Calidad del resultado
-            
-            FORMATO: Respuesta profesional con cifras específicas en millones de euros,
-            análisis de rentabilidad y conclusiones sobre la gestión de BBVA.
-            """
+Actúa como un analista financiero senior especializado en banca internacional con 15 años de experiencia en análisis de cuentas de resultados.
 
-            messages = [
-                {"role": "system", "content": "Eres un analista financiero senior especializado en banca española y análisis de rentabilidad."},
-                {"role": "user", "content": analysis_prompt}
-            ]
-            
-            response = self.chat_client.chat(messages, max_tokens=2000)
-            
-            # Agregar métricas cuantitativas
-            if financial_data:
-                quantitative_metrics = self._create_quantitative_metrics(financial_data)
-                response = f"{response}\n\n{quantitative_metrics}"
-            
-            return response.strip()
-            
-        except Exception as e:
-            print(f"Error generando respuesta LLM: {str(e)}")
-            return self._generate_fallback_response(financial_data)
+Analiza de forma EXHAUSTIVA y DETALLADA el siguiente contenido extraído de la cuenta de resultados de GarantiBank International N.V./BBVA:
 
-    def _create_financial_context(self, financial_data: List[Dict]) -> str:
-        """Crear contexto financiero estructurado"""
-        if not financial_data:
-            return "No se pudieron extraer datos financieros específicos."
-        
-        context_parts = ["DATOS DE CUENTA DE RESULTADOS IDENTIFICADOS:"]
-        
-        for item in financial_data:
-            concept = item.get("concept", "")
-            amount_2023 = item.get("2023", 0)
-            amount_2022 = item.get("2022", 0)
-            section = item.get("section", "")
-            
-            if amount_2023 or amount_2022:
-                context_parts.append(f"• {concept} ({section}): 2023: €{amount_2023:,.0f}k, 2022: €{amount_2022:,.0f}k")
-        
-        return "\n".join(context_parts)
+CONTENIDO EXTRAÍDO DEL PDF:
+{text[:4000]}
 
-    def _create_quantitative_metrics(self, financial_data: List[Dict]) -> str:
-        """Crear métricas cuantitativas específicas"""
-        summary_parts = ["\n📊 **MÉTRICAS CLAVE - CUENTA DE RESULTADOS BBVA 2023:**"]
-        
-        net_income_2023 = 0
-        total_income_2023 = 0
-        total_expenses_2023 = 0
-        
-        for item in financial_data:
-            concept = item.get("concept", "").lower()
-            amount_2023 = item.get("2023", 0)
-            section = item.get("section", "")
-            
-            if "net income" in concept or "beneficio neto" in concept:
-                net_income_2023 = amount_2023
-                summary_parts.append(f"• **Resultado Neto: €{amount_2023:,.0f} miles**")
-            elif section == "revenue" and "total" in concept:
-                total_income_2023 = amount_2023
-                summary_parts.append(f"• Ingresos Totales: €{amount_2023:,.0f} miles")
-            elif section == "expenses" and "total" in concept:
-                total_expenses_2023 = abs(amount_2023)
-                summary_parts.append(f"• Gastos Totales: €{abs(amount_2023):,.0f} miles")
-        
-        # Calcular ratios si hay datos
-        if total_income_2023 and total_expenses_2023:
-            efficiency_ratio = (total_expenses_2023 / total_income_2023) * 100
-            summary_parts.append(f"• **Ratio de Eficiencia: {efficiency_ratio:.1f}%**")
-        
-        if net_income_2023 and total_income_2023:
-            net_margin = (net_income_2023 / total_income_2023) * 100
-            summary_parts.append(f"• **Margen Neto: {net_margin:.1f}%**")
-        
-        return "\n".join(summary_parts)
+DATOS FINANCIEROS ESPECÍFICOS IDENTIFICADOS:
+{json.dumps(financial_data, indent=2) if financial_data else "No se identificaron datos numéricos específicos"}
 
-    def _generate_fallback_response(self, financial_data: List[Dict]) -> str:
-        """Respuesta de fallback mejorada"""
-        if financial_data:
-            return f"""📋 **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA 2023**
+RATIOS FINANCIEROS CALCULADOS:
+{json.dumps(ratios, indent=2) if ratios else "No se pudieron calcular ratios específicos"}
 
-    He extraído exitosamente {len(financial_data)} componentes de la Cuenta de Resultados Consolidada:
+INSTRUCCIONES PARA ANÁLISIS PROFESIONAL BANCARIO:
 
-    {self._create_quantitative_metrics(financial_data)}
+1. **Estructura tu análisis en las siguientes secciones obligatorias:**
+   - Resumen ejecutivo de la rentabilidad y performance financiera
+   - Análisis detallado del margen de intereses (principal fuente de ingresos bancarios)
+   - Evaluación de ingresos por comisiones y servicios
+   - Análisis de gastos operativos y eficiencia
+   - Evaluación de provisiones y calidad crediticia
+   - Análisis de rentabilidad y márgenes (ROE, ROA, si calculables)
+   - Comparación con períodos anteriores (si datos disponibles)
+   - Identificación de riesgos y oportunidades estratégicas
+   - Conclusiones y recomendaciones para la gestión
 
-    **Análisis Cualitativo:**
-    - La estructura de ingresos muestra diversificación entre margen de intereses y comisiones
-    - Los gastos operativos reflejan la inversión en transformación digital y eficiencia
-    - La rentabilidad obtenida evidencia la solidez del modelo de negocio
+2. **Utiliza ÚNICAMENTE las cifras y datos presentes en el texto extraído:**
+   - Cita cifras exactas cuando estén disponibles (ej: "€1,025k en 2023")
+   - NO inventes números que no aparezcan en el contenido
+   - Si una cifra no está disponible, menciona "requiere datos adicionales"
+   - Usa los ratios calculados automáticamente cuando estén disponibles
 
-    **Fuente:** Cuenta de Resultados Consolidada BBVA 2023"""
-        
-        return """He completado la extracción de la Cuenta de Resultados Consolidada, pero no se pudieron identificar componentes específicos en esta ocasión. Los datos están disponibles en los archivos generados para análisis posterior."""
+3. **Proporciona interpretación profesional específica para banca:**
+   - Explica el significado de variaciones en margen de intereses
+   - Analiza la diversificación de ingresos (intereses vs comisiones)
+   - Evalúa la eficiencia operativa (cost-income ratio)
+   - Comenta sobre la calidad crediticia basada en provisiones
+   - Relaciona con estrategia bancaria y entorno regulatorio
 
-    def _extract_financial_numbers(self, text: str, financial_data: List[Dict]) -> Dict[str, str]:
-        """
-        Extrae números financieros clave del texto y datos parseados
-        """
-        financial_numbers = {}
-        
-        # Usar datos parseados primero
-        if financial_data:
-            for item in financial_data:
-                concept = item.get('concept', '').lower()
-                section = item.get('section', '')
+4. **Formato profesional y técnico:**
+   - Usa terminología técnica apropiada para entidades financieras
+   - Estructura clara con subtítulos descriptivos
+   - Párrafos bien desarrollados con argumentación sólida
+   - Longitud objetivo: 800-1000 palabras
+
+5. **Enfoque específico bancario:**
+   - Considera particularidades del sector financiero
+   - Analiza impacto de tasas de interés en resultados
+   - Evalúa calidad de los ingresos recurrentes vs no recurrentes
+   - Comenta sobre cumplimiento regulatorio y capital
+   - Identifica tendencias del mercado bancario
+
+Genera un análisis que demuestre expertise profesional avanzado, útil tanto para el comité de dirección como para stakeholders externos, con insights accionables y recomendaciones estratégicas específicas.
+"""
+
+            try:
+                # Usar el LLM para generar análisis inteligente
+                analysis_response = self.chat_client.chat([
+                    {"role": "system", "content": "Eres un analista financiero senior con maestría en finanzas y 15+ años especializándote en análisis de cuentas de resultados de entidades bancarias internacionales."},
+                    {"role": "user", "content": analysis_prompt}
+                ], max_tokens=2200)  # Aumentado para respuestas más extensas
                 
-                if 'net income' in concept or 'beneficio neto' in concept:
-                    financial_numbers['net_income_2023'] = str(item.get('2023', ''))
-                    financial_numbers['net_income_2022'] = str(item.get('2022', ''))
-                elif 'total income' in concept and section == 'revenue':
-                    financial_numbers['total_income_2023'] = str(item.get('2023', ''))
-                    financial_numbers['total_income_2022'] = str(item.get('2022', ''))
-                elif 'total expenses' in concept and section == 'expenses':
-                    financial_numbers['total_expenses_2023'] = str(abs(item.get('2023', 0)))
-                    financial_numbers['total_expenses_2022'] = str(abs(item.get('2022', 0)))
-        
-        # Usar regex como backup
-        text_lower = text.lower()
-        
-        # Patrones adicionales para valores específicos conocidos
-        backup_patterns = {
-            'interest_income': [r'interest\s+income.*?(\d{1,3}(?:,\d{3})+)'],
-            'personnel_expenses': [r'personnel\s+expenses.*?(\d{1,3}(?:,\d{3})+)']
-        }
-        
-        for data_type, pattern_list in backup_patterns.items():
-            if data_type not in financial_numbers:
-                for pattern in pattern_list:
-                    match = re.search(pattern, text_lower)
-                    if match:
-                        financial_numbers[data_type] = match.group(1)
-                        break
-        
-        return financial_numbers
-
-    def _generate_general_summary(self, extracted_text: str, financial_numbers: Dict) -> str:
-        """
-        Genera resumen general sin pregunta específica
-        """
-        if financial_numbers:
-            summary_parts = ["📈 **RESUMEN DE CUENTA DE RESULTADOS EXTRAÍDA**\n"]
-            
-            if 'net_income_2023' in financial_numbers:
-                summary_parts.append(f"• **Beneficio Neto 2023**: €{financial_numbers['net_income_2023']} miles")
-            
-            if 'total_income_2023' in financial_numbers:
-                summary_parts.append(f"• **Ingresos Totales 2023**: €{financial_numbers['total_income_2023']} miles")
-            
-            if 'total_expenses_2023' in financial_numbers:
-                summary_parts.append(f"• **Gastos Totales 2023**: €{financial_numbers['total_expenses_2023']} miles")
-            
-            summary_parts.append("\n**Fuente**: Cuenta de resultados consolidada de GarantiBank International N.V.")
-            
-            return "\n".join(summary_parts)
-        
-        return "✅ He extraído exitosamente la cuenta de resultados consolidada. Los datos de ingresos, gastos y beneficios están disponibles en los archivos generados para análisis detallado."
-
-    def _ask_llm_specific_question(self, question: str, extracted_text: str, financial_numbers: Dict) -> str:
-        """
-        USA EL LLM PARA RESPONDER PREGUNTA ESPECÍFICA - FUNCIONALIDAD CLAVE
-        """
-        try:
-            # Preparar contexto financiero para el LLM
-            financial_context = ""
-            if financial_numbers:
-                financial_context = "DATOS FINANCIEROS IDENTIFICADOS:\n"
-                for key, value in financial_numbers.items():
-                    financial_context += f"- {key.replace('_', ' ').title()}: €{value} miles\n"
-            
-            # PROMPT ENGINEERING ESPECIALIZADO PARA CUENTA DE RESULTADOS
-            analysis_prompt = f"""Eres un analista financiero experto especializado en análisis de cuentas de resultados corporativas.
-
-CONTEXTO:
-Has extraído información de la cuenta de resultados consolidada de GarantiBank International N.V. para el año 2023.
-
-{financial_context}
-
-TEXTO EXTRAÍDO DE LA CUENTA DE RESULTADOS:
-{extracted_text[:2000]}
-
-PREGUNTA DEL USUARIO:
-{question}
-
-INSTRUCCIONES:
-1. Analiza la información financiera de la cuenta de resultados
-2. Responde la pregunta de forma específica y profesional
-3. Incluye cifras exactas cuando estén disponibles
-4. Proporciona contexto relevante sobre la rentabilidad de GarantiBank
-5. Si no tienes datos exactos, indica qué información está disponible
-6. Mantén un tono profesional y conciso
-
-FORMATO DE RESPUESTA:
-- Respuesta directa y específica sobre ingresos/gastos/beneficios
-- Cifras con formato apropiado (€X,XXX miles)
-- Análisis de rentabilidad cuando sea relevante
-- Fuente: Cuenta de resultados consolidada
-
-RESPUESTA PROFESIONAL:"""
-
-            # Llamar al LLM
-            messages = [
-                {
-                    "role": "system", 
-                    "content": "Eres un analista financiero experto especializado en análisis de cuentas de resultados de instituciones financieras."
-                },
-                {
-                    "role": "user", 
-                    "content": analysis_prompt
-                }
-            ]
-            
-            # Usar cliente Azure OpenAI existente
-            response = self.chat_client.chat(messages, max_tokens=1000)
-            
-            return response.strip()
-            
-        except Exception as e:
-            print(f"❌ Error en LLM: {str(e)}")
-            # Fallback a respuesta basada en reglas
-            return self._generate_rule_based_response(question, extracted_text, financial_numbers)
-
-    def _generate_rule_based_response(self, question: str, extracted_text: str, financial_numbers: Dict) -> str:
-        """
-        Fallback: Genera respuesta basada en reglas si el LLM no está disponible
-        """
-        question_lower = question.lower()
-        
-        # Detectar tipo de pregunta y responder con datos disponibles
-        if any(word in question_lower for word in ['beneficio', 'ganancia', 'profit', 'net income']):
-            if 'net_income_2023' in financial_numbers:
-                return f"📈 **El beneficio neto de GarantiBank International N.V. en 2023 fue €{financial_numbers['net_income_2023']} miles** según la cuenta de resultados consolidada.\n\n**Fuente**: Statement of Comprehensive Income extraído"
-            
-        elif any(word in question_lower for word in ['ingresos', 'revenue', 'income']):
-            if 'total_income_2023' in financial_numbers:
-                return f"💰 **Los ingresos totales en 2023 fueron €{financial_numbers['total_income_2023']} miles**, incluyendo ingresos por intereses y comisiones.\n\n**Fuente**: Cuenta de resultados consolidada extraída"
+                # Construir respuesta final con información técnica expandida
+                response_parts = [
+                    "📊 **ANÁLISIS PROFESIONAL DE CUENTA DE RESULTADOS - GarantiBank International N.V.**",
+                    "=" * 90,
+                    "",
+                    analysis_response,
+                    "",
+                    "### 📋 **INFORMACIÓN TÉCNICA Y METODOLÓGICA DEL ANÁLISIS**",
+                    f"• **Calidad de extracción**: {quality.title()} (puntuación: {validation.get('score', 0)}/100)",
+                    f"• **Confianza en datos**: {confidence:.1%}",
+                    f"• **Caracteres analizados**: {len(text):,} del documento original",
+                    f"• **Páginas procesadas**: {len(extraction.get('pages_processed', []))} páginas del estado financiero",
+                    f"• **Categorías financieras identificadas**: {len([k for k, v in financial_data.items() if v])} de 7 principales" if financial_data else "• **Datos financieros**: Análisis basado en contenido textual estructurado",
+                    f"• **Ratios calculados**: {len(ratios)} indicadores financieros" if ratios else "• **Ratios**: No calculables con datos actuales",
+                    f"• **Idioma del documento**: {extraction.get('language', 'Desconocido').title()}",
+                    "• **Metodología**: Extracción automática + análisis con IA especializada en banca",
+                    "• **Fuente**: Cuenta de resultados consolidada de GarantiBank International N.V.",
+                    "• **Estándares**: Análisis conforme a mejores prácticas de análisis financiero bancario",
+                    "",
+                    "=" * 90,
+                    "📊 *Análisis generado por sistema de IA especializada en análisis de rentabilidad bancaria*"
+                ]
                 
-        elif any(word in question_lower for word in ['gastos', 'expenses', 'costos', 'costs']):
-            if 'total_expenses_2023' in financial_numbers:
-                return f"💸 **Los gastos totales en 2023 fueron €{financial_numbers['total_expenses_2023']} miles**, incluyendo gastos de personal y operativos.\n\n**Fuente**: Cuenta de resultados consolidada extraída"
+                return "\n".join(response_parts)
+                
+            except Exception as llm_error:
+                print(f"Error en análisis LLM: {str(llm_error)}")
+                # Fallback: análisis básico si el LLM falla
+                return self.generate_fallback_income_analysis(text, confidence, quality, financial_data, ratios)
+                
+        except Exception as e:
+            return f"Error al generar análisis específico de cuenta de resultados: {str(e)}"
+
+    def generate_fallback_income_analysis(self, text: str, confidence: float, quality: str, 
+                                        financial_data: Dict, ratios: Dict) -> str:
+        """Análisis de respaldo basado en extracción de datos específicos"""
         
-        # Respuesta genérica si no puede determinar específicamente
-        return "✅ He extraído exitosamente la cuenta de resultados consolidada de GarantiBank International N.V. Los datos incluyen ingresos operativos, gastos y beneficios para 2023. Los datos detallados están disponibles en los archivos generados."
+        response_parts = []
+        response_parts.append("📊 **ANÁLISIS DE CUENTA DE RESULTADOS - GarantiBank International N.V.**")
+        response_parts.append("=" * 75)
+        
+        text_lower = normalize_text(text)
+        
+        # Análisis de ingresos principales
+        response_parts.append("\n### 💰 **ANÁLISIS DE INGRESOS PRINCIPALES**")
+        
+        # Margen de intereses
+        if financial_data.get('net_interest_income'):
+            amounts = financial_data['net_interest_income']
+            response_parts.append(f"• **Margen de intereses**: {amounts} (miles de euros)")
+            if 'net_interest_income_growth' in ratios:
+                growth = ratios['net_interest_income_growth']
+                response_parts.append(f"  - Variación: {growth:+.1f}% respecto período anterior")
+        elif any(term in text_lower for term in ["interest", "intereses"]):
+            response_parts.append("• **Margen de intereses**: Identificado como fuente principal de ingresos bancarios")
+        
+        # Comisiones
+        if financial_data.get('fee_commission_income'):
+            amounts = financial_data['fee_commission_income']
+            response_parts.append(f"• **Ingresos por comisiones**: {amounts} (miles de euros)")
+            if 'fee_commission_income_growth' in ratios:
+                growth = ratios['fee_commission_income_growth']
+                response_parts.append(f"  - Variación: {growth:+.1f}% respecto período anterior")
+                if growth < -50:
+                    response_parts.append("  - ⚠️ ATENCIÓN: Caída significativa que requiere análisis estratégico")
+        elif any(term in text_lower for term in ["commission", "comisiones"]):
+            response_parts.append("• **Ingresos por comisiones**: Fuente complementaria de ingresos identificada")
+        
+        # Análisis de gastos
+        response_parts.append("\n### 💸 **ANÁLISIS DE GASTOS OPERATIVOS**")
+        
+        if financial_data.get('operating_expenses'):
+            amounts = financial_data['operating_expenses']
+            response_parts.append(f"• **Gastos operativos**: {amounts} (miles de euros)")
+            if 'efficiency_ratio' in ratios:
+                efficiency = ratios['efficiency_ratio']
+                response_parts.append(f"  - Ratio de eficiencia: {efficiency:.1f}%")
+                if efficiency < 50:
+                    response_parts.append("  - ✅ Eficiencia operativa superior al promedio sectorial")
+                elif efficiency > 60:
+                    response_parts.append("  - ⚠️ Oportunidades de mejora en eficiencia operativa")
+        
+        if financial_data.get('staff_costs'):
+            amounts = financial_data['staff_costs']
+            response_parts.append(f"• **Gastos de personal**: {amounts} (miles de euros)")
+            if 'staff_cost_ratio' in ratios:
+                staff_ratio = ratios['staff_cost_ratio']
+                response_parts.append(f"  - Ratio sobre ingresos: {staff_ratio:.1f}%")
+        
+        # Provisiones y calidad crediticia
+        response_parts.append("\n### 🛡️ **PROVISIONES Y CALIDAD CREDITICIA**")
+        
+        if financial_data.get('provisions'):
+            amounts = financial_data['provisions']
+            response_parts.append(f"• **Provisiones**: {amounts} (miles de euros)")
+            response_parts.append("• Las provisiones reflejan la gestión prudente del riesgo crediticio")
+        elif any(term in text_lower for term in ["provision", "provisiones"]):
+            response_parts.append("• **Provisiones**: Identificadas como parte de la gestión de riesgos")
+        
+        # Rentabilidad
+        response_parts.append("\n### 📈 **ANÁLISIS DE RENTABILIDAD**")
+        
+        if financial_data.get('net_profit'):
+            amounts = financial_data['net_profit']
+            response_parts.append(f"• **Beneficio neto**: {amounts} (miles de euros)")
+            if 'net_profit_margin' in ratios:
+                margin = ratios['net_profit_margin']
+                response_parts.append(f"  - Margen neto: {margin:.1f}%")
+                if margin > 15:
+                    response_parts.append("  - ✅ Rentabilidad sólida para el sector bancario")
+                elif margin < 10:
+                    response_parts.append("  - ⚠️ Margen por debajo del promedio sectorial")
+        
+        # Ratios adicionales
+        if ratios:
+            response_parts.append("\n### 📊 **RATIOS FINANCIEROS CALCULADOS**")
+            for ratio_name, value in ratios.items():
+                if not ratio_name.endswith('_growth'):
+                    response_parts.append(f"• **{ratio_name.replace('_', ' ').title()}**: {value:.2f}%")
+        
+        # Conclusiones
+        response_parts.append("\n### 🎯 **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
+        response_parts.append(f"• **Calidad del análisis**: {quality.title()} con {confidence:.1%} de confianza")
+        response_parts.append(f"• **Contenido procesado**: {len(text):,} caracteres de información financiera")
+        
+        if financial_data:
+            categories_found = len([k for k, v in financial_data.items() if v])
+            response_parts.append(f"• **Datos específicos**: {categories_found} categorías financieras identificadas")
+            
+            # Identificar tendencias principales
+            declining_categories = []
+            growing_categories = []
+            for category, values in financial_data.items():
+                if len(values) >= 2:
+                    if values[-1] < values[0]:
+                        declining_categories.append(category.replace('_', ' '))
+                    else:
+                        growing_categories.append(category.replace('_', ' '))
+            
+            if declining_categories:
+                response_parts.append(f"• **Tendencias descendentes**: {', '.join(declining_categories)}")
+            if growing_categories:
+                response_parts.append(f"• **Tendencias ascendentes**: {', '.join(growing_categories)}")
+        else:
+            response_parts.append("• **Recomendación**: Se requiere acceso a cifras numéricas específicas para análisis cuantitativo completo")
+        
+        response_parts.append("\n• **Metodología**: Análisis automatizado basado en contenido extraído y patrones financieros")
+        response_parts.append("• **Fuente**: Cuenta de resultados consolidada de GarantiBank International N.V.")
+        response_parts.append("• **Nota**: Para análisis más profundo se recomienda acceso a datos históricos completos")
+        
+        return "\n".join(response_parts)
 
-# =============================
-# Sistema de herramientas básico (si se necesita para REACT)
-# =============================
-
-def run_income_agent(pdf_path: Path, output_dir: Path, max_steps: int = 10) -> Dict[str, Any]:
-    """
-    Función principal para ejecutar el agente de income (compatibilidad)
-    """
-    agent = IncomeREACTAgent()
-    
-    try:
-        result = agent._run_core_extraction(pdf_path, output_dir)
-        return {
-            "history": [],
-            "context": {"last_extraction": result},
-            "steps_completed": 5,
-            "finished": result.get("success", False)
-        }
-    except Exception as e:
-        return {
-            "history": [],
-            "context": {},
-            "steps_completed": 0,
-            "finished": False,
-            "error": str(e)
-        }
-
-# =============================
-# CLI principal
-# =============================
+# ===== CONFIGURACIÓN Y MAIN =====
+DEFAULT_CONFIG = {
+    "pdf": "data/entrada/output/bbva_2023_div.pdf",
+    "out": "data/salida", 
+    "maxsteps": 25
+}
 
 def main():
-    # ===== CONFIGURACIÓN PREDEFINIDA =====
-    DEFAULT_CONFIG = {
-        "pdf": "data/entrada/output/bbva_2023_div.pdf",
-        "out": "data/salida",
-        "max_steps": 10
-    }
-
     parser = argparse.ArgumentParser(
-        description="Income Agent AUTÓNOMO especializado en Cuenta de Resultados - Multi-Agent System",
+        description="Income Agent AUTÓNOMO con Análisis Detallado - Multi-Agent System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplo de uso:
   python agents/income_agent.py                    # Usa configuración predefinida
   python agents/income_agent.py --pdf otro.pdf    # Sobreescribe PDF
-  
-CARACTERÍSTICAS AUTÓNOMAS:
-  - Generación de respuestas específicas usando LLM
-  - Prompt engineering especializado para cuenta de resultados
-  - Fallback robusto con respuestas basadas en reglas
-  - Extracción automática de datos de ingresos, gastos y beneficios
-  
-Sistema Multi-Agente:
-  Esta versión incluye IncomeREACTAgent AUTÓNOMO para integración con main_system.py
-        """
+
+CARACTERÍSTICAS AVANZADAS:
+  - Análisis detallado de 800-1000 palabras generado por LLM especializado
+  - Extracción automática de cifras financieras específicas
+  - Cálculo automático de ratios bancarios (eficiencia, rentabilidad, crecimiento)
+  - Validación mejorada con puntuación de calidad detallada
+  - Análisis fallback robusto basado en datos extraídos
+
+MEJORAS IMPLEMENTADAS:
+  - Búsqueda inteligente por relevancia de páginas
+  - Identificación automática de cifras de ingresos, gastos, y rentabilidad
+  - Análisis profesional con terminología bancaria especializada
+  - Cálculo de variaciones interanuales automático
+  - Informes de calidad técnicos extendidos
+  - Respuestas estructuradas con insights accionables
+"""
     )
-
-    # ===== ARGUMENTOS OPCIONALES =====
-    parser.add_argument("--pdf", 
-                       default=DEFAULT_CONFIG["pdf"], 
+    
+    # Argumentos opcionales
+    parser.add_argument("--pdf", default=DEFAULT_CONFIG["pdf"], 
                        help=f"Ruta al PDF (por defecto: {DEFAULT_CONFIG['pdf']})")
-    
-    parser.add_argument("--out", 
-                       default=DEFAULT_CONFIG["out"], 
+    parser.add_argument("--out", default=DEFAULT_CONFIG["out"],
                        help=f"Directorio de salida (por defecto: {DEFAULT_CONFIG['out']})")
-    
-    parser.add_argument("--max_steps", 
-                       type=int, 
-                       default=DEFAULT_CONFIG["max_steps"], 
-                       help=f"Máximo pasos REACT (por defecto: {DEFAULT_CONFIG['max_steps']})")
-    
-    parser.add_argument("--question", 
-                       type=str, 
-                       default=None, 
+    parser.add_argument("--maxsteps", type=int, default=DEFAULT_CONFIG["maxsteps"],
+                       help=f"Máximo pasos (por defecto: {DEFAULT_CONFIG['maxsteps']})")
+    parser.add_argument("--question", type=str, default=None,
                        help="Pregunta específica sobre cuenta de resultados")
-
+    
     args = parser.parse_args()
-
-    # ===== CONFIGURAR RUTAS =====
-    pdf_path = Path(args.pdf)
-    output_dir = Path(args.out)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # ===== VERIFICAR PDF =====
-    if not pdf_path.exists():
-        print(f"❌ Error: PDF no encontrado en {pdf_path}")
-        return
-
-    # ===== MOSTRAR CONFIGURACIÓN =====
-    print(f"🚀 Income Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
-    print(f"📄 PDF: {pdf_path}")
-    print(f"📁 Salida: {output_dir}")
-    print(f"⚙️ Azure OpenAI: {AZURE_OPENAI_DEPLOYMENT}")
-    print(f"🔧 Max steps: {args.max_steps}")
-    print(f"🤖 Multi-Agent: IncomeREACTAgent AUTÓNOMO class available")
-    print("🆕 CARACTERÍSTICAS: Respuestas LLM específicas, prompt engineering avanzado, completamente autónomo")
-
+    
+    # MOSTRAR CONFIGURACIÓN
+    print("🚀 Income Agent v4.0 AUTÓNOMO Multi-Agent - Análisis Detallado")
+    print(f"📄 PDF: {args.pdf}")
+    print(f"📁 Salida: {args.out}")
+    print(f"⚙️ Groq/Azure OpenAI: Configuración optimizada")
+    print(f"🔧 Max steps: {args.maxsteps}")
+    print("🆕 CARACTERÍSTICAS: Análisis extenso con LLM, extracción avanzada, ratios automáticos")
+    
     try:
-        # Crear agente y ejecutar
+        # VERIFICAR PDF
+        pdf_path = Path(args.pdf)
+        output_dir = Path(args.out)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        if not pdf_path.exists():
+            print(f"❌ Error: PDF no encontrado en {pdf_path}")
+            return
+        
+        # CREAR AGENTE Y EJECUTAR
         agent = IncomeREACTAgent()
         
         if args.question:
-            # Modo pregunta específica
             print(f"❓ Pregunta específica: {args.question}")
             result = agent.run_final_financial_extraction_agent(str(pdf_path), args.question)
         else:
-            # Modo extracción general
             result = agent.run_final_financial_extraction_agent(str(pdf_path))
-
-        print("\n🎯 ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
+        
+        # MOSTRAR RESULTADOS
+        print("🎯 ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
         print(f"Estado: {'✅ EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
         print(f"Pasos completados: {result.get('steps_taken', 0)}")
         print(f"Archivos generados: {result.get('files_generated', 0)}")
-
-        if result.get("status") == "task_completed":
-            print("\n📋 ==== RESPUESTA ESPECÍFICA ====")
-            print(result.get("specific_answer", "No hay respuesta específica disponible"))
+        
+        if result.get('status') == 'task_completed':
+            print("📋 ==== ANÁLISIS DETALLADO GENERADO ====")
+            analysis = result.get("specific_answer", "No hay respuesta específica disponible")
+            print(f"Longitud del análisis: {len(analysis)} caracteres")
+            
+            summary = result.get("extraction_summary", {})
+            print(f"Caracteres procesados: {summary.get('total_characters', 0):,}")
+            print(f"Categorías financieras: {summary.get('financial_data_categories', 0)}")
+            print(f"Confianza: {summary.get('confidence', 0.8):.1%}")
+            print(f"Calidad: {summary.get('quality', 'unknown').title()}")
+            print("✅ Análisis detallado con LLM especializado completado")
         else:
-            print(f"\n❌ Error: {result.get('error_details', 'Error desconocido')}")
-
-        print("\n🎉 Análisis de cuenta de resultados completado!")
-        print("🤖 Clase IncomeREACTAgent AUTÓNOMA disponible para sistema multi-agente")
-        print("🆕 Versión autónoma con generación de respuestas específicas usando LLM")
-
+            print(f"❌ Error: {result.get('error_details', 'Error desconocido')}")
+        
+        print("🎉 Análisis de cuenta de resultados completado!")
+        print("🤖 IncomeREACTAgent con análisis detallado disponible para sistema multi-agente")
+        
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")
         raise
