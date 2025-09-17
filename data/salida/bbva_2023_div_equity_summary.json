@@ -1,209 +1,35 @@
 {
-  "pdf": "data\\entrada\\bbva_2023_div.pdf",
-  "type": "equity_statement",
-  "version": "3.1_balanced_extraction",
-  "extraction": {
-    "success": true,
-    "pages_processed": [
-      4
-    ],
-    "text": "=== PÁGINA 4 ===\n58 \nStatement of Changes in Equity \nNotes \nShare \nCapital \nand Share \nPremium \nFair value \nreserve \nHedging \nReserve \nOther legal \nreserves \nRetained \nEarnings \nTotal \nEquity \nBalance as at 1 January 2023 \n136,836 \n(6,685) \n879 \n11,082 \n511,210 \n653,322 \nProfit for the year \n100,692 \n100,692 \nOther comprehensive income \nNet unrealised gains/(losses) on fair \nvalue assets portfolio \n3,548 \n3,548 \nNet gains/(losses) on fair value assets and \ncash flow hedges transferred to profit or loss \nForeign currency translation differences \non fair value portfolio \nNet fair value gains/(losses) from cash flow hedges \n(218) \n(218) \nNet change in expected credit losses on \nFVOCI instruments \n10 \n10 \nRevaluation surplus on building \n(2,175) \n(2,175) \nTotal comprehensive income \n3,558 \n(218)\n(2,175)\n100,692 \n101,857 \nTranslation differences \nOther movements \n345 \n(345) \nBalances as at 31 December 2023 \n14 \n136,836 \n(3,127) \n661 \n9,252 \n611,557 \n755,179 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n",
-    "entries_found": 9,
-    "data": [
-      {
-        "concept": "Share capital and share premium",
-        "section": "capital",
-        "2023": 136836.0,
-        "2022": 6685.0
-      },
-      {
-        "concept": "Fair value reserve",
-        "section": "reserves",
-        "2023": -6685.0,
-        "2022": -2175.0
-      },
-      {
-        "concept": "Hedging reserve",
-        "section": "reserves",
-        "2023": 136836.0,
-        "2022": 6685.0
-      },
-      {
-        "concept": "Other legal reserves (variant)",
-        "section": "reserves",
-        "2023": 136836.0,
-        "2022": 6685.0
-      },
-      {
-        "concept": "Legal reserves (variant)",
-        "section": "reserves",
-        "2023": 136836.0,
-        "2022": 6685.0
-      },
-      {
-        "concept": "Retained earnings",
-        "section": "retained_earnings",
-        "2023": 136836.0,
-        "2022": 6685.0
-      },
-      {
-        "concept": "Profit for the year",
-        "section": "profit",
-        "2023": 100692.0,
-        "2022": 100692.0
-      },
-      {
-        "concept": "Total comprehensive income",
-        "section": "comprehensive_income",
-        "2023": 3558.0,
-        "2022": 2175.0
-      },
-      {
-        "concept": "Total equity",
-        "section": "total_equity",
-        "2023": 136836.0,
-        "2022": 6685.0
-      }
-    ],
-    "quality_score": 47.272727272727266,
-    "data_quality": "low",
-    "coverage_info": {
-      "coverage_score": 45.45454545454545,
-      "concepts_found": [
-        "reserves",
-        "share capital",
-        "retained earnings",
-        "profit",
-        "equity"
-      ],
-      "missing_concepts": [
-        "capital social",
-        "resultados acumulados",
-        "reservas",
-        "beneficio",
-        "resultado",
-        "patrimonio"
-      ],
-      "warnings": [
-        "Cobertura baja: 45.5% - Faltan conceptos clave"
-      ],
-      "total_entries": 9
-    },
-    "suspicious_warnings": [
-      "Valores frecuentes detectados: [136836.0] - Revisar duplicados",
-      "Cambio extremo en Share capital and share premium: 1946.9%",
-      "Cambio extremo en Hedging reserve: 1946.9%",
-      "Cambio extremo en Other legal reserves (variant): 1946.9%",
-      "Cambio extremo en Legal reserves (variant): 1946.9%",
-      "Cambio extremo en Retained earnings: 1946.9%",
-      "Cambio extremo en Total equity: 1946.9%"
-    ],
-    "extraction_method": "balanced_v3.1"
-  },
   "analysis": {
     "success": true,
-    "analysis": {
-      "total_entries": 9,
-      "sections": {
-        "reserves": 4,
-        "capital": 1,
-        "retained_earnings": 1,
-        "profit": 1,
-        "comprehensive_income": 1,
-        "total_equity": 1
-      },
-      "years_available": [
-        "2023",
-        "2022"
-      ],
-      "quality_score": 47.272727272727266,
-      "data_quality": "low",
-      "coverage_info": {
-        "coverage_score": 45.45454545454545,
-        "concepts_found": [
-          "reserves",
-          "share capital",
-          "retained earnings",
-          "profit",
-          "equity"
-        ],
-        "missing_concepts": [
-          "capital social",
-          "resultados acumulados",
-          "reservas",
-          "beneficio",
-          "resultado",
-          "patrimonio"
-        ],
-        "warnings": [
-          "Cobertura baja: 45.5% - Faltan conceptos clave"
-        ],
-        "total_entries": 9
-      },
-      "extraction_method": "balanced_v3.1",
-      "capital_items": 1,
-      "reserves_items": 4,
-      "retained_earnings_items": 1,
-      "profit_items": 1,
-      "comprehensive_income_items": 1,
-      "total_equity_items": 1,
-      "dividends_items": 0,
-      "other_items": 0,
-      "structure_quality": "acceptable",
-      "strengths": [
-        "Buena cobertura de componentes",
-        "Diversidad de secciones"
-      ],
-      "improvements": [
-        "Mejorar calidad de datos"
-      ]
-    },
-    "structure_quality": "acceptable"
+    "pages_selected": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "equity_found": true,
+    "anchor_page_used": 8
   },
-  "ratios": {
+  "extraction": {
+    "total_characters": 1274,
+    "confidence": 1.0,
+    "pages_processed": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "validation": {
     "success": true,
-    "ratios": {
-      "2023": {
-        "profit_value": 100692.0,
-        "total_equity_value": 136836.0,
-        "capital_value": 136836.0,
-        "retained_earnings_value": 136836.0,
-        "roe": 73.5858984477769,
-        "roe_performance": "Excelente",
-        "capital_ratio": 100.0,
-        "retained_earnings_ratio": 100.0,
-        "reserves_ratio": 295.1145897278494,
-        "ratios_calculated": 5,
-        "data_completeness": "complete",
-        "warnings": [
-          "ROE muy alto (73.6%) - Revisar datos"
-        ]
-      },
-      "2022": {
-        "profit_value": 100692.0,
-        "total_equity_value": 6685.0,
-        "capital_value": 6685.0,
-        "retained_earnings_value": 6685.0,
-        "roe": 1506.23784592371,
-        "roe_performance": "Excelente",
-        "capital_ratio": 100.0,
-        "retained_earnings_ratio": 100.0,
-        "reserves_ratio": 267.4644727000748,
-        "ratios_calculated": 5,
-        "data_completeness": "complete",
-        "warnings": [
-          "ROE muy alto (1506.2%) - Revisar datos"
-        ]
-      }
-    },
-    "trend_analysis": {
-      "roe_trend": "declining",
-      "roe_change_points": -1432.6519474759332,
-      "equity_growth": 1946.9109947643979,
-      "equity_trend": "growing"
-    },
-    "years_analyzed": 2,
-    "data_limitations": []
+    "quality": "fair",
+    "confidence": 1.0,
+    "score": 25,
+    "details": [
+      "✅ Reservas encontradas"
+    ]
   },
-  "generated_at": "2025-09-05 15:46:07"
+  "timestamp": "2025-09-17 09:34:33"
 }

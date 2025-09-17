@@ -46,7 +46,7 @@ class FinancialQuestionRouter:
                     "gastos operativos", "gastos financieros", "amortizaciones",
                     "beneficio neto", "beneficio bruto", "ebitda", "ebit",
                     "rentabilidad", "roi", "roe", "roa", "margen operativo",
-                    "cuenta de resultados", "resultado integral",
+                    "cuenta de resultados", "estado de resultados","resultado integral",
                     
                     # English - Income Statement Concepts  
                     "revenue", "income", "profit", "loss", "earnings", "sales",

@@ -41,7 +41,7 @@ class PredictorAgent:
         self.agent_type = "predictor"
         self.agent_name = "Predictor_Agent"
         
-        # 🔥 CONFIGURACIÓN ACTUALIZADA
+        # CONFIGURACIÓN ACTUALIZADA
         self.config = config or PREDICTOR_AGENT_CONFIG
         self.prediction_horizon = self.config.get('prediction_horizon', 12)
         self.confidence_threshold = self.config.get('confidence_threshold', 0.75)
@@ -54,7 +54,7 @@ class PredictorAgent:
             'equity': ['retained_earnings', 'share_capital', 'dividends_paid']
         }
         
-        # 🔥 PATRONES DE MAPEO INTELIGENTE
+        # PATRONES DE MAPEO INTELIGENTE
         self.data_mapping_patterns = self._initialize_mapping_patterns()
         
         # Setup logging
@@ -78,13 +78,13 @@ class PredictorAgent:
                 api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
             )
             self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
-            self.logger.info("✅ Cliente Azure OpenAI configurado correctamente")
+            self.logger.info(" Cliente Azure OpenAI configurado correctamente")
         except Exception as e:
-            self.logger.error(f"❌ Error configurando Azure OpenAI: {e}")
+            self.logger.error(f" Error configurando Azure OpenAI: {e}")
             self.client = None
 
     def _initialize_mapping_patterns(self) -> Dict[str, Dict[str, List[str]]]:
-        """🔥 NUEVO: Inicializar patrones de mapeo inteligente"""
+        """ NUEVO: Inicializar patrones de mapeo inteligente"""
         return {
             'balance': {
                 'total_assets': [
@@ -192,10 +192,10 @@ class PredictorAgent:
             }
         }
 
-    # 🔥 MÉTODO PRINCIPAL PARA EL PIPELINE
+    #  MÉTODO PRINCIPAL PARA EL PIPELINE
     async def generate_predictions(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        🔥 MÉTODO PRINCIPAL - Compatible con el pipeline multi-agente
+         MÉTODO PRINCIPAL - Compatible con el pipeline multi-agente
         
         Args:
             input_data: Datos estructurados del financial_coordinator

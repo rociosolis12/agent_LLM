@@ -607,204 +607,103 @@ def execute_react_step(history: List[Dict[str, str]], tools_ctx: Dict[str, Any])
     try:
         assistant_text = chat_client.chat(history, max_tokens=1500)
         history.append({"role": "assistant", "content": assistant_text})
-        print(f"🤖 Asistente respondió: {len(assistant_text)} caracteres")
-        print(f"📝 RESPUESTA COMPLETA:\n{assistant_text}\n" + "="*50)
         
-        # ===== MEJORA: LOGGING DETALLADO =====
-        print(f"🔍 DEBUG: Buscando frases de finalización en: {assistant_text[:100]}...")
+        print(f"[DEBUG] Respuesta del asistente: {assistant_text[:200]}...")
+        
+        # SOLUCIÓN 1: DETECCIÓN MEJORADA DE FRASES DE FINALIZACIÓN
+        completion_phrases = [
+            "balanceextractioncompleted", "extraction completed successfully", 
+            "archivos guardados exitosamente", "task completed", "analysis completed"
+        ]
+        
+        for phrase in completion_phrases:
+            if phrase.lower() in assistant_text.lower():
+                print(f"[SUCCESS] Finalizacion detectada: {phrase}")
+                return history, True
+        
+        # SOLUCIÓN 2: DETECCIÓN ROBUSTA DE TOOL CALLS
+        toolname = None
+        params = {}
+        
+        # Método 1: Buscar herramientas por nombre directo
+        tool_names = ["analyzebalancestructure", "extractbalancestatement", "validatebalancequality", "savebalanceresults"]
+        
+        for tool in tool_names:
+            if tool in assistant_text.lower():
+                toolname = tool
+                print(f"[SUCCESS] Tool detectada: {toolname}")
+                
+                # Extraer parámetros básicos del contexto
+                if toolname == "analyzebalancestructure":
+                    params = {
+                        "pdfpath": tools_ctx["pdfpath"],
+                        "anchorpage": tools_ctx.get("anchorpage", 55),
+                        "maxpages": 60,
+                        "extend": 1
+                    }
+                elif toolname == "extractbalancestatement":
+                    params = {
+                        "pdfpath": tools_ctx["pdfpath"],
+                        "analysisjson": tools_ctx.get("lastanalysis", {}),
+                        "extractsemanticchunks": True
+                    }
+                elif toolname == "validatebalancequality":
+                    params = {
+                        "extraction": tools_ctx.get("lastextraction", {"text": assistant_text, "confidence": 0.8})
+                    }
+                elif toolname == "savebalanceresults":
+                    params = {
+                        "outputdir": tools_ctx["outputdir"],
+                        "pdfname": str(tools_ctx["pdfpath"]),
+                        "analysis": tools_ctx.get("lastanalysis", {}),
+                        "extraction": tools_ctx.get("lastextraction", {}),
+                        "validation": tools_ctx.get("lastvalidation", {})
+                    }
+                break
+        
+        # EJECUTAR HERRAMIENTA
+        if toolname:
+            tool_obj = TOOLS_REGISTRY.get(toolname)
+            if tool_obj:
+                try:
+                    print(f"[EXECUTING] {toolname} con parámetros: {list(params.keys())}")
+                    result = tool_obj.run(**params)
+                    
+                    if result.get("success", False):
+                        print(f"[SUCCESS] {toolname} ejecutado correctamente")
+                        
+                        # Actualizar contexto
+                        if toolname == "analyzebalancestructure":
+                            tools_ctx["lastanalysis"] = result
+                        elif toolname == "extractbalancestatement":
+                            tools_ctx["lastextraction"] = result  
+                        elif toolname == "validatebalancequality":
+                            tools_ctx["lastvalidation"] = result
+                        elif toolname == "savebalanceresults":
+                            tools_ctx["lastsaved"] = result
+                            print("[FORCING COMPLETION] Archivos guardados - finalizando")
+                            return history, True
+                        
+                        feedback = f"{toolname} ejecutado exitosamente."
+                    else:
+                        feedback = f"Error en {toolname}: {result.get('error', 'Error desconocido')}"
+                    
+                    history.append({"role": "user", "content": feedback})
+                    return history, False
+                    
+                except Exception as e:
+                    print(f"[ERROR] Ejecutando {toolname}: {str(e)}")
+                    error_feedback = f"Error ejecutando {toolname}: {str(e)}"
+                    history.append({"role": "user", "content": error_feedback})
+                    return history, False
+        
+        print("[WARNING] No se detectó ninguna tool call - continuando")
+        return history, False
         
     except Exception as e:
-        print(f"❌ Error en chat_client: {e}")
+        print(f"[ERROR] En execute_react_step: {str(e)}")
         return history, False
 
-    # ===== MEJORA: DETECCIÓN DE FINALIZACIÓN AMPLIADA =====
-    completion_phrases = [
-        "task_completed", "completado", "finished", "finalizado",
-        "guardados exitosamente", "análisis completado",
-        "archivos del balance guardados exitosamente",
-        "balance consolidado.*ha sido.*guardado",
-        "extracción.*completada.*exitosamente",
-        "balance_extraction_completed",  # ← NUEVA FRASE ESPECÍFICA
-        "extraction completed successfully",
-        "successfully completed",
-        "proceso finalizado",
-        "tarea terminada"
-    ]
-    
-    # Verificar frases de finalización ANTES de buscar tool calls
-    for phrase in completion_phrases:
-        if re.search(phrase, assistant_text.lower()):
-            print(f"🎉 FRASE DE FINALIZACIÓN DETECTADA: '{phrase}'")
-            print("🎉 TAREA COMPLETADA - Finalizando flujo ReAct")
-            return history, True
-
-    # ===== REGEX MEJORADO Y MÁS FLEXIBLE =====
-    tool_patterns = [
-        # Patrón principal más flexible
-        r'<tool_call[^>]*>\s*(\{[^{}]*\{[^}]*\}[^{}]*\}|\{[^}]*\}|\{\}|[^<]*)',
-        # Patrón alternativo
-        r'<tool_call[^>]*>(.*?)</tool_call>',
-        # Patrón simple
-        r'<tool_call>(.*?)</tool_call>'
-    ]
-
-    tool_name = None
-    params = {}
-
-    for i, pattern in enumerate(tool_patterns):
-        matches = re.search(pattern, assistant_text, re.DOTALL | re.IGNORECASE)
-        if matches:
-            raw_json = matches.group(1) if len(matches.groups()) > 1 else "{}"
-            print(f"🔧 Tool detectada con patrón {i+1}")
-            print(f"📝 JSON raw: {raw_json[:200]}...")
-
-            # Limpiar y parsear JSON
-            try:
-                # Limpiar el JSON
-                raw_json = raw_json.strip()
-                if not raw_json:
-                    raw_json = "{}"
-                elif not raw_json.startswith('{'):
-                    # Buscar JSON dentro del contenido
-                    json_match = re.search(r'\{[^{}]*(?:\{[^}]*\}[^{}]*)*\}', raw_json)
-                    if json_match:
-                        raw_json = json_match.group(0)
-                    else:
-                        raw_json = "{}"
-
-                params = json.loads(raw_json)
-                print(f"✅ JSON parseado exitosamente: {list(params.keys())}")
-                break
-            except json.JSONDecodeError as e:
-                print(f"⚠️ Error parseando JSON (patrón {i+1}): {e}")
-                continue
-
-        if tool_name:
-            break
-
-    # Si no se detectó con regex, buscar manualmente
-    if not tool_name:
-        print("🔍 Buscando tool calls manualmente...")
-        for tool_key in TOOLS_REGISTRY.keys():
-            if f'name="{tool_key}"' in assistant_text or tool_key in assistant_text:
-                tool_name = tool_key
-                params = {}
-                print(f"🔧 Tool detectada manualmente: {tool_name}")
-                break
-
-    if tool_name:
-        # Verificar herramienta existe
-        tool_obj = TOOLS_REGISTRY.get(tool_name)
-        if not tool_obj:
-            error_msg = f"Error: tool_not_found:{tool_name}"
-            history.append({"role": "user", "content": error_msg})
-            return history, False
-
-        print(f"🎯 Preparando ejecución de: {tool_name}")
-
-        # ===== CONFIGURAR PARÁMETROS POR HERRAMIENTA =====
-        if tool_name == "analyze_balance_structure":
-            params = {
-                "pdf_path": tools_ctx["pdf_path"],
-                "max_pages": params.get("max_pages", 60),
-                "extend": params.get("extend", 1),
-                "use_embeddings": params.get("use_embeddings", True)
-            }
-            if tools_ctx.get("anchor_page") is not None:
-                params["anchor_page"] = tools_ctx["anchor_page"]
-                print(f"🎯 APLICANDO anchor_page: {params['anchor_page']}")
-            if tools_ctx.get("anchor_titles"):
-                params["anchor_titles"] = tools_ctx["anchor_titles"]
-
-        elif tool_name == "extract_balance_statement":
-            params = {
-                "pdf_path": tools_ctx["pdf_path"],
-                "analysis_json": tools_ctx.get("last_analysis", {}),
-                "extract_semantic_chunks": True
-            }
-
-        elif tool_name == "validate_balance_quality":
-            extraction_data = tools_ctx.get("last_extraction", {})
-            if not extraction_data:
-                # Crear datos de extracción básicos
-                extraction_data = {
-                    "text": assistant_text,
-                    "language": "en",
-                    "confidence": 0.8,
-                    "pages_used": [tools_ctx.get("anchor_page", 55)]
-                }
-            params = {"extraction": extraction_data}
-
-        elif tool_name == "save_balance_results":
-            analysis_data = tools_ctx.get("last_analysis", {"selected_pages": [tools_ctx.get("anchor_page", 55)]})
-            extraction_data = tools_ctx.get("last_extraction", {"confidence": 0.8, "text": assistant_text})
-            validation_data = tools_ctx.get("last_validation", {"status": "good", "confidence": 0.8})
-            params = {
-                "output_dir": tools_ctx["output_dir"],
-                "pdf_name": str(tools_ctx["pdf_path"]),
-                "analysis": analysis_data,
-                "extraction": extraction_data,
-                "validation": validation_data
-            }
-
-        # ===== EJECUTAR HERRAMIENTA =====
-        try:
-            print(f"🚀 EJECUTANDO {tool_name} con parámetros: {list(params.keys())}")
-            result = tool_obj.run(**params)
-            if not isinstance(result, dict):
-                result = {"success": False, "error": "Invalid tool result"}
-            if result.get("success", False):
-                print(f"✅ {tool_name} ejecutado EXITOSAMENTE")
-            else:
-                print(f"⚠️ {tool_name} retornó success=False: {result.get('error', 'No error message')}")
-        except Exception as e:
-            result = {"success": False, "error": f"Tool execution error: {str(e)}"}
-            print(f"❌ Error ejecutando {tool_name}: {e}")
-
-        # ===== ACTUALIZAR CONTEXTO =====
-        if tool_name == "analyze_balance_structure":
-            tools_ctx["last_analysis"] = result
-            if result.get("success") and result.get("selected_pages"):
-                print(f"📄 Páginas seleccionadas: {result['selected_pages']}")
-        elif tool_name == "extract_balance_statement":
-            tools_ctx["last_extraction"] = result
-            if result.get("success"):
-                text_length = len(result.get("text", ""))
-                confidence = result.get("confidence", 0)
-                print(f"📊 Extracción: {text_length} chars, confianza: {confidence}")
-        elif tool_name == "validate_balance_quality":
-            tools_ctx["last_validation"] = result
-            if result.get("success"):
-                status = result.get("status", "unknown")
-                confidence = result.get("confidence", 0)
-                print(f"✅ Validación: {status}, confianza: {confidence}")
-        elif tool_name == "save_balance_results":
-            tools_ctx["last_saved"] = result
-            if result.get("success"):
-                files_created = result.get("files_created", 0)
-                print(f"💾 Archivos guardados: {files_created}")
-
-        # ===== PREPARAR FEEDBACK PARA AZURE OPENAI =====
-        try:
-            if result.get("success"):
-                if tool_name == "save_balance_results":
-                    # ===== MEJORA: FEEDBACK ESPECÍFICO DE FINALIZACIÓN =====
-                    feedback = f"✅ Archivos del balance guardados exitosamente. BALANCE_EXTRACTION_COMPLETED. Responde EXACTAMENTE con 'BALANCE_EXTRACTION_COMPLETED' para finalizar."
-                else:
-                    feedback = f"✅ {tool_name} ejecutado correctamente."
-            else:
-                feedback = f"❌ Error en {tool_name}: {result.get('error', 'Error desconocido')}"
-            history.append({"role": "user", "content": feedback})
-            print(f"📤 Feedback enviado: {feedback}")
-        except Exception as e:
-            fallback = f"Error procesando resultado de {tool_name}: {str(e)}"
-            history.append({"role": "user", "content": fallback})
-            return history, False
-
-        return history, False
-
-    print("⏭️ No hay tool_call detectado, continuando flujo")
-    return history, False
 
 def run_balance_agent(pdf_path: Path, output_dir: Path, max_steps: int = 20,  # ← AUMENTADO DE 12 A 20
                       anchor_page: Optional[int] = None, anchor_titles: Optional[List[str]] = None) -> Dict[str, Any]:

@@ -1,154 +1,35 @@
 {
-  "pdf": "data\\entrada\\bbva_2023_div.pdf",
-  "type": "cashflow_statement",
-  "extraction": {
-    "success": true,
-    "pages_processed": [
-      6
-    ],
-    "text": "=== PÁGINA 6 ===\n60 \nStatement of Cash flows \nFor the year ended 31 December 2023 \nNotes \n1 January \n2023 - 31 \nDecember \n2023 \n1 January \n2022 - 31 \nDecember \n2022 \nCash flows from operating activities: \nProfit for the year \n100,692 \n40,793 \nAdjustments for: \nDepreciation and amortisation \n7,8 \n2,818 \n2,899 \nExpected credit losses on financial instruments \n28 \n1,026 \n(1,779) \nTax expense \n12 \n35,945 \n14,164 \n140,481 \n56,077 \nChanges in: \nLoans and advances to banks \n4 \n297,821 \n(125,171) \nFinancial assets at fair value through profit or loss \n37 \n2,295 \n875 \nLoans and advances to customers \n5 \n(99,093) \n(15,947) \nOther assets \n9 \n(506)\n(751) \nDeposits from banks \n10 \n(44,915) \n(62,433) \nDeposits from customers \n11 \n690,594 \n957,491 \nFinancial liabilities at fair value through profit or loss \n37 \n5,158 \n(23,204)\nOther liabilities, accrued expenses and provisions \n13 \n(86,546) \n78,321 \n905,289 \n865,258 \nIncome taxes paid \n13 \n(24,254) \n(3,986) \nNet cash from / (used in) operating activities \n881,035 \n861,272 \nCash flows from investing activities: \nAcquisitions in investment portfolio \n6 \n(333,878) \n(410,586) \nProceeds from investment portfolio \n6 \n129,236 \n431,169 \nPurchase of tangible and intangible assets \n7,8 \n(4,319) \n(2,529) \nNet cash from / (used in) investing activities \n(208,961) \n18,054 \nEffect of exchange rate changes \n(1,411) \n(1,974) \nNet increase / (decrease) in cash and cash equivalents \n670,662 \n877,352 \nCash and cash equivalents at the beginning of the period \n1 \n1,579,446 \n702,094 \nCash and cash equivalents at the end of the period \n1 \n2,250,108 \n1,579,446 \nAdditional information on operational cash \nflows from interest \nInterest received \n287,992 \n130,401 \nInterest paid \n86,819 \n29,829 \nGarantiBank International N.V.  \nNotes to the Financial Statements  \nAs of and for the Year Ended 31 December 2023 \n       (Currency: Thousands of Euros) \n\n\n",
-    "entries_found": 16,
-    "data": [
-      {
-        "concept": "Profit for the year",
-        "section": "operating",
-        "2023": 100692.0,
-        "2022": 40793.0
-      },
-      {
-        "concept": "Depreciation and amortisation",
-        "section": "operating",
-        "2023": 2818.0,
-        "2022": 2899.0
-      },
-      {
-        "concept": "Expected credit losses",
-        "section": "operating",
-        "2023": 1026.0,
-        "2022": 1779.0
-      },
-      {
-        "concept": "Tax expense",
-        "section": "operating",
-        "2023": 35945.0,
-        "2022": 14164.0
-      },
-      {
-        "concept": "Deposits from customers",
-        "section": "operating",
-        "2023": 690594.0,
-        "2022": 957491.0
-      },
-      {
-        "concept": "Income taxes paid",
-        "section": "operating",
-        "2023": -24254.0,
-        "2022": -3986.0
-      },
-      {
-        "concept": "Net cash from operating activities",
-        "section": "operating",
-        "2023": 881035.0,
-        "2022": 861272.0
-      },
-      {
-        "concept": "Acquisitions in investment portfolio",
-        "section": "investing",
-        "2023": -333878.0,
-        "2022": -410586.0
-      },
-      {
-        "concept": "Proceeds from investment portfolio",
-        "section": "investing",
-        "2023": 129236.0,
-        "2022": 431169.0
-      },
-      {
-        "concept": "Purchase of tangible and intangible assets",
-        "section": "investing",
-        "2023": -4319.0,
-        "2022": -2529.0
-      },
-      {
-        "concept": "Net cash from investing activities",
-        "section": "investing",
-        "2023": -208961.0,
-        "2022": -18054.0
-      },
-      {
-        "concept": "Net increase in cash and cash equivalents",
-        "section": "summary",
-        "2023": 670662.0,
-        "2022": 877352.0
-      },
-      {
-        "concept": "Cash and cash equivalents at beginning of period",
-        "section": "summary",
-        "2023": 1579446.0,
-        "2022": 702094.0
-      },
-      {
-        "concept": "Cash and cash equivalents at end of period",
-        "section": "summary",
-        "2023": 2250108.0,
-        "2022": 1579446.0
-      },
-      {
-        "concept": "Interest received",
-        "section": "additional",
-        "2023": 287992.0,
-        "2022": 130401.0
-      },
-      {
-        "concept": "Interest paid",
-        "section": "additional",
-        "2023": -86819.0,
-        "2022": -29829.0
-      }
-    ]
-  },
   "analysis": {
     "success": true,
-    "analysis": {
-      "total_entries": 16,
-      "sections": {
-        "operating": 7,
-        "investing": 4,
-        "summary": 3,
-        "additional": 2
-      },
-      "years_available": [
-        "2023",
-        "2022"
-      ],
-      "operating_items": 7,
-      "investing_items": 4,
-      "financing_items": 0,
-      "summary_items": 3
-    },
-    "structure_quality": "good"
+    "pages_selected": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "cashflow_found": false,
+    "anchor_page_used": 8
   },
-  "ratios": {
+  "extraction": {
+    "total_characters": 2610,
+    "confidence": 1.0,
+    "pages_processed": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "validation": {
     "success": true,
-    "ratios": {
-      "2023": {
-        "operating_cash_flow": 881035.0,
-        "investing_cash_flow": -417922.0,
-        "financing_cash_flow": 0.0,
-        "total_cash_flow": 463113.0,
-        "free_cash_flow": 542838.0,
-        "fcf_margin": 61.61367028551646
-      },
-      "2022": {
-        "operating_cash_flow": 861272.0,
-        "investing_cash_flow": 0.0,
-        "financing_cash_flow": 0.0,
-        "total_cash_flow": 861272.0,
-        "free_cash_flow": 448157.0,
-        "fcf_margin": 52.03431668508903
-      }
-    },
-    "years_analyzed": 2
+    "quality": "fair",
+    "confidence": 1.0,
+    "score": 25,
+    "details": [
+      "✅ Actividades de financiación encontradas"
+    ]
   },
-  "generated_at": "2025-09-05 15:15:35"
+  "timestamp": "2025-09-17 09:54:32"
 }

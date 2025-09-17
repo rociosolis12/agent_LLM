@@ -1,0 +1,18 @@
+
+REPORTE DE CALIDAD - CAMBIOS EN PATRIMONIO
+==========================================
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Fecha: 2025-09-17 09:34:33
+
+RESULTADOS DE VALIDACIÓN:
+- Calidad: fair
+- Confianza: 1.000
+- Puntuación: 25/100
+
+DETALLES:
+✅ Reservas encontradas
+
+EXTRACCIÓN:
+- Caracteres procesados: 1274
+- Páginas procesadas: [6, 7, 8, 9, 10]
+- Chunks generados: 2

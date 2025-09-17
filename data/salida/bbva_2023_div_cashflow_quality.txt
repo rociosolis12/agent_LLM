@@ -1,0 +1,18 @@
+
+REPORTE DE CALIDAD - FLUJOS DE EFECTIVO
+=====================================
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Fecha: 2025-09-17 09:54:32
+
+RESULTADOS DE VALIDACIÓN:
+- Calidad: fair
+- Confianza: 1.000
+- Puntuación: 25/100
+
+DETALLES:
+✅ Actividades de financiación encontradas
+
+EXTRACCIÓN:
+- Caracteres procesados: 2610
+- Páginas procesadas: [6, 7, 8, 9, 10]
+- Chunks generados: 4
