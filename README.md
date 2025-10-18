@@ -1,4 +1,4 @@
-# 🧠 Sistema Multi-Agente Financiero para Análisis Predictivo de las Memorias Anuales de los Bancos
+#  Sistema Multi-Agente Financiero para Análisis Predictivo de las Memorias Anuales de los Bancos
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
@@ -7,13 +7,13 @@
 [![Groq](https://img.shields.io/badge/Groq-Llama--3.3--70b-purple.svg)](https://groq.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 📋 Descripción
+##  Descripción
 
 **Sistema Multi-Agente especializado en análisis financiero automatizado** diseñado para procesar y analizar documentos financieros complejos, en particular **Memorias Anuales bancarias**. 
 
 El sistema utiliza **Azure OpenAI GPT-4o** para análisis financiero complejo y **Groq Llama-3.3-70b** para procesamiento de alta velocidad, implementando una arquitectura multi-agente que coordina diferentes especialistas financieros.
 
-### 🎯 ¿Qué hace el sistema?
+###  ¿Qué hace el sistema?
 
 - **📄 Procesa automáticamente** PDFs de memorias anuales bancarias
 - **🔍 Extrae y estructura** los cuatro estados financieros principales
@@ -21,67 +21,67 @@ El sistema utiliza **Azure OpenAI GPT-4o** para análisis financiero complejo y 
 - **📈 Genera predicciones** sobre KPIs financieros relevantes
 - **💬 Responde preguntas** en lenguaje natural sobre los datos financieros
 
-## ✨ Características Principales
+##  Características Principales
 
-### 📊 Extracción de Estados Financieros
+###  Extracción de Estados Financieros
 Procesamiento automático de los **4 estados financieros principales**:
 - **🏦 Balance General** - Posición financiera en un momento específico
 - **📈 Cuenta de Resultados** - Rendimiento financiero durante un período
 - **💰 Estado de Cambios en el Patrimonio Neto** - Variaciones en el capital
 - **💸 Estado de Flujos de Efectivo** - Movimientos de efectivo
 
-### 🤖 Arquitectura Multi-Agente Especializada
+###  Arquitectura Multi-Agente Especializada
 Sistema coordinado por un **Financial Coordinator** que:
 1. **Analiza la pregunta** del usuario
 2. **Selecciona el agente financiero** apropiado según el estado financiero
 3. **Evalúa si necesita predicciones** basado en palabras clave
 4. **Coordina la respuesta final** directa o con predicciones
 
-### 📈 Predicción de KPIs Financieros
+###  Predicción de KPIs Financieros
 Estimación inteligente de indicadores clave:
 - **Rentabilidad**: ROE, ROA, margen neto
 - **Solvencia**: Ratio de capital, tier 1
 - **Liquidez**: Ratio de liquidez, LCR
 - **Eficiencia**: Ratio de eficiencia operativa
 
-## ⚙️ Arquitectura del Sistema
+##  Arquitectura del Sistema
 
-### 🏗️ Flujo de Ejecución Real
+###  Flujo de Ejecución Real
 
 ```mermaid
 graph TB
-    subgraph "🎯 INPUT LAYER"
-        A[👤 User Query]
-        B[📄 PDF Document]
+    subgraph " INPUT LAYER"
+        A[ User Query]
+        B[ PDF Document]
     end
     
-    subgraph "🔄 PROCESSING CORE"
-        C[🎭 main_system.py]
-        D[📄 PDF Extractor Agent]
-        E[💾 Extracted PDF Content]
+    subgraph " PROCESSING CORE"
+        C[ main_system.py]
+        D[ PDF Extractor Agent]
+        E[ Extracted PDF Content]
     end
     
-    subgraph "🧠 COORDINATION LAYER"
-        F[🤖 Financial Coordinator]
-        G{🔍 Question Analysis}
+    subgraph " COORDINATION LAYER"
+        F[ Financial Coordinator]
+        G{ Question Analysis}
     end
     
-    subgraph "🏦 FINANCIAL AGENTS"
-        G -->|Balance Questions| H[🏦 Balance Agent]
-        G -->|Income Questions| I[📈 Income Agent]
-        G -->|Equity Questions| J[💰 Equity Agent]
-        G -->|Cash Flow Questions| K[💸 Cash Flow Agent]
+    subgraph " FINANCIAL AGENTS"
+        G -->|Balance Questions| H[ Balance Agent]
+        G -->|Income Questions| I[ Income Agent]
+        G -->|Equity Questions| J[ Equity Agent]
+        G -->|Cash Flow Questions| K[ Cash Flow Agent]
     end
     
-    subgraph "🔮 AI LAYER"
-        L{❓ Requires Prediction?}
-        M[🔮 Predictor Agent]
-        N[📤 Direct Response]
+    subgraph " AI LAYER"
+        L{ Requires Prediction?}
+        M[ Predictor Agent]
+        N[ Direct Response]
     end
     
-    subgraph "🌐 OUTPUT LAYER"
-        O[📤 FastAPI Backend]
-        P[⚛️ React Frontend]
+    subgraph " OUTPUT LAYER"
+        O[ FastAPI Backend]
+        P[ React Frontend]
     end
     
     %% Flujo principal
@@ -117,7 +117,7 @@ graph TB
     style L fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
 ```
 
-### 🧠 Financial Coordinator - Distribución Inteligente
+###  Financial Coordinator - Distribución Inteligente
 
 El **Financial Coordinator** (`financial_coordinator.py`) opera en dos fases:
 
@@ -161,31 +161,31 @@ def route_question(self, question: str, pdf_content: dict) -> str:
 | **💰 Patrimonio Neto** | `equity_agent.py` | Tier 1, Capital Ratio | "¿Cómo evolucionó el capital?" |
 | **💸 Flujos de Efectivo** | `cashflow_agent.py` | Liquidez, LCR | "¿Hay problemas de liquidez?" |
 
-## 🔧 Stack Tecnológico
+##  Stack Tecnológico
 
-### 🧠 AI & Machine Learning
+###  AI & Machine Learning
 - **Azure OpenAI GPT-4o**: Agente LLM principal para análisis financiero complejo
 - **Groq Llama-3.3-70b**: Agente LLM de alta velocidad para respuestas rápidas
 - **LangChain**: Orquestación de agentes
 - **HuggingFace Transformers**: Modelos de NLP y embeddings
 
-### 🚀 Backend & API
+###  Backend & API
 - **FastAPI**: Framework web asíncrono
 - **Python 3.10+**: Lenguaje principal
 - **Celery**: Procesamiento asíncrono (opcional)
 - **PyPDF2/PDFPlumber**: Procesamiento de PDFs
 
-### 🎨 Frontend
+###  Frontend
 - **React 18**: Interface de usuario moderna
 - **Material-UI**: Componentes de diseño
 - **Axios**: Cliente HTTP
 - **Recharts**: Gráficos financieros
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 agent_LLM/
-├── 🚀 api/                          # Backend FastAPI
+├──  api/                          # Backend FastAPI
 │   ├── main_api.py                  # Punto de entrada principal
 │   ├── routers/                     # Endpoints organizados
 │   │   ├── financial.py             # Rutas financieras
@@ -194,20 +194,20 @@ agent_LLM/
 │   ├── services/                    # Lógica de negocio
 │   └── models/                      # Modelos de datos
 │
-├── 🤖 agents/                       # Sistema Multi-Agente
+├──  agents/                       # Sistema Multi-Agente
 │   ├── base_agent.py                # Agente base
-│   ├── financial_coordinator.py     # 🧠 Coordinador principal
-│   ├── extractor_pdf_agent.py       # 📄 Extracción PDF
+│   ├── financial_coordinator.py     #  Coordinador principal
+│   ├── extractor_pdf_agent.py       #  Extracción PDF
 │   │
-│   ├── 💼 financial_agents/         # Agentes por Estado Financiero
-│   │   ├── balance_agent.py         # 🏦 Balance General
-│   │   ├── income_agent.py          # 📈 Cuenta de Resultados  
-│   │   ├── equity_agent.py          # 💰 Patrimonio Neto
-│   │   └── cashflow_agent.py        # 💸 Flujos de Efectivo
+│   ├──  financial_agents/         # Agentes por Estado Financiero
+│   │   ├── balance_agent.py         #  Balance General
+│   │   ├── income_agent.py          #  Cuenta de Resultados  
+│   │   ├── equity_agent.py          #  Patrimonio Neto
+│   │   └── cashflow_agent.py        #  Flujos de Efectivo
 │   │
-│   └── predictor_agent.py           # 🔮 Predicción KPIs (opcional)
+│   └── predictor_agent.py           #  Predicción KPIs (opcional)
 │
-├── 🎨 frontend/                     # Interfaz React
+├──  frontend/                     # Interfaz React
 │   ├── src/
 │   │   ├── components/              # Componentes React
 │   │   │   ├── FinancialDashboard/  # Dashboard principal
@@ -220,7 +220,7 @@ agent_LLM/
 │   ├── package.json
 │   └── public/
 │
-├── 📁 data/                         # Datos del Sistema
+├──  data/                         # Datos del Sistema
 │   ├── uploads/                     # PDFs cargados
 │   │   └── GarantiBank_Report.pdf   # 🏦 Ejemplo real
 │   ├── processed/                   # Datos procesados
@@ -232,29 +232,29 @@ agent_LLM/
 │       ├── kpi_predictions/         # Predicciones generadas
 │       └── financial_analysis/      # Análisis completos
 │
-├── main_system.py                   # 🎯 Orquestador principal
-├── question_router.py               # 🔀 Router de preguntas
-├── config.py                        # ⚙️ Configuración
+├── main_system.py                   #  Orquestador principal
+├── question_router.py               #  Router de preguntas
+├── config.py                        #  Configuración
 ├── requirements.txt                 # Dependencias Python
 ├── .env.example                     # Variables de entorno ejemplo
 └── README.md                        # Este archivo
 ```
 
-## 🚀 Instalación y Configuración
+##  Instalación y Configuración
 
-### ✅ Prerrequisitos
+###  Prerrequisitos
 
 - **Python 3.10+** (recomendado 3.11)
 - **Node.js 18+** y **npm 9+**
 - **Git**
 - **4GB RAM mínimo** (8GB recomendado)
 
-#### **🔑 API Keys Requeridas**
+#### ** API Keys Requeridas**
 - **Azure OpenAI**: Endpoint y API key (primary)
 - **Groq API Key**: Para procesamiento de alta velocidad
 - **OpenAI API Key**: Como backup (opcional)
 
-### 📦 Instalación Paso a Paso
+###  Instalación Paso a Paso
 
 1. **Clonar el repositorio**
 ```bash
@@ -288,7 +288,7 @@ cp .env.example .env
 nano .env
 ```
 
-#### **🔧 Configuración de .env**
+#### ** Configuración de .env**
 ```bash
 # ===== AZURE OPENAI CONFIGURATION (PRIMARY) =====
 AZURE_OPENAI_ENDPOINT="https://llmcoeiberia-openai.openai.azure.com/"
@@ -335,7 +335,7 @@ client = AzureOpenAI(
     api_version=os.getenv('AZURE_OPENAI_API_VERSION'),
     azure_endpoint=os.getenv('AZURE_OPENAI_ENDPOINT')
 )
-print('✅ Azure OpenAI: Configurado correctamente')
+print(' Azure OpenAI: Configurado correctamente')
 "
 
 # Test Groq
@@ -343,45 +343,45 @@ python -c "
 import os
 import groq
 client = groq.Groq(api_key=os.getenv('GROQ_API_KEY'))
-print('✅ Groq: Configurado correctamente')
+print(' Groq: Configurado correctamente')
 "
 ```
 
-## 🎯 Uso del Sistema
+##  Uso del Sistema
 
-### 🖥️ Ejecutar el Backend
+###  Ejecutar el Backend
 ```bash
 # Comando específico del sistema
 python -m uvicorn api.main_api:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-### 🎨 Ejecutar el Frontend
+###  Ejecutar el Frontend
 ```bash
 # En otra terminal
 cd frontend
 npm start
 ```
 
-### 🌐 Acceder a la aplicación
+###  Acceder a la aplicación
 - **Frontend**: http://localhost:3000
 - **API Docs**: http://localhost:8000/docs
 - **Redoc**: http://localhost:8000/redoc
 
-### 🎯 Resultado Esperado
+###  Resultado Esperado
 
-**✅ Con esta configuración, tu Sistema Multi-Agente Financiero estará 100% operativo con:**
+**Con esta configuración, tu Sistema Multi-Agente Financiero estará 100% operativo con:**
 
-- ✅ **5 agentes funcionando perfectamente**
-- ✅ **Análisis completo de estados financieros** 
-- ✅ **Datos reales del documento GarantiBank**
-- ✅ **Interfaz React completamente funcional**
+-  **5 agentes funcionando perfectamente**
+-  **Análisis completo de estados financieros** 
+-  **Datos reales del documento GarantiBank**
+-  **Interfaz React completamente funcional**
 
-## 💼 Caso de Uso Real: GarantiBank
+##  Caso de Uso Real: GarantiBank
 
-### 🏦 **Análisis de Memoria Anual GarantiBank**
+###  **Análisis de Memoria Anual GarantiBank**
 
 ```python
-# ✅ FLUJO CORRECTO: Extracción primero, preguntas después
+#  FLUJO CORRECTO: Extracción primero, preguntas después
 from agents.financial_coordinator import FinancialCoordinator
 from agents.extractor_pdf_agent import PDFExtractorAgent
 
@@ -419,66 +419,66 @@ for q in questions:
         question=q["question"],
         pdf_content=pdf_content  # Contenido ya extraído
     )
-    print(f"🤖 Provider: {result['provider_used']}")
-    print(f"🎯 Agente: {result['agent_used']}")
-    print(f"🔮 Predictor usado: {result['predictor_used']}")
-    print(f"💡 Respuesta: {result['answer']}")
+    print(f" Provider: {result['provider_used']}")
+    print(f" Agente: {result['agent_used']}")
+    print(f" Predictor usado: {result['predictor_used']}")
+    print(f" Respuesta: {result['answer']}")
     print("─" * 50)
 ```
 
-### 📊 **Resultado del Procesamiento**
+###  **Resultado del Procesamiento**
 
 ```
-📄 EXTRACCIÓN COMPLETADA - GarantiBank Annual Report
+ EXTRACCIÓN COMPLETADA - GarantiBank Annual Report
 ═══════════════════════════════════════════════════
-✅ Balance General → Páginas 45-47 (extraído)
-✅ Cuenta de Resultados → Páginas 48-50 (extraído)  
-✅ Patrimonio Neto → Páginas 51-52 (extraído)
-✅ Flujos de Efectivo → Páginas 53-55 (extraído)
+ Balance General → Páginas 45-47 (extraído)
+ Cuenta de Resultados → Páginas 48-50 (extraído)  
+ Patrimonio Neto → Páginas 51-52 (extraído)
+ Flujos de Efectivo → Páginas 53-55 (extraído)
 
-💬 PROCESANDO CONSULTAS...
+ PROCESANDO CONSULTAS...
 
-🤖 Provider: azure_openai (GPT-4o)
-🎯 Agente: Income Agent
-🔮 Predictor usado: No
-💡 Respuesta: El ROE de GarantiBank fue del 15.2%, mostrando una mejora 
+ Provider: azure_openai (GPT-4o)
+ Agente: Income Agent
+ Predictor usado: No
+ Respuesta: El ROE de GarantiBank fue del 15.2%, mostrando una mejora 
              del 2.1% respecto al año anterior...
 
-🤖 Provider: azure_openai (GPT-4o)
-🎯 Agente: Income Agent → Predictor Agent
-🔮 Predictor usado: Sí
-💡 Respuesta: Basado en las tendencias actuales, el ROE proyectado para 2024
+ Provider: azure_openai (GPT-4o)
+ Agente: Income Agent → Predictor Agent
+ Predictor usado: Sí
+ Respuesta: Basado en las tendencias actuales, el ROE proyectado para 2024
              sería del 16.8% ±1.2%, considerando el crecimiento esperado...
 
-🤖 Provider: groq (Llama-3.3-70b)
-🎯 Agente: Cash Flow Agent
-🔮 Predictor usado: No
-💡 Respuesta: El ratio LCR es del 142%, superando ampliamente el mínimo
+ Provider: groq (Llama-3.3-70b)
+ Agente: Cash Flow Agent
+ Predictor usado: No
+ Respuesta: El ratio LCR es del 142%, superando ampliamente el mínimo
              regulatorio del 100%. La posición de liquidez es sólida...
 ```
 
-### 💬 **Consultas en Lenguaje Natural**
+###  **Consultas en Lenguaje Natural**
 
 ```
 Usuario: "¿Cuál fue la evolución de la cartera crediticia de GarantiBank?"
 
-🤖 Sistema Respuesta:
+Sistema Respuesta:
 ┌─────────────────────────────────────────────┐
-│ 📊 EVOLUCIÓN CARTERA CREDITICIA GARANTI     │
+│ EVOLUCIÓN CARTERA CREDITICIA GARANTI     │
 ├─────────────────────────────────────────────┤
 │ 2021: 187.2B TL (+12.5%)                   │
 │ 2022: 218.9B TL (+16.9%)                   │
 │ 2023: 245.8B TL (+12.3%)                   │
 │                                             │
-│ 📈 Crecimiento promedio: 14.2% anual       │
-│ 🎯 Morosidad actual: 2.8%                  │
-│ ⚠️  Alerta: Crecimiento acelerado          │
+│ Crecimiento promedio: 14.2% anual       │
+│ Morosidad actual: 2.8%                  │
+│ Alerta: Crecimiento acelerado          │
 └─────────────────────────────────────────────┘
 ```
 
-## 📖 API Reference
+## API Reference
 
-### 🏦 Financial Analysis Endpoints
+### Financial Analysis Endpoints
 
 #### **Cargar y Analizar Documento**
 ```http
@@ -554,9 +554,9 @@ Response: {
 }
 ```
 
-## 🧪 Testing
+## Testing
 
-### 🔬 Ejecutar Tests
+### Ejecutar Tests
 ```bash
 # Tests unitarios
 pytest tests/unit/ -v
@@ -571,7 +571,7 @@ pytest tests/api/ -v
 pytest --cov=agents --cov-report=html tests/
 ```
 
-### ✅ Validación de Agentes
+### Validación de Agentes
 ```python
 # Test del Financial Coordinator
 from tests.agent_tests import AgentValidator
@@ -592,9 +592,9 @@ validator.test_question_routing([
 ])
 ```
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
-### 🔍 Problemas Comunes
+### Problemas Comunes
 
 #### **Error: "Azure OpenAI connection failed"**
 ```bash
@@ -610,7 +610,7 @@ client = AzureOpenAI(
     api_version='2024-10-21',
     azure_endpoint='https://llmcoeiberia-openai.openai.azure.com/'
 )
-print('✅ Azure OpenAI: OK')
+print('Azure OpenAI: OK')
 "
 ```
 
@@ -640,7 +640,7 @@ python scripts/system_monitor.py
 tail -f logs/agents/financial_coordinator.log
 ```
 
-### 📊 Monitoring
+### Monitoring
 
 ```bash
 # Logs específicos
@@ -655,9 +655,9 @@ python scripts/agent_status.py
 python scripts/llm_performance_monitor.py
 ```
 
-## 🔧 Configuración Avanzada
+## Configuración Avanzada
 
-### ⚙️ Configuración de Agentes
+### Configuración de Agentes
 
 ```python
 # config.py - Agent Configuration
@@ -709,9 +709,9 @@ PREDICTION_KEYWORDS = [
 ```
 ```
 
-## 🤝 Contribución
+## Contribución
 
-### 🔄 Workflow de Contribución
+### Workflow de Contribución
 
 1. **Fork** el repositorio
 2. **Crea** una rama feature (`git checkout -b feature/mejora-agente-balance`)
@@ -721,7 +721,7 @@ PREDICTION_KEYWORDS = [
 6. **Push** a tu fork (`git push origin feature/mejora-agente-balance`)
 7. **Abre** un Pull Request con descripción detallada
 
-### 📋 Estándares de Código
+### Estándares de Código
 
 - **Python**: Seguir PEP 8
 - **JavaScript**: Usar ESLint y Prettier
@@ -729,13 +729,11 @@ PREDICTION_KEYWORDS = [
 - **Testing**: Cobertura mínima del 80%
 - **Documentación**: Docstrings en todos los métodos
 
-## 📄 Licencia
+## Licencia
 
 Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENSE](LICENSE) para más detalles.
 
-## 🙏 Agradecimientos
-
-### 🏆 Tecnologías Utilizadas
+### Tecnologías Utilizadas
 
 - **[Azure OpenAI](https://azure.microsoft.com/en-us/services/cognitive-services/openai-service/)** - Por GPT-4o que potencia el análisis financiero
 - **[Groq](https://groq.com/)** - Por Llama-3.3-70b y procesamiento de alta velocidad
@@ -743,27 +741,20 @@ Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENS
 - **[React](https://reactjs.org/)** - Por la biblioteca de UI moderna
 - **[LangChain](https://langchain.com/)** - Por las herramientas de orquestación de LLMs
 
-### 🎓 Contexto Académico
+### Contexto Académico
 
 Este proyecto se desarrolló como parte del **Trabajo de Fin de Máster (TFM)** enfocado en la aplicación de sistemas multi-agente para el análisis financiero automatizado.
-
-### 📧 Contacto
-
-- **Email**: rocio.solis@financialagent.com
-- **LinkedIn**: [Rocío Solís](https://www.linkedin.com/in/roc%C3%ADo-sol%C3%ADs-mart%C3%ADn-de-santa-olalla/)
 
 ---
 
 <div align="center">
 
-### 🌟 **¿Te gusta el proyecto? ¡Dale una ⭐ en GitHub!**
+###  **¿Te gusta el proyecto? ¡Dale una ⭐ en GitHub!**
 
-[🐛 Reportar Bug](https://github.com/rociosolis12/agent_LLM/issues/new?template=bug_report.md) · [✨ Solicitar Feature](https://github.com/rociosolis12/agent_LLM/issues/new?template=feature_request.md) · [📚 Documentación](https://github.com/rociosolis12/agent_LLM/wiki)
+[Reportar Bug](https://github.com/rociosolis12/agent_LLM/issues/new?template=bug_report.md) · [Solicitar Feature](https://github.com/rociosolis12/agent_LLM/issues/new?template=feature_request.md) · [Documentación](https://github.com/rociosolis12/agent_LLM/wiki)
 
 ---
 
-**🧠 Sistema Multi-Agente Financiero** | **🤖 IA para Análisis Bancario** | **🔬 Open Source**
-
-*Desarrollado con ❤️ por [Rocío Solís](https://github.com/rociosolis12)*
+**Sistema Multi-Agente Financiero** | ** IA para Análisis Bancario** | **Open Source**
 
 </div>
