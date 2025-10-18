@@ -15,14 +15,22 @@
     "2019",
     "2021",
     "2022",
-    "2020",
-    "2023"
+    "2023",
+    "2020"
   ],
   "net_interest_income": [],
-  "fee_commission_income": [],
-  "operating_expenses": [],
+  "fee_commission_income": [
+    2.0,
+    8.0
+  ],
+  "operating_expenses": [
+    8.0
+  ],
   "staff_costs": [],
   "provisions": [],
   "net_profit": [],
-  "total_income": []
+  "total_income": [
+    2.0,
+    8.0
+  ]
 }

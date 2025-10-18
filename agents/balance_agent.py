@@ -824,12 +824,12 @@ class BalanceREACTAgent:
             # 3. GENERAR RESPUESTA ESPECÍFICA USANDO LLM
             specific_answer = self._generate_llm_response(question, pdf_file, result)
             
-            print("✅ Balance extraction completed successfully (AUTÓNOMO)")
+            print("Balance extraction completed adecuadamente")
             return {
                 "status": "task_completed",
                 "steps_taken": result.get("steps_completed", 0),
                 "session_id": f"balance_{pdf_file.stem}",
-                "final_response": "Balance extraction completed successfully - AUTONOMOUS VERSION",
+                "final_response": "Balance extraction completed successfully",
                 "agent_type": "balance",
                 "files_generated": result.get("context", {}).get("last_saved", {}).get("files_created", 0),
                 "specific_answer": specific_answer  # ← RESPUESTA GENERADA POR LLM
@@ -1036,7 +1036,7 @@ RESPUESTA PROFESIONAL:"""
             return response.strip()
             
         except Exception as e:
-            print(f"❌ Error en LLM: {str(e)}")
+            print(f" Error en LLM: {str(e)}")
             # Fallback a respuesta basada en reglas
             return self._generate_rule_based_response(question, extracted_text, financial_data)
 
@@ -1049,18 +1049,18 @@ RESPUESTA PROFESIONAL:"""
         # Detectar tipo de pregunta y responder con datos disponibles
         if any(word in question_lower for word in ['total', 'activos', 'assets']):
             if 'total_assets' in financial_data:
-                return f"📊 **El total de activos de GarantiBank International N.V. es €{financial_data['total_assets']} miles** según el balance consolidado al 31 de diciembre de 2023.\n\n**Fuente**: Statement of Financial Position extraído"
+                return f" **El total de activos de GarantiBank International N.V. es €{financial_data['total_assets']} miles** según el balance consolidado al 31 de diciembre de 2023.\n\n**Fuente**: Statement of Financial Position extraído"
             
         elif any(word in question_lower for word in ['pasivos', 'liabilities', 'deudas']):
             if 'total_liabilities' in financial_data:
-                return f"💰 **El total de pasivos es €{financial_data['total_liabilities']} miles**, incluyendo depósitos de clientes y otras obligaciones financieras.\n\n**Fuente**: Balance consolidado extraído"
+                return f" **El total de pasivos es €{financial_data['total_liabilities']} miles**, incluyendo depósitos de clientes y otras obligaciones financieras.\n\n**Fuente**: Balance consolidado extraído"
                 
         elif any(word in question_lower for word in ['patrimonio', 'equity', 'capital']):
             if 'total_equity' in financial_data:
-                return f"🏛️ **El patrimonio total es €{financial_data['total_equity']} miles**, representando el valor neto para los accionistas.\n\n**Fuente**: Balance consolidado extraído"
+                return f" **El patrimonio total es €{financial_data['total_equity']} miles**, representando el valor neto para los accionistas.\n\n**Fuente**: Balance consolidado extraído"
         
         # Respuesta genérica si no puede determinar específicamente
-        return "✅ He extraído exitosamente el balance consolidado de GarantiBank International N.V. Los principales componentes incluyen activos, pasivos y patrimonio al 31 de diciembre de 2023. Los datos detallados están disponibles en los archivos generados."
+        return " He extraído exitosamente el balance consolidado de GarantiBank International N.V. Los principales componentes incluyen activos, pasivos y patrimonio al 31 de diciembre de 2023. Los datos detallados están disponibles en los archivos generados."
 
 # =============================
 # CLI principal MEJORADO
@@ -1120,7 +1120,7 @@ Esta versión incluye BalanceREACTAgent AUTÓNOMO para integración con main_sys
                        default=None, 
                        help="Título de anclaje (puede usarse múltiples veces)")
 
-    # ⭐ AGREGAR ESTA LÍNEA ⭐
+    #  AGREGAR ESTA LÍNEA 
     parser.add_argument("--question", 
                        type=str, 
                        default=None, 
@@ -1141,20 +1141,20 @@ Esta versión incluye BalanceREACTAgent AUTÓNOMO para integración con main_sys
 
     # ===== VERIFICAR QUE EL PDF EXISTE =====
     if not pdf_path.exists():
-        print(f"❌ Error: PDF no encontrado en {pdf_path}")
-        print(f"💡 Asegúrate de que el archivo existe en la ruta especificada")
+        print(f" Error: PDF no encontrado en {pdf_path}")
+        print(f" Asegúrate de que el archivo existe en la ruta especificada")
         return
 
     # ===== MOSTRAR CONFIGURACIÓN =====
-    print(f"🚀 Balance Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
-    print(f"📄 PDF: {pdf_path}")
-    print(f"📁 Salida: {output_dir}")
-    print(f"🎯 Anchor page: {args.anchor_page}")
-    print(f"🔍 Anchor titles: {anchor_titles}")
-    print(f"⚙️ Configuración: Groq {GROQ_MODEL} + Azure {AZURE_OPENAI_DEPLOYMENT}")
-    print(f"🔧 Max steps: {args.max_steps} (MEJORADO)")
-    print(f"🤖 Multi-Agent: BalanceREACTAgent AUTÓNOMO class available")
-    print("🆕 MEJORAS: Detección finalización ampliada, logging detallado, verificación robusta")
+    print(f" Balance Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
+    print(f" PDF: {pdf_path}")
+    print(f" Salida: {output_dir}")
+    print(f" Anchor page: {args.anchor_page}")
+    print(f" Anchor titles: {anchor_titles}")
+    print(f" Configuración: Groq {GROQ_MODEL} + Azure {AZURE_OPENAI_DEPLOYMENT}")
+    print(f" Max steps: {args.max_steps} (MEJORADO)")
+    print(f" Multi-Agent: BalanceREACTAgent AUTÓNOMO class available")
+    print(" MEJORAS: Detección finalización ampliada, logging detallado, verificación robusta")
 
     try:
         # Crear agente y ejecutar
@@ -1162,26 +1162,26 @@ Esta versión incluye BalanceREACTAgent AUTÓNOMO para integración con main_sys
         
         if args.question:
             # Modo pregunta específica
-            print(f"❓ Pregunta específica: {args.question}")
+            print(f" Pregunta específica: {args.question}")
             result = agent.run_final_financial_extraction_agent(str(pdf_path), args.question)
         else:
             # Modo extracción general
             result = agent.run_final_financial_extraction_agent(str(pdf_path))
 
-        print("\n🎯 ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
-        print(f"Estado: {'✅ EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
+        print("\n ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
+        print(f"Estado: {' EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
         print(f"Pasos completados: {result.get('steps_taken', 0)}")
         print(f"Archivos generados: {result.get('files_generated', 0)}")
 
         if result.get("status") == "task_completed":
-            print("\n📋 ==== RESPUESTA ESPECÍFICA ====")
+            print("\n ==== RESPUESTA ESPECÍFICA ====")
             print(result.get("specific_answer", "No hay respuesta específica disponible"))
         else:
-            print(f"\n❌ Error: {result.get('error_details', 'Error desconocido')}")
+            print(f"\n Error: {result.get('error_details', 'Error desconocido')}")
 
-        print("\n🎉 Análisis de balance completado!")
-        print("🤖 Clase BalanceREACTAgent AUTÓNOMA disponible para sistema multi-agente")
-        print("🆕 Versión autónoma con generación de respuestas específicas usando LLM")
+        print("\n Análisis de balance completado!")
+        print(" Clase BalanceREACTAgent AUTÓNOMA disponible para sistema multi-agente")
+        print(" Versión autónoma con generación de respuestas específicas usando LLM")
 
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")

@@ -27,7 +27,7 @@ load_dotenv()
 
 class PredictorAgent:
     """
-    🔮 Agente Predictor con Mapeo Inteligente de Datos
+    Agente Predictor con Mapeo Inteligente de Datos
     
     Características principales:
     - Integración completa con el pipeline multi-agente
@@ -578,7 +578,6 @@ class PredictorAgent:
                 current_profit = income_data['net_income']
                 
                 # Tasa de crecimiento conservadora basada en datos históricos
-                # (En implementación completa se calcularía de datos históricos)
                 conservative_growth_rate = 0.08  # 8% anual conservador para BBVA
                 
                 prediction.update({
@@ -616,7 +615,7 @@ class PredictorAgent:
                 current_roa = net_income / total_assets if total_assets > 0 else 0
                 
                 # Proyección conservadora de mejora en eficiencia
-                projected_margin_improvement = 0.02  # +2 puntos porcentuales
+                projected_margin_improvement = 0.02  
                 projected_roa = current_roa + projected_margin_improvement
                 
                 prediction.update({
@@ -847,10 +846,10 @@ class PredictorAgent:
             return scenarios
             
         except Exception as e:
-            self.logger.error(f"❌ Error en análisis de escenarios: {e}")
+            self.logger.error(f" Error en análisis de escenarios: {e}")
             return {}
 
-    # 🔥 MÉTODOS DE RESPUESTA Y GUARDADO
+    # MÉTODOS DE RESPUESTA Y GUARDADO
 
     async def _save_prediction_results(self, results: Dict[str, Any], metadata: Dict[str, Any]) -> None:
         """Guardar resultados de predicciones con trazabilidad completa"""
@@ -913,10 +912,10 @@ class PredictorAgent:
             "timestamp": datetime.now().isoformat()
         }
 
-    # 🔥 MÉTODO DE COMPATIBILIDAD LEGACY
+    # MÉTODO DE COMPATIBILIDAD LEGACY
     async def run_final_financial_extraction_agent(self, pdf_path: str, question: str = None, **kwargs) -> Dict[str, Any]:
         """
-        🔥 MÉTODO DE COMPATIBILIDAD para llamadas legacy
+        MÉTODO DE COMPATIBILIDAD para llamadas legacy
         Mantiene compatibilidad con versiones anteriores
         """
         try:

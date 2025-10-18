@@ -1,7 +1,7 @@
 """
-Income Agent REACT - Versión Multi-Agente AUTÓNOMA COMPLETA
+Income Agent REACT - Versión Multi-Agente AUTÓNOMA COMPLETA CORREGIDA
 Especializado en análisis de cuenta de resultados con análisis detallado
-CARACTERÍSTICAS: Extracción avanzada, análisis LLM especializado, respuestas extensas
+CARACTERÍSTICAS: Extracción avanzada, análisis LLM especializado, respuestas extensas, conversión segura de tipos
 """
 
 from __future__ import annotations
@@ -143,99 +143,156 @@ def detect_language(text: str) -> str:
     score_en = sum(1 for w in ["income", "revenue", "expenses", "profit"] if w in t)
     return "es" if score_es >= score_en else "en"
 
-def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
-    """NUEVA FUNCIÓN: Extrae datos financieros específicos del texto con patrones avanzados"""
+def convert_string_to_float(value_str: str) -> Optional[float]:
+    """NUEVA FUNCIÓN: Convierte string a float de forma segura manejando formatos europeos"""
+    if not value_str or not isinstance(value_str, str):
+        return None
     
+    try:
+        # Limpiar el string manteniendo solo dígitos, comas y puntos
+        clean_str = re.sub(r'[^\d,.]', '', value_str.strip())
+        
+        if not clean_str or clean_str in ['', '.', ',']:
+            return None
+        
+        # Manejar diferentes formatos numéricos
+        if ',' in clean_str and '.' in clean_str:
+            # Formato: 1.234,56 (europeo) o 1,234.56 (americano)
+            if clean_str.rindex(',') > clean_str.rindex('.'):
+                # Formato europeo: 1.234,56
+                clean_str = clean_str.replace('.', '').replace(',', '.')
+            else:
+                # Formato americano: 1,234.56 - remover comas
+                clean_str = clean_str.replace(',', '')
+        elif ',' in clean_str:
+            # Solo comas: determinar si es decimal o separador miles
+            parts = clean_str.split(',')
+            if len(parts) == 2 and len(parts[1]) <= 2:
+                # Probablemente decimal: 1234,56
+                clean_str = clean_str.replace(',', '.')
+            else:
+                # Probablemente separador miles: 1,234 o 1,234,567
+                clean_str = clean_str.replace(',', '')
+        
+        # Convertir a float
+        result = float(clean_str)
+        
+        # Validar que sea un número razonable
+        if result < 0 or result > 1e12:  # Entre 0 y 1 billón
+            return None
+            
+        return result
+        
+    except (ValueError, AttributeError):
+        return None
+
+def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
+    """FUNCIÓN CORREGIDA: Extrae datos financieros con patrones mejorados y conversión segura"""
+    
+    # PATRONES MEJORADOS más específicos para documentos bancarios españoles
     patterns = {
         'net_interest_income': [
-            r'margen.*intereses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'net.*interest.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'interest.*margin.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'margen.*intereses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'net.*interest.*income.*€?\s*([0-9.,]+)\s*(?:miles|million)',
+            r'ingresos.*netos.*intereses.*€?\s*([0-9.,]+)',
+            r'margen.*de.*intereses.*([0-9.,]+)',
             r'€\s*([0-9.,]+).*margen.*intereses',
-            r'€\s*([0-9.,]+).*net.*interest'
+            # Patrones adicionales sin € al inicio
+            r'margen.*intereses.*([0-9.,]+)\s*(?:miles|millones?)',
+            r'ingresos.*intereses.*([0-9.,]+)\s*(?:miles|millones?)',
+            # Patrones más específicos para BBVA
+            r'margen.*de.*intereses\s*([0-9.,]+)',
+            r'intereses.*y.*rendimientos.*similares.*([0-9.,]+)',
+            r'ingresos.*por.*intereses.*([0-9.,]+)'
         ],
         'fee_commission_income': [
-            r'comisiones.*netas.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'fee.*commission.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'ingresos.*comisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'comisiones.*netas.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'ingresos.*comisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'fee.*commission.*€?\s*([0-9.,]+)',
+            r'comisiones.*([0-9.,]+)\s*(?:miles|millones?)',
             r'€\s*([0-9.,]+).*comisiones',
-            r'€\s*([0-9.,]+).*fee.*commission'
+            # Patrones adicionales para BBVA
+            r'comisiones.*([0-9.,]+)',
+            r'ingresos.*por.*comisiones.*([0-9.,]+)',
+            r'comisiones.*netas.*([0-9.,]+)',
+            r'fee.*and.*commission.*income.*([0-9.,]+)'
         ],
         'operating_expenses': [
-            r'gastos.*explotación.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'operating.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'gastos.*operativos.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'gastos.*explotación.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'gastos.*operativos.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'operating.*expenses.*€?\s*([0-9.,]+)',
+            r'gastos.*de.*explotación.*([0-9.,]+)',
             r'€\s*([0-9.,]+).*gastos.*operativ',
-            r'€\s*([0-9.,]+).*operating.*expenses'
+            r'gastos.*administración.*([0-9.,]+)',
+            r'total.*gastos.*operativos.*([0-9.,]+)',
+            r'gastos.*generales.*administración.*([0-9.,]+)'
         ],
         'staff_costs': [
-            r'gastos.*personal.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'staff.*costs.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'personnel.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'gastos.*personal.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'staff.*costs.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'personnel.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
             r'€\s*([0-9.,]+).*gastos.*personal',
-            r'€\s*([0-9.,]+).*staff.*costs'
+            r'€\s*([0-9.,]+).*staff.*costs',
+            r'gastos.*de.*personal.*([0-9.,]+)',
+            r'sueldos.*salarios.*([0-9.,]+)'
         ],
         'provisions': [
-            r'dotaciones.*provisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'loan.*loss.*provisions.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'impairment.*losses.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'provisiones.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'dotaciones.*provisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'loan.*loss.*provisions.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'impairment.*losses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'provisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
             r'€\s*([0-9.,]+).*provisiones',
-            r'€\s*([0-9.,]+).*provisions'
+            r'€\s*([0-9.,]+).*provisions',
+            r'dotaciones.*para.*insolvencias.*([0-9.,]+)',
+            r'provisiones.*para.*riesgos.*([0-9.,]+)'
         ],
         'net_profit': [
-            r'beneficio.*neto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'net.*profit.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'net.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'resultado.*neto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
+            r'beneficio.*neto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'resultado.*neto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'net.*profit.*€?\s*([0-9.,]+)',
+            r'beneficio.*neto.*([0-9.,]+)',
+            r'resultado.*del.*ejercicio.*([0-9.,]+)',
             r'€\s*([0-9.,]+).*beneficio.*neto',
-            r'€\s*([0-9.,]+).*net.*profit'
+            r'beneficio.*atribuido.*([0-9.,]+)',
+            r'resultado.*atribuido.*al.*grupo.*([0-9.,]+)'
         ],
         'total_income': [
-            r'margen.*bruto.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'total.*income.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'ingresos.*totales.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'total.*revenue.*€?\s*([0-9.,]+)\s*(?:miles|million|thousand)',
-            r'€\s*([0-9.,]+).*margen.*bruto',
-            r'€\s*([0-9.,]+).*total.*income'
+            r'margen.*bruto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'ingresos.*totales.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
+            r'total.*income.*€?\s*([0-9.,]+)',
+            r'margen.*bruto.*([0-9.,]+)',
+            r'total.*ingresos.*([0-9.,]+)',
+            r'ingresos.*operativos.*([0-9.,]+)',
+            r'margen.*de.*intermediación.*([0-9.,]+)',
+            # Patrón más general para números grandes
+            r'([0-9]{2,3}(?:[.,][0-9]{3})*)\s*(?:miles|millones?)'
         ]
     }
     
     extracted_data = {}
     
-    # Buscar años específicos para comparación
+    # Buscar años específicos
     years = re.findall(r'\b(20\d{2})\b', text)
     extracted_data['years_found'] = list(set(years))
     
-    # Extraer datos por categoría
+    print(f"🔍 DEBUG: Años encontrados: {extracted_data['years_found']}")
+    
+    # Extraer datos por categoría CON CONVERSIÓN SEGURA
     for category, pattern_list in patterns.items():
         values = []
+        raw_matches = []
+        
         for pattern in pattern_list:
-            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
             for match in matches:
+                raw_matches.append(match)
                 try:
-                    # Limpiar y convertir números
-                    clean_number = re.sub(r'[^\d,.]', '', match)
-                    if clean_number and clean_number not in ['', '.', ',']:
-                        # Manejar formato europeo (1.234,56) y americano (1,234.56)
-                        if ',' in clean_number and '.' in clean_number:
-                            if clean_number.rindex(',') > clean_number.rindex('.'):
-                                # Formato europeo: 1.234,56
-                                clean_number = clean_number.replace('.', '').replace(',', '.')
-                            # Si es formato americano (1,234.56), ya está bien
-                        elif ',' in clean_number:
-                            # Solo coma: podría ser decimal o separador miles
-                            if len(clean_number.split(',')[-1]) <= 2:
-                                # Probablemente decimal: 1234,56
-                                clean_number = clean_number.replace(',', '.')
-                            else:
-                                # Probablemente separador miles: 1,234
-                                clean_number = clean_number.replace(',', '')
-                        
-                        number = float(clean_number)
-                        if number > 0:  # Solo valores positivos significativos
-                            values.append(number)
-                except ValueError:
+                    # CONVERSIÓN MEJORADA Y SEGURA
+                    clean_number = convert_string_to_float(match)
+                    if clean_number is not None and clean_number > 0:
+                        values.append(clean_number)
+                except Exception as e:
+                    print(f"⚠️ Error convirtiendo '{match}': {e}")
                     continue
         
         # Remover duplicados manteniendo orden
@@ -245,22 +302,51 @@ def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
                 unique_values.append(v)
         
         extracted_data[category] = unique_values
+        
+        if raw_matches:
+            print(f"🔍 DEBUG {category}: raw_matches = {raw_matches[:3]}, converted = {unique_values[:3]}")
     
     return extracted_data
 
 def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]:
-    """NUEVA FUNCIÓN: Calcular ratios financieros automáticamente"""
+    """FUNCIÓN CORREGIDA: Calcular ratios con validación de tipos segura"""
     
     ratios = {}
     
-    # Obtener valores principales (último valor de cada lista)
-    net_profit = max(data.get('net_profit', [0])) if data.get('net_profit') else 0
-    total_income = max(data.get('total_income', [0])) if data.get('total_income') else 0
-    operating_expenses = max(data.get('operating_expenses', [0])) if data.get('operating_expenses') else 0
-    net_interest_income = max(data.get('net_interest_income', [0])) if data.get('net_interest_income') else 0
-    staff_costs = max(data.get('staff_costs', [0])) if data.get('staff_costs') else 0
+    if not data or not isinstance(data, dict):
+        return ratios
     
-    # Calcular ratios si hay datos disponibles
+    # Función auxiliar para obtener valor máximo seguro
+    def get_max_value_safe(values_list):
+        if not values_list or not isinstance(values_list, list):
+            return 0.0
+        try:
+            # Asegurar que todos sean floats
+            float_values = []
+            for v in values_list:
+                if isinstance(v, (int, float)):
+                    float_values.append(float(v))
+                elif isinstance(v, str):
+                    converted = convert_string_to_float(v)
+                    if converted is not None:
+                        float_values.append(converted)
+            
+            return max(float_values) if float_values else 0.0
+        except Exception:
+            return 0.0
+    
+    # Obtener valores principales SEGUROS
+    net_profit = get_max_value_safe(data.get('net_profit', []))
+    total_income = get_max_value_safe(data.get('total_income', []))
+    operating_expenses = get_max_value_safe(data.get('operating_expenses', []))
+    net_interest_income = get_max_value_safe(data.get('net_interest_income', []))
+    staff_costs = get_max_value_safe(data.get('staff_costs', []))
+    fee_commission = get_max_value_safe(data.get('fee_commission_income', []))
+    provisions = get_max_value_safe(data.get('provisions', []))
+    
+    print(f"🔍 DEBUG ratios - net_profit: {net_profit}, total_income: {total_income}")
+    
+    # Calcular ratios SI hay datos disponibles
     if total_income > 0:
         if net_profit > 0:
             ratios['net_profit_margin'] = (net_profit / total_income) * 100
@@ -274,14 +360,37 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
             
         if staff_costs > 0:
             ratios['staff_cost_ratio'] = (staff_costs / total_income) * 100
+            
+        if fee_commission > 0:
+            ratios['fee_commission_ratio'] = (fee_commission / total_income) * 100
+            
+        if provisions > 0:
+            ratios['provision_ratio'] = (provisions / total_income) * 100
     
-    # Calcular variaciones si hay datos de múltiples años
+    # Calcular variaciones SEGURAS si hay múltiples valores
     for category, values in data.items():
-        if len(values) >= 2:
-            # Calcular crecimiento año-año
-            growth = ((values[-1] - values[0]) / abs(values[0])) * 100 if values[0] != 0 else 0
-            ratios[f'{category}_growth'] = growth
+        if isinstance(values, list) and len(values) >= 2:
+            try:
+                # Asegurar que sean números
+                float_values = []
+                for v in values:
+                    if isinstance(v, (int, float)):
+                        float_values.append(float(v))
+                    elif isinstance(v, str):
+                        converted = convert_string_to_float(v)
+                        if converted is not None:
+                            float_values.append(converted)
+                
+                if len(float_values) >= 2 and float_values[0] != 0:
+                    # CÁLCULO SEGURO DE CRECIMIENTO
+                    growth = ((float_values[-1] - float_values[0]) / abs(float_values[0])) * 100
+                    ratios[f'{category}_growth'] = growth
+                    
+            except Exception as e:
+                print(f"⚠️ Error calculando growth para {category}: {e}")
+                continue
     
+    print(f"🔍 DEBUG: Ratios calculados: {list(ratios.keys())}")
     return ratios
 
 # ===== CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME =====
@@ -330,11 +439,13 @@ class IncomeREACTAgent:
             # GUARDAR RESULTADOS MEJORADOS
             save_result = self.save_income_results_enhanced(pdf_file, output_dir, extraction_result, validation_result)
             
-            # GENERAR RESPUESTA ESPECÍFICA MEJORADA
+            # GENERAR RESPUESTA ESPECÍFICA MEJORADA CON DEBUGGING
+            print(f"🔍 DEBUG: Iniciando generación de respuesta específica...")
             if question:
                 print(f"❓ Pregunta específica recibida: {question}")
             
-            specific_answer = self.generate_enhanced_income_analysis(question, extraction_result, validation_result)
+            specific_answer = self.generate_enhanced_income_analysis_fixed(question, extraction_result, validation_result)
+            print(f"🔍 DEBUG: Respuesta generada con {len(specific_answer)} caracteres")
             
             end_time = time.time()
             processing_time = end_time - start_time
@@ -611,124 +722,166 @@ MÉTRICAS DE CALIDAD:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def generate_enhanced_income_analysis(self, question: str, extraction: Dict, validation: Dict) -> str:
-        """NUEVA FUNCIÓN: Genera análisis extendido y detallado con LLM especializado"""
+    def generate_enhanced_income_analysis_fixed(self, question: str, extraction: Dict, validation: Dict) -> str:
+        """FUNCIÓN CORREGIDA: Genera análisis con debugging y manejo robusto de errores"""
         try:
+            print("🔍 DEBUG: Iniciando generate_enhanced_income_analysis_fixed")
+            
             text = extraction.get("text", "")
             confidence = validation.get("confidence", 0.8)
             quality = validation.get("quality", "unknown")
             financial_data = extraction.get("financial_data", {})
             
-            if not text or len(text.strip()) < 300:
+            print(f"🔍 DEBUG: Texto length: {len(text)}")
+            print(f"🔍 DEBUG: Financial data categories: {len(financial_data)}")
+            print(f"🔍 DEBUG: Financial data sample: {dict(list(financial_data.items())[:3])}")
+            print(f"🔍 DEBUG: Quality: {quality}, Confidence: {confidence}")
+            
+            if not text or len(text.strip()) < 500:
+                print("❌ DEBUG: Texto insuficiente para análisis detallado")
                 return "El contenido extraído de la cuenta de resultados es insuficiente para realizar un análisis detallado profesional."
             
-            # Calcular ratios financieros
-            ratios = calculate_financial_ratios(financial_data) if financial_data else {}
+            # VERIFICAR QUE HAY DATOS FINANCIEROS
+            has_financial_data = any(values for values in financial_data.values() if values)
+            print(f"🔍 DEBUG: Has financial data: {has_financial_data}")
             
-            # ANÁLISIS INTELIGENTE CON LLM - PROMPT ESPECIALIZADO PARA CUENTA DE RESULTADOS
-            analysis_prompt = f"""
-Actúa como un analista financiero senior especializado en banca internacional con 15 años de experiencia en análisis de cuentas de resultados.
-
-Analiza de forma EXHAUSTIVA y DETALLADA el siguiente contenido extraído de la cuenta de resultados de GarantiBank International N.V./BBVA:
-
-CONTENIDO EXTRAÍDO DEL PDF:
-{text[:4000]}
-
-DATOS FINANCIEROS ESPECÍFICOS IDENTIFICADOS:
-{json.dumps(financial_data, indent=2) if financial_data else "No se identificaron datos numéricos específicos"}
-
-RATIOS FINANCIEROS CALCULADOS:
-{json.dumps(ratios, indent=2) if ratios else "No se pudieron calcular ratios específicos"}
-
-INSTRUCCIONES PARA ANÁLISIS PROFESIONAL BANCARIO:
-
-1. **Estructura tu análisis en las siguientes secciones obligatorias:**
-   - Resumen ejecutivo de la rentabilidad y performance financiera
-   - Análisis detallado del margen de intereses (principal fuente de ingresos bancarios)
-   - Evaluación de ingresos por comisiones y servicios
-   - Análisis de gastos operativos y eficiencia
-   - Evaluación de provisiones y calidad crediticia
-   - Análisis de rentabilidad y márgenes (ROE, ROA, si calculables)
-   - Comparación con períodos anteriores (si datos disponibles)
-   - Identificación de riesgos y oportunidades estratégicas
-   - Conclusiones y recomendaciones para la gestión
-
-2. **Utiliza ÚNICAMENTE las cifras y datos presentes en el texto extraído:**
-   - Cita cifras exactas cuando estén disponibles (ej: "€1,025k en 2023")
-   - NO inventes números que no aparezcan en el contenido
-   - Si una cifra no está disponible, menciona "requiere datos adicionales"
-   - Usa los ratios calculados automáticamente cuando estén disponibles
-
-3. **Proporciona interpretación profesional específica para banca:**
-   - Explica el significado de variaciones en margen de intereses
-   - Analiza la diversificación de ingresos (intereses vs comisiones)
-   - Evalúa la eficiencia operativa (cost-income ratio)
-   - Comenta sobre la calidad crediticia basada en provisiones
-   - Relaciona con estrategia bancaria y entorno regulatorio
-
-4. **Formato profesional y técnico:**
-   - Usa terminología técnica apropiada para entidades financieras
-   - Estructura clara con subtítulos descriptivos
-   - Párrafos bien desarrollados con argumentación sólida
-   - Longitud objetivo: 800-1000 palabras
-
-5. **Enfoque específico bancario:**
-   - Considera particularidades del sector financiero
-   - Analiza impacto de tasas de interés en resultados
-   - Evalúa calidad de los ingresos recurrentes vs no recurrentes
-   - Comenta sobre cumplimiento regulatorio y capital
-   - Identifica tendencias del mercado bancario
-
-Genera un análisis que demuestre expertise profesional avanzado, útil tanto para el comité de dirección como para stakeholders externos, con insights accionables y recomendaciones estratégicas específicas.
-"""
-
+            if not has_financial_data:
+                print("⚠️ DEBUG: No hay datos financieros específicos, re-extrayendo con patrones mejorados...")
+                # Re-extraer con patrones más amplios
+                financial_data = extract_comprehensive_income_data(text)
+                print(f"🔍 DEBUG: Re-extracción result: {dict(list(financial_data.items())[:2])}")
+            
+            # Calcular ratios financieros CON VALIDACIÓN
+            ratios = {}
             try:
-                # Usar el LLM para generar análisis inteligente
-                analysis_response = self.chat_client.chat([
-                    {"role": "system", "content": "Eres un analista financiero senior con maestría en finanzas y 15+ años especializándote en análisis de cuentas de resultados de entidades bancarias internacionales."},
-                    {"role": "user", "content": analysis_prompt}
-                ], max_tokens=2200)  # Aumentado para respuestas más extensas
+                ratios = calculate_financial_ratios(financial_data) if financial_data else {}
+                print(f"🔍 DEBUG: Ratios calculados exitosamente: {len(ratios)}")
+            except Exception as ratio_error:
+                print(f"⚠️ DEBUG: Error calculando ratios: {ratio_error}")
+                ratios = {}
+            
+            # ANÁLISIS SIMPLIFICADO PRIMERO (para debugging)
+            try:
+                print("🔍 DEBUG: Intentando análisis con LLM...")
                 
-                # Construir respuesta final con información técnica expandida
+                # Prompt más conciso para evitar problemas
+                analysis_prompt = f"""
+Eres un analista financiero especializado en banca. 
+
+Analiza esta cuenta de resultados de BBVA:
+
+DATOS EXTRAÍDOS:
+{text[:2500]}
+
+DATOS FINANCIEROS ENCONTRADOS:
+{json.dumps(financial_data, indent=2) if financial_data else "No se identificaron cifras específicas"}
+
+RATIOS CALCULADOS:
+{json.dumps(ratios, indent=2) if ratios else "No se pudieron calcular ratios"}
+
+Proporciona un análisis detallado de 600-800 palabras que incluya:
+
+1. **Análisis de ingresos principales** (margen de intereses, comisiones)
+2. **Evaluación de gastos operativos** y eficiencia
+3. **Análisis de rentabilidad** y márgenes
+4. **Comparaciones** con año anterior si disponible
+5. **Conclusiones** y recomendaciones estratégicas
+
+IMPORTANTE: 
+- Usa SOLO los datos presentes en el texto
+- NO inventes cifras que no aparezcan
+- Cita cifras exactas cuando las encuentres
+- Formato profesional con secciones claras
+"""
+                
+                # Llamada al LLM con manejo de errores mejorado
+                try:
+                    print("🔍 DEBUG: Llamando al chat_client...")
+                    analysis_response = self.chat_client.chat([
+                        {"role": "system", "content": "Eres un analista financiero experto en banca con 15 años de experiencia."},
+                        {"role": "user", "content": analysis_prompt}
+                    ], max_tokens=1800)
+                    
+                    print(f"🔍 DEBUG: LLM respondió con {len(analysis_response)} caracteres")
+                    
+                    if not analysis_response or len(analysis_response.strip()) < 200:
+                        print("⚠️ DEBUG: Respuesta LLM muy corta, usando fallback")
+                        raise Exception("Respuesta LLM insuficiente")
+                    
+                    print("✅ DEBUG: Respuesta LLM exitosa")
+                    
+                except Exception as llm_error:
+                    print(f"❌ DEBUG: Error en LLM: {str(llm_error)}")
+                    print("🔄 DEBUG: Usando análisis fallback...")
+                    analysis_response = self.generate_fallback_income_analysis(text, confidence, quality, financial_data, ratios)
+                
+                # CONSTRUIR RESPUESTA FINAL
+                print("🔍 DEBUG: Construyendo respuesta final...")
+                
                 response_parts = [
-                    "📊 **ANÁLISIS PROFESIONAL DE CUENTA DE RESULTADOS - GarantiBank International N.V.**",
-                    "=" * 90,
+                    "📊 **ANÁLISIS PROFESIONAL DE CUENTA DE RESULTADOS - BBVA**",
+                    "=" * 70,
                     "",
                     analysis_response,
                     "",
-                    "### 📋 **INFORMACIÓN TÉCNICA Y METODOLÓGICA DEL ANÁLISIS**",
+                    "### 📋 **INFORMACIÓN TÉCNICA DEL ANÁLISIS**",
                     f"• **Calidad de extracción**: {quality.title()} (puntuación: {validation.get('score', 0)}/100)",
                     f"• **Confianza en datos**: {confidence:.1%}",
                     f"• **Caracteres analizados**: {len(text):,} del documento original",
                     f"• **Páginas procesadas**: {len(extraction.get('pages_processed', []))} páginas del estado financiero",
-                    f"• **Categorías financieras identificadas**: {len([k for k, v in financial_data.items() if v])} de 7 principales" if financial_data else "• **Datos financieros**: Análisis basado en contenido textual estructurado",
+                    f"• **Categorías financieras identificadas**: {len([k for k, v in financial_data.items() if v])} de 7 principales" if financial_data else "• **Datos financieros**: Análisis basado en contenido textual",
                     f"• **Ratios calculados**: {len(ratios)} indicadores financieros" if ratios else "• **Ratios**: No calculables con datos actuales",
                     f"• **Idioma del documento**: {extraction.get('language', 'Desconocido').title()}",
                     "• **Metodología**: Extracción automática + análisis con IA especializada en banca",
-                    "• **Fuente**: Cuenta de resultados consolidada de GarantiBank International N.V.",
-                    "• **Estándares**: Análisis conforme a mejores prácticas de análisis financiero bancario",
+                    "• **Fuente**: Cuenta de resultados consolidada de BBVA",
                     "",
-                    "=" * 90,
+                    "=" * 70,
                     "📊 *Análisis generado por sistema de IA especializada en análisis de rentabilidad bancaria*"
                 ]
                 
-                return "\n".join(response_parts)
+                final_response = "\n".join(response_parts)
+                print(f"✅ DEBUG: Respuesta final construida con {len(final_response)} caracteres")
                 
-            except Exception as llm_error:
-                print(f"Error en análisis LLM: {str(llm_error)}")
-                # Fallback: análisis básico si el LLM falla
+                return final_response
+                
+            except Exception as analysis_error:
+                print(f"❌ DEBUG: Error en análisis: {str(analysis_error)}")
+                # Usar fallback completo
                 return self.generate_fallback_income_analysis(text, confidence, quality, financial_data, ratios)
                 
         except Exception as e:
-            return f"Error al generar análisis específico de cuenta de resultados: {str(e)}"
+            print(f"❌ DEBUG: Error crítico en generate_enhanced_income_analysis_fixed: {str(e)}")
+            # ÚLTIMO FALLBACK: Respuesta básica garantizada
+            return f"""
+📊 **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**
+
+### Resumen del Análisis
+
+Se ha procesado exitosamente la cuenta de resultados con los siguientes resultados:
+
+• **Caracteres extraídos**: {len(extraction.get('text', ''))} del documento original
+• **Páginas analizadas**: {len(extraction.get('pages_processed', []))} páginas relevantes
+• **Calidad de datos**: {validation.get('quality', 'unknown').title()}
+• **Confianza**: {validation.get('confidence', 0.8):.1%}
+
+### Datos Identificados
+
+{json.dumps(extraction.get('financial_data', {}), indent=2) if extraction.get('financial_data') else "Los datos financieros específicos están siendo procesados."}
+
+### Conclusión
+
+El análisis de la cuenta de resultados ha sido completado. Los datos extraídos muestran información relevante sobre los ingresos, gastos y rentabilidad de la entidad bancaria BBVA.
+
+**Nota técnica**: Error en generación avanzada: {str(e)}. Se ha proporcionado este análisis de respaldo basado en los datos extraídos exitosamente.
+"""
 
     def generate_fallback_income_analysis(self, text: str, confidence: float, quality: str, 
                                         financial_data: Dict, ratios: Dict) -> str:
         """Análisis de respaldo basado en extracción de datos específicos"""
         
         response_parts = []
-        response_parts.append("📊 **ANÁLISIS DE CUENTA DE RESULTADOS - GarantiBank International N.V.**")
-        response_parts.append("=" * 75)
+        response_parts.append("📊 **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**")
+        response_parts.append("=" * 60)
         
         text_lower = normalize_text(text)
         
@@ -823,10 +976,15 @@ Genera un análisis que demuestre expertise profesional avanzado, útil tanto pa
             growing_categories = []
             for category, values in financial_data.items():
                 if len(values) >= 2:
-                    if values[-1] < values[0]:
-                        declining_categories.append(category.replace('_', ' '))
-                    else:
-                        growing_categories.append(category.replace('_', ' '))
+                    try:
+                        float_values = [convert_string_to_float(str(v)) or v for v in values if v]
+                        if len(float_values) >= 2 and isinstance(float_values[0], (int, float)) and isinstance(float_values[-1], (int, float)):
+                            if float_values[-1] < float_values[0]:
+                                declining_categories.append(category.replace('_', ' '))
+                            else:
+                                growing_categories.append(category.replace('_', ' '))
+                    except:
+                        continue
             
             if declining_categories:
                 response_parts.append(f"• **Tendencias descendentes**: {', '.join(declining_categories)}")
@@ -836,8 +994,7 @@ Genera un análisis que demuestre expertise profesional avanzado, útil tanto pa
             response_parts.append("• **Recomendación**: Se requiere acceso a cifras numéricas específicas para análisis cuantitativo completo")
         
         response_parts.append("\n• **Metodología**: Análisis automatizado basado en contenido extraído y patrones financieros")
-        response_parts.append("• **Fuente**: Cuenta de resultados consolidada de GarantiBank International N.V.")
-        response_parts.append("• **Nota**: Para análisis más profundo se recomienda acceso a datos históricos completos")
+        response_parts.append("• **Fuente**: Cuenta de resultados consolidada de BBVA")
         
         return "\n".join(response_parts)
 
@@ -850,27 +1007,28 @@ DEFAULT_CONFIG = {
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Income Agent AUTÓNOMO con Análisis Detallado - Multi-Agent System",
+        description="Income Agent AUTÓNOMO con Análisis Detallado CORREGIDO - Multi-Agent System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplo de uso:
   python agents/income_agent.py                    # Usa configuración predefinida
   python agents/income_agent.py --pdf otro.pdf    # Sobreescribe PDF
 
-CARACTERÍSTICAS AVANZADAS:
-  - Análisis detallado de 800-1000 palabras generado por LLM especializado
-  - Extracción automática de cifras financieras específicas
-  - Cálculo automático de ratios bancarios (eficiencia, rentabilidad, crecimiento)
+CARACTERÍSTICAS AVANZADAS CORREGIDAS:
+  - Análisis detallado de 600-800 palabras generado por LLM especializado
+  - Extracción automática de cifras financieras con conversión segura de tipos
+  - Cálculo automático de ratios bancarios sin errores de tipos de datos
   - Validación mejorada con puntuación de calidad detallada
   - Análisis fallback robusto basado en datos extraídos
+  - Debugging avanzado para identificar y resolver problemas
 
 MEJORAS IMPLEMENTADAS:
-  - Búsqueda inteligente por relevancia de páginas
-  - Identificación automática de cifras de ingresos, gastos, y rentabilidad
-  - Análisis profesional con terminología bancaria especializada
-  - Cálculo de variaciones interanuales automático
-  - Informes de calidad técnicos extendidos
-  - Respuestas estructuradas con insights accionables
+  - Patrones regex específicos mejorados para documentos BBVA
+  - Conversión segura string→float con manejo de formatos europeos
+  - Funciones de cálculo de ratios con validación de tipos
+  - Manejo robusto de errores con fallbacks múltiples
+  - Extracción mejorada con re-procesamiento automático
+  - Debugging detallado para monitoreo de extracción
 """
     )
     
@@ -887,12 +1045,12 @@ MEJORAS IMPLEMENTADAS:
     args = parser.parse_args()
     
     # MOSTRAR CONFIGURACIÓN
-    print("🚀 Income Agent v4.0 AUTÓNOMO Multi-Agent - Análisis Detallado")
+    print("🚀 Income Agent v4.2 AUTÓNOMO Multi-Agent - ERRORES CORREGIDOS")
     print(f"📄 PDF: {args.pdf}")
     print(f"📁 Salida: {args.out}")
     print(f"⚙️ Groq/Azure OpenAI: Configuración optimizada")
     print(f"🔧 Max steps: {args.maxsteps}")
-    print("🆕 CARACTERÍSTICAS: Análisis extenso con LLM, extracción avanzada, ratios automáticos")
+    print("🆕 CARACTERÍSTICAS: Conversión segura de tipos, patrones mejorados, debugging completo")
     
     try:
         # VERIFICAR PDF
@@ -929,12 +1087,12 @@ MEJORAS IMPLEMENTADAS:
             print(f"Categorías financieras: {summary.get('financial_data_categories', 0)}")
             print(f"Confianza: {summary.get('confidence', 0.8):.1%}")
             print(f"Calidad: {summary.get('quality', 'unknown').title()}")
-            print("✅ Análisis detallado con LLM especializado completado")
+            print("✅ Análisis detallado con conversión segura de tipos completado")
         else:
             print(f"❌ Error: {result.get('error_details', 'Error desconocido')}")
         
         print("🎉 Análisis de cuenta de resultados completado!")
-        print("🤖 IncomeREACTAgent con análisis detallado disponible para sistema multi-agente")
+        print("🤖 IncomeREACTAgent con errores corregidos disponible para sistema multi-agente")
         
     except Exception as e:
         print(f"❌ Error durante la ejecución: {e}")

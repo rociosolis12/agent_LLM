@@ -1,18 +1,26 @@
 
-REPORTE DE CALIDAD - FLUJOS DE EFECTIVO
-=====================================
+REPORTE DE CALIDAD EXTENDIDO - FLUJOS DE EFECTIVO
+=================================================
 PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-09-17 15:49:54
+Fecha: 2025-09-17 20:05:20
 
 RESULTADOS DE VALIDACIÓN:
-- Calidad: fair
-- Confianza: 1.000
-- Puntuación: 25/100
+- Calidad: poor
+- Puntuación: 33/100
+- Confianza final: 1.000
+- Datos financieros encontrados: 4 categorías
 
-DETALLES:
+DETALLES DE VALIDACIÓN:
 ✅ Actividades de financiación encontradas
+✅ Datos financieros específicos: 4 categorías
 
-EXTRACCIÓN:
+EXTRACCIÓN DETALLADA:
 - Caracteres procesados: 2610
-- Páginas procesadas: [6, 7, 8, 9, 10]
+- Páginas procesadas: [5, 6, 7, 8, 9, 10]
 - Chunks generados: 4
+- Datos financieros extraídos: {'operating_cash': [], 'investing_cash': [], 'financing_cash': [], 'net_change_cash': []}
+
+MÉTRICAS DE CALIDAD:
+- Cobertura de secciones: Limitada
+- Precisión de extracción: 100.0%
+- Recomendación: Requiere revisión manual

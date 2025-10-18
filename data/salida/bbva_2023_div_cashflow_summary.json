@@ -2,6 +2,7 @@
   "analysis": {
     "success": true,
     "pages_selected": [
+      5,
       6,
       7,
       8,
@@ -9,27 +10,42 @@
       10
     ],
     "cashflow_found": false,
-    "anchor_page_used": 8
+    "anchor_page_used": 8,
+    "relevance_scores": {}
   },
   "extraction": {
     "total_characters": 2610,
     "confidence": 1.0,
     "pages_processed": [
+      5,
       6,
       7,
       8,
       9,
       10
-    ]
+    ],
+    "financial_data": {
+      "operating_cash": [],
+      "investing_cash": [],
+      "financing_cash": [],
+      "net_change_cash": []
+    }
   },
   "validation": {
     "success": true,
-    "quality": "fair",
+    "quality": "poor",
     "confidence": 1.0,
-    "score": 25,
+    "score": 33,
     "details": [
-      "✅ Actividades de financiación encontradas"
-    ]
+      "✅ Actividades de financiación encontradas",
+      "✅ Datos financieros específicos: 4 categorías"
+    ],
+    "financial_data_found": 4
   },
-  "timestamp": "2025-09-17 15:49:54"
+  "timestamp": "2025-09-17 20:05:20",
+  "extraction_quality_metrics": {
+    "data_categories_found": 4,
+    "quality_score": 33,
+    "final_confidence": 1.0
+  }
 }

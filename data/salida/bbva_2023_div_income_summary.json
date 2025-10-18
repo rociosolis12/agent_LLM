@@ -27,16 +27,24 @@
         "2019",
         "2021",
         "2022",
-        "2020",
-        "2023"
+        "2023",
+        "2020"
       ],
       "net_interest_income": [],
-      "fee_commission_income": [],
-      "operating_expenses": [],
+      "fee_commission_income": [
+        2.0,
+        8.0
+      ],
+      "operating_expenses": [
+        8.0
+      ],
       "staff_costs": [],
       "provisions": [],
       "net_profit": [],
-      "total_income": []
+      "total_income": [
+        2.0,
+        8.0
+      ]
     },
     "confidence": 1.0,
     "language": "en"
@@ -45,19 +53,19 @@
     "success": true,
     "quality": "fair",
     "confidence": 1.0,
-    "score": 52,
+    "score": 58,
     "details": [
       "✅ Ingresos por comisiones encontrados",
       "✅ Gastos operativos encontrados",
       "✅ Beneficio neto encontrado",
-      "✅ Datos financieros específicos: 1 categorías"
+      "✅ Datos financieros específicos: 4 categorías"
     ],
-    "financial_categories_found": 1
+    "financial_categories_found": 4
   },
-  "processing_timestamp": "2025-09-17 16:15:28",
+  "processing_timestamp": "2025-09-17 21:18:04",
   "quality_metrics": {
-    "data_categories_found": 1,
-    "quality_score": 52,
+    "data_categories_found": 4,
+    "quality_score": 58,
     "final_confidence": 1.0
   }
 }

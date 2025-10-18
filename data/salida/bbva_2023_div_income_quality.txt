@@ -2,19 +2,19 @@
 REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
 ==================================================
 PDF: bbva_2023_div.pdf
-Fecha: 2025-09-17 16:15:28
+Fecha: 2025-09-17 21:18:04
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: fair
-- Puntuación: 52/100
+- Puntuación: 58/100
 - Confianza final: 1.000
-- Categorías financieras: 1
+- Categorías financieras: 4
 
 DETALLES DE VALIDACIÓN:
 ✅ Ingresos por comisiones encontrados
 ✅ Gastos operativos encontrados
 ✅ Beneficio neto encontrado
-✅ Datos financieros específicos: 1 categorías
+✅ Datos financieros específicos: 4 categorías
 
 EXTRACCIÓN DETALLADA:
 - Caracteres procesados: 18148
@@ -38,16 +38,24 @@ EXTRACCIÓN DETALLADA:
     "2019",
     "2021",
     "2022",
-    "2020",
-    "2023"
+    "2023",
+    "2020"
   ],
   "net_interest_income": [],
-  "fee_commission_income": [],
-  "operating_expenses": [],
+  "fee_commission_income": [
+    2.0,
+    8.0
+  ],
+  "operating_expenses": [
+    8.0
+  ],
   "staff_costs": [],
   "provisions": [],
   "net_profit": [],
-  "total_income": []
+  "total_income": [
+    2.0,
+    8.0
+  ]
 }
 
 MÉTRICAS DE CALIDAD:
