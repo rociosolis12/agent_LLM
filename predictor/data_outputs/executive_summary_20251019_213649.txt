@@ -1,0 +1,28 @@
+================================================================================
+RESUMEN EJECUTIVO - SISTEMA PREDICTOR HÍBRIDO
+================================================================================
+
+Fecha: 2025-10-19T21:36:29.750308
+Banco: GARAN.IS
+Jurisdicción: TR
+Banco Matriz: BBVA
+
+PREDICCIONES ML
+--------------------------------------------------------------------------------
+Total de predicciones: 8
+
+VALIDACIÓN WALK-FORWARD
+--------------------------------------------------------------------------------
+RECOMENDACIONES
+--------------------------------------------------------------------------------
+[
+  {
+    "level": "SUCCESS",
+    "message": "Excelente precisión de predicción (MAE: 0.0000). El modelo es altamente confiable."
+  },
+  {
+    "level": "WARNING",
+    "message": "Capacidad explicativa limitada (R²: 0.0000). Considerar variables adicionales o modelos alternativos."
+  }
+]
+================================================================================

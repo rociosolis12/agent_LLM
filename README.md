@@ -222,7 +222,7 @@ agent_LLM/
 │
 ├──  data/                         # Datos del Sistema
 │   ├── uploads/                     # PDFs cargados
-│   │   └── GarantiBank_Report.pdf   # 🏦 Ejemplo real
+│   │   └── GarantiBank_Report.pdf   #  Ejemplo real
 │   ├── processed/                   # Datos procesados
 │   │   ├── balance_sheets/          # Balances extraídos
 │   │   ├── income_statements/       # Cuentas de resultado

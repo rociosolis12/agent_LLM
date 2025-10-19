@@ -1,0 +1,107 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Para proporcionarte un análisis cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Sin embargo, puedo ofrecerte un marco general de cómo analizar los datos financieros de un banco como Garanti BBVA, considerando su operación bajo la regulación BRSA en Turquía.\n\n### 1. Principales fortalezas financieras identificadas\n\n- **Solidez del Capital**: Un alto ratio de capital regulatorio (CAR) indica que el banco tiene un colchón adecuado para absorber pérdidas inesperadas, lo cual es crucial en un entorno económico volátil.\n- **Diversificación de Ingresos**: La capacidad de generar ingresos tanto por intereses como por comisiones y otros servicios financieros puede ser una fortaleza, especialmente si el banco tiene una amplia base de clientes.\n- **Eficiencia Operativa**: Un bajo ratio de eficiencia (coste/ingreso) sugiere que el banco está gestionando bien sus costos en relación con sus ingresos.\n\n### 2. Áreas de preocupación o riesgo\n\n- **Exposición a Riesgos de Mercado**: La volatilidad de la lira turca y las tasas de interés pueden afectar negativamente la rentabilidad y el valor de los activos.\n- **Calidad de los Activos**: Un aumento en los préstamos no productivos (NPL) puede indicar problemas en la calidad de la cartera de préstamos.\n- **Entorno Regulatorio y Político**: Cambios en la regulación BRSA o inestabilidad política pueden impactar las operaciones del banco.\n\n### 3. Tendencias observables en los ratios clave\n\n- **Crecimiento de Préstamos**: Un crecimiento sostenido en la cartera de préstamos puede indicar una demanda saludable, pero también podría aumentar el riesgo de crédito si no se gestiona adecuadamente.\n- **Margen de Interés Neto (NIM)**: Un NIM estable o creciente sugiere que el banco está gestionando bien su estructura de costos de financiamiento y sus ingresos por intereses.\n- **Ratio de Liquidez**: Un ratio de liquidez adecuado es crucial para asegurar que el banco pueda cumplir con sus obligaciones a corto plazo.\n\n### 4. Recomendaciones estratégicas de alto nivel\n\n- **Gestión de Riesgos**: Fortalecer las prácticas de gestión de riesgos, especialmente en lo que respecta a la exposición al riesgo de mercado y de crédito.\n- **Innovación Digital**: Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa, lo cual es clave en un mercado cada vez más digital.\n- **Expansión de Mercado**: Considerar la expansión en segmentos de mercado menos saturados o en productos financieros innovadores para diversificar aún más las fuentes de ingresos.\n- **Monitoreo Regulatorio**: Mantener una vigilancia constante sobre los cambios regulatorios y adaptar las estrategias en consecuencia para asegurar el cumplimiento y minimizar riesgos.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y preciso.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T18:07:44.114877",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T18:07:44.125552",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Para proporcionarte un análisis cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Sin embargo, puedo ofrecerte un marco general de cómo analizar los datos financieros de un banco como Garanti BBVA, considerando su operación bajo la regulación BRSA en Turquía.\n\n### 1. Principales fortalezas financieras identificadas\n\n- **Solidez del Capital**: Un alto ratio de capital regulatorio (CAR) indica que el banco tiene un colchón adecuado para absorber pérdidas inesperadas, lo cual es crucial en un entorno económico volátil.\n- **Diversificación de Ingresos**: La capacidad de generar ingresos tanto por intereses como por comisiones y otros servicios financieros puede ser una fortaleza, especialmente si el banco tiene una amplia base de clientes.\n- **Eficiencia Operativa**: Un bajo ratio de eficiencia (coste/ingreso) sugiere que el banco está gestionando bien sus costos en relación con sus ingresos.\n\n### 2. Áreas de preocupación o riesgo\n\n- **Exposición a Riesgos de Mercado**: La volatilidad de la lira turca y las tasas de interés pueden afectar negativamente la rentabilidad y el valor de los activos.\n- **Calidad de los Activos**: Un aumento en los préstamos no productivos (NPL) puede indicar problemas en la calidad de la cartera de préstamos.\n- **Entorno Regulatorio y Político**: Cambios en la regulación BRSA o inestabilidad política pueden impactar las operaciones del banco.\n\n### 3. Tendencias observables en los ratios clave\n\n- **Crecimiento de Préstamos**: Un crecimiento sostenido en la cartera de préstamos puede indicar una demanda saludable, pero también podría aumentar el riesgo de crédito si no se gestiona adecuadamente.\n- **Margen de Interés Neto (NIM)**: Un NIM estable o creciente sugiere que el banco está gestionando bien su estructura de costos de financiamiento y sus ingresos por intereses.\n- **Ratio de Liquidez**: Un ratio de liquidez adecuado es crucial para asegurar que el banco pueda cumplir con sus obligaciones a corto plazo.\n\n### 4. Recomendaciones estratégicas de alto nivel\n\n- **Gestión de Riesgos**: Fortalecer las prácticas de gestión de riesgos, especialmente en lo que respecta a la exposición al riesgo de mercado y de crédito.\n- **Innovación Digital**: Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa, lo cual es clave en un mercado cada vez más digital.\n- **Expansión de Mercado**: Considerar la expansión en segmentos de mercado menos saturados o en productos financieros innovadores para diversificar aún más las fuentes de ingresos.\n- **Monitoreo Regulatorio**: Mantener una vigilancia constante sobre los cambios regulatorios y adaptar las estrategias en consecuencia para asegurar el cumplimiento y minimizar riesgos.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y preciso.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Para proporcionarte un análisis cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Sin embargo, puedo ofrecerte un marco general de cómo analizar los datos financieros de un banco como Garanti BBVA, considerando su operación bajo la regulación BRSA en Turquía.\n\n### 1. Principales fortalezas financieras identificadas\n\n- **Solidez del Capital**: Un alto ratio de capital regulatorio (CAR) indica que el banco tiene un colchón adecuado "
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {
+    "capital_ratios": {
+      "cet1_minimum": 4.5,
+      "cet1_with_buffers": 10.5,
+      "tier1_minimum": 6.0,
+      "total_capital_minimum": 8.0,
+      "leverage_ratio_minimum": 3.0
+    },
+    "liquidity_ratios": {
+      "lcr_minimum": 100.0,
+      "nsfr_minimum": 100.0
+    },
+    "performance_benchmarks": {
+      "roa_healthy": 1.0,
+      "roa_warning": 0.5,
+      "roe_healthy": 10.0,
+      "roe_warning": 5.0
+    },
+    "risk_thresholds": {
+      "solvency_critical": 3.0,
+      "solvency_warning": 5.0,
+      "liquidity_critical": 80.0,
+      "liquidity_warning": 90.0
+    },
+    "metadata": {
+      "regulation_framework": "Basel III/IV",
+      "effective_date": "2025-10-19",
+      "source": "BRSA Regulation",
+      "notes": "Applies Basel III standards as per BRSA guidelines for Turkey.",
+      "retrieval_timestamp": "2025-10-19T18:07:38.129464"
+    }
+  }
+}

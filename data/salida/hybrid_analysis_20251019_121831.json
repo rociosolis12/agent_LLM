@@ -1,0 +1,107 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para proporcionar un análisis cualitativo detallado sobre Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas que analice. Una vez que tenga acceso a esos datos, podré identificar las fortalezas, áreas de riesgo, tendencias en los ratios clave y ofrecer recomendaciones estratégicas basadas en la situación actual del banco. Por favor, proporciona los datos financieros para proceder con el análisis.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T12:18:31.252857",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T12:18:31.263210",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para proporcionar un análisis cualitativo detallado sobre Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas que analice. Una vez que tenga acceso a esos datos, podré identificar las fortalezas, áreas de riesgo, tendencias en los ratios clave y ofrecer recomendaciones estratégicas basadas en la situación actual del banco. Por favor, proporciona los datos financieros para proceder con el análisis.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Claro, para proporcionar un análisis cualitativo detallado sobre Garanti BBVA, necesitaría que me proporciones los datos financieros específicos que deseas que analice. Una vez que tenga acceso a esos datos, podré identificar las fortalezas, áreas de riesgo, tendencias en los ratios clave y ofrecer recomendaciones estratégicas basadas en la situación actual del banco. Por favor, proporciona los datos financieros para proceder con el análisis."
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {
+    "capital_ratios": {
+      "cet1_minimum": 4.5,
+      "cet1_with_buffers": 7.0,
+      "tier1_minimum": 6.0,
+      "total_capital_minimum": 8.0,
+      "leverage_ratio_minimum": 3.0
+    },
+    "liquidity_ratios": {
+      "lcr_minimum": 100.0,
+      "nsfr_minimum": 100.0
+    },
+    "performance_benchmarks": {
+      "roa_healthy": 1.0,
+      "roa_warning": 0.5,
+      "roe_healthy": 10.0,
+      "roe_warning": 5.0
+    },
+    "risk_thresholds": {
+      "solvency_critical": 3.0,
+      "solvency_warning": 5.0,
+      "liquidity_critical": 80.0,
+      "liquidity_warning": 90.0
+    },
+    "metadata": {
+      "regulation_framework": "Basel III/IV",
+      "effective_date": "2025-10-19",
+      "source": "BRSA (Banking Regulation and Supervision Agency of Turkey)",
+      "notes": "Applies Basel III standards with local adjustments by BRSA.",
+      "retrieval_timestamp": "2025-10-19T12:18:29.355125"
+    }
+  }
+}

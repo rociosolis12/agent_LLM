@@ -43,13 +43,22 @@ from config import (
 
 from financial_coordinator import FinancialCoordinator
 from extractor_pdf_agent import PDFExtractorAgent  
-from predictor_agent import PredictorAgent         
+
+from predictor_agent import PredictorAgent
+
+# ========== NUEVO: MÓDULO PREDICTOR HÍBRIDO ==========
+try:
+    from predictor.main_predictor import PredictorOrchestrator
+    HYBRID_PREDICTOR_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️ Módulo predictor híbrido no disponible: {e}")
+    HYBRID_PREDICTOR_AVAILABLE = False
 
 # Importar agentes especializados
-from balance_agent import BalanceREACTAgent
-from income_agent import IncomeREACTAgent
-from cashflows_agent import CashFlowsREACTAgent
-from equity_agent import EquityREACTAgent
+from agents.balance_agent import BalanceREACTAgent
+from agents.income_agent import IncomeREACTAgent
+from agents. cashflows_agent import CashFlowsREACTAgent
+from agents.equity_agent import EquityREACTAgent
 
 # =============================
 # CLASE PRINCIPAL 
@@ -59,6 +68,8 @@ class FinancialExtractionSystem:
     """Sistema principal de extracción financiera con pipeline completo"""
     
     def __init__(self):
+        self.logger = self._setup_logger()
+
         self.agents = {
             'balance': BalanceREACTAgent,
             'income': IncomeREACTAgent,
@@ -70,6 +81,23 @@ class FinancialExtractionSystem:
         self.pdf_extractor = PDFExtractorAgent()
         self.predictor = PredictorAgent()
         self.coordinator = FinancialCoordinator()
+
+        if HYBRID_PREDICTOR_AVAILABLE:
+            try:
+                self.hybrid_predictor = PredictorOrchestrator(
+                    bank_symbol="GARAN.IS",
+                    jurisdiction="TR",
+                    parent_bank="BBVA",
+                    data_dir=str(DATA_OUTPUT_DIR),
+                    output_dir=str(DATA_OUTPUT_DIR),
+                    always_generate_new=True
+                )
+                self.logger.info(" Orquestador predictor híbrido inicializado")
+            except Exception as e:
+                self.logger.warning(f"Error inicializando predictor híbrido: {e}")
+                self.hybrid_predictor = None
+        else:
+            self.hybrid_predictor = None
         
         self.results = {}
         self.logger = self._setup_logger()
@@ -83,130 +111,300 @@ class FinancialExtractionSystem:
         return logging.getLogger(__name__)
 
     # Ejecutar pipeline completo
-    async def run_complete_pipeline(self, question: str = None) -> Dict:
+    async def run_complete_pipeline_with_hybrid_predictor(
+        self, 
+        question: str = None,
+        generate_new_predictions: bool = True
+    ) -> Dict:
         """
-        Ejecutar pipeline completo: PDF Extractor → Agentes Especializados → Predictor
+        Ejecutar pipeline completo con predictor híbrido avanzado
+        
+        Pipeline completo:
+        ├── PASO 1: Extractor PDF
+        │   └── Extrae estados financieros de PDFs
+        ├── PASO 2: Agentes Especializados
+        │   ├── BalanceAgent
+        │   ├── IncomeAgent
+        │   ├── CashFlowsAgent
+        │   └── EquityAgent
+        └── PASO 3: Predictor Híbrido 
+            ├── 3.1: Generar NUEVAS predicciones ML (Prophet + XGBoost)
+            ├── 3.2: Validación walk-forward
+            ├── 3.3: Análisis híbrido (LLM + ML + Regulatory)
+            └── 3.4: Consolidar y exportar resultados
+        
+        Args:
+            question: Pregunta del usuario (opcional)
+            generate_new_predictions: Si generar nuevas predicciones ML (default: True)
+            
+        Returns:
+            Dict con resultados consolidados del pipeline completo
         """
         try:
-            self.logger.info(" Iniciando pipeline completo multi-agente")
+            self.logger.info("="*80)
+            self.logger.info("🚀 INICIANDO PIPELINE COMPLETO CON PREDICTOR HÍBRIDO")
+            self.logger.info("="*80)
+            self.logger.info("🔄 Modo: GENERACIÓN AUTOMÁTICA DE NUEVAS PREDICCIONES ML")
             
             pipeline_result = {
                 "success": True,
                 "pipeline_steps": [],
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "mode": "hybrid_predictor_advanced"
             }
             
+            # ============================================================
             # PASO 1: EXTRACTOR PDF
-            self.logger.info(" Ejecutando extractor PDF...")
-            extraction_result = await self.pdf_extractor.extract_financial_statements()
+            # ============================================================
+            self.logger.info("📄 PASO 1/3: Ejecutando extractor PDF...")
             
-            pipeline_result["pipeline_steps"].append({
-                "step": "pdf_extraction",
-                "success": extraction_result["success"],
-                "details": extraction_result
-            })
-            
-            if not extraction_result["success"]:
+            try:
+                extraction_result = await self.pdf_extractor.extract_financial_statements()
+                
+                pipeline_result["pipeline_steps"].append({
+                    "step": "pdf_extraction",
+                    "step_number": 1,
+                    "success": extraction_result["success"],
+                    "details": extraction_result
+                })
+                
+                if not extraction_result["success"]:
+                    pipeline_result["success"] = False
+                    pipeline_result["error"] = f"PDF extraction failed: {extraction_result.get('error', 'Unknown error')}"
+                    self.logger.error(f"❌ Error en extracción PDF: {pipeline_result['error']}")
+                    return pipeline_result
+                
+                self.logger.info(f"✅ PDF extraído: {extraction_result.get('pages_extracted', 0)} páginas procesadas")
+                
+            except Exception as e:
+                self.logger.error(f"❌ Error crítico en extracción PDF: {e}")
                 pipeline_result["success"] = False
-                pipeline_result["error"] = f"PDF extraction failed: {extraction_result['error']}"
+                pipeline_result["error"] = f"PDF extraction error: {str(e)}"
                 return pipeline_result
             
+            # ============================================================
             # PASO 2: AGENTES ESPECIALIZADOS
-            self.logger.info(" Ejecutando agentes especializados...")
+            # ============================================================
+            self.logger.info("🤖 PASO 2/3: Ejecutando agentes especializados...")
             
-            if question:
-                coordinator_result = await self.coordinator.process_question(question)
-            else:
-                # Ejecutar análisis general
-                coordinator_result = await self.coordinator.process_request({
-                    "type": "general_analysis",
-                    "timestamp": datetime.now().isoformat()
+            try:
+                if question:
+                    self.logger.info(f"   Pregunta del usuario: {question}")
+                    coordinator_result = await self.coordinator.process_question(question)
+                else:
+                    self.logger.info("   Ejecutando análisis general (sin pregunta específica)")
+                    coordinator_result = await self.coordinator.process_request({
+                        "type": "general_analysis",
+                        "timestamp": datetime.now().isoformat()
+                    })
+                
+                pipeline_result["pipeline_steps"].append({
+                    "step": "specialized_agents",
+                    "step_number": 2,
+                    "success": coordinator_result.get("success", False),
+                    "details": coordinator_result
+                })
+                
+                agents_executed = len(coordinator_result.get("agents_results", {}))
+                self.logger.info(f"✅ Agentes especializados: {agents_executed} agentes ejecutados")
+                
+                if not coordinator_result.get("success"):
+                    self.logger.warning("⚠️ Algunos agentes especializados fallaron, continuando con predictor...")
+                
+            except Exception as e:
+                self.logger.error(f"❌ Error en agentes especializados: {e}")
+                pipeline_result["pipeline_steps"].append({
+                    "step": "specialized_agents",
+                    "step_number": 2,
+                    "success": False,
+                    "error": str(e)
                 })
             
-            pipeline_result["pipeline_steps"].append({
-                "step": "specialized_agents",
-                "success": coordinator_result["success"],
-                "details": coordinator_result
-            })
+            # ============================================================
+            # PASO 3: PREDICTOR HÍBRIDO AVANZADO
+            # ============================================================
+            self.logger.info("🔬 PASO 3/3: Ejecutando predictor híbrido avanzado...")
             
-            if not coordinator_result["success"]:
-                self.logger.warning("⚠️ Algunos agentes especializados fallaron, continuando...")
-            
-            # PASO 3: AGENTE PREDICTOR (si está habilitado)
-            if PREDICTOR_AGENT_CONFIG['enabled']:
-                self.logger.info(" Ejecutando agente predictor...")
+            if self.hybrid_predictor and HYBRID_PREDICTOR_AVAILABLE:
                 
-                predictor_input = {
-                    "financial_data": {
+                hybrid_predictor_results = None
+
+                try:
+                    self.logger.info("   ➤ Componente: EvolutionaryPredictorAgent (Prophet + XGBoost)")
+                    self.logger.info("   ➤ Componente: WalkForwardValidator")
+                    self.logger.info("   ➤ Componente: HybridPredictorAgent (LLM + ML)")
+                    self.logger.info("   ➤ Componente: RegulatoryConfigAgent")
+                    self.logger.info("   🆕 Generando NUEVAS predicciones ML...")
+                    
+                    # Preparar resultados de agentes para el predictor
+                    agent_results = {
                         "agents_results": coordinator_result.get("agents_results", {}),
-                        "structured_for_predictor": coordinator_result.get("structured_for_predictor", {})
-                    },
-                    "config": PREDICTOR_AGENT_CONFIG,
-                    "request_metadata": {
-                        "timestamp": datetime.now().isoformat(),
+                        "structured_data": coordinator_result.get("structured_for_predictor", {}),
+                        "pdf_extraction": extraction_result,
                         "question": question,
-                        "data_source": "extracted_pdf_statements"
+                        "timestamp": datetime.now().isoformat()
                     }
-                }
-                
-                predictor_result = await self.predictor.generate_predictions(predictor_input)
-                
-                pipeline_result["pipeline_steps"].append({
-                    "step": "predictor",
-                    "success": predictor_result["success"],
-                    "details": predictor_result
-                })
+                    
+                    # Ejecutar pipeline completo del predictor híbrido
+                    # SIEMPRE con generate_new_predictions=True
+                    hybrid_predictor_results = await self.hybrid_predictor.run_complete_pipeline(
+                        agent_results=agent_results,
+                        generate_new_predictions=True,  
+                        run_advanced_validation=True
+                    )
+                    
+                    pipeline_result["pipeline_steps"].append({
+                        "step": "hybrid_predictor",
+                        "step_number": 3,
+                        "success": True,
+                        "details": hybrid_predictor_results,
+                        "new_predictions_generated": True,
+                        "components": {
+                            "ml_predictions": True,
+                            "walk_forward_validation": True,
+                            "hybrid_analysis": True,
+                            "regulatory_config": True
+                        }
+                    })
+                    
+                    # Mostrar estadísticas del predictor
+                    ml_pred_count = len(hybrid_predictor_results.get('ml_predictions', []))
+                    validation_count = len(hybrid_predictor_results.get('validation_results', {}))
+                    recommendations_count = len(hybrid_predictor_results.get('recommendations', {}))
+                    
+                    self.logger.info("✅ Predictor híbrido completado exitosamente:")
+                    self.logger.info(f"   • Predicciones ML: {ml_pred_count}")
+                    self.logger.info(f"   • Métricas validadas: {validation_count}")
+                    self.logger.info(f"   • Recomendaciones: {recommendations_count}")
+                    
+                except Exception as e:
+                    self.logger.error(f"❌ Error en predictor híbrido: {e}")
+                    import traceback
+                    self.logger.error(f"Traceback: {traceback.format_exc()}")
+                    
+                    pipeline_result["pipeline_steps"].append({
+                        "step": "hybrid_predictor",
+                        "step_number": 3,
+                        "success": False,
+                        "error": str(e),
+                        "traceback": traceback.format_exc()
+                    })
+                    
+                    # No fallar todo el pipeline, solo marcar este paso como fallido
+                    self.logger.warning("⚠️ Pipeline continuará con resultados parciales")
             else:
+                # Predictor híbrido no disponible
+                self.logger.error("❌ PREDICTOR HÍBRIDO NO DISPONIBLE")
+                self.logger.error("   Verifica que los módulos estén instalados:")
+                self.logger.error("   • main_predictor.py")
+                self.logger.error("   • update_predictor_agent.py")
+                self.logger.error("   • validation_module.py")
+                self.logger.error("   • regulatory_config_agent.py")
+                
                 pipeline_result["pipeline_steps"].append({
-                    "step": "predictor",
-                    "success": True,
-                    "skipped": True,
-                    "reason": "Predictor disabled in config"
+                    "step": "hybrid_predictor",
+                    "step_number": 3,
+                    "success": False,
+                    "error": "Hybrid predictor not available",
+                    "reason": "HYBRID_PREDICTOR_AVAILABLE = False"
                 })
+                
+                pipeline_result["success"] = False
+                pipeline_result["error"] = "Hybrid predictor module not available"
             
+            # ============================================================
             # COMPILAR RESULTADO FINAL
+            # ============================================================
+            self.logger.info("📦 Compilando resultados finales del pipeline...")
+            
             pipeline_result.update({
                 "pdf_extraction": extraction_result,
                 "financial_analysis": coordinator_result,
-                "predictions": predictor_result if PREDICTOR_AGENT_CONFIG['enabled'] else None,
+                "hybrid_predictions": hybrid_predictor_results if self.hybrid_predictor else None,
                 "total_steps_completed": len([s for s in pipeline_result["pipeline_steps"] if s["success"]]),
+                "total_steps": len(pipeline_result["pipeline_steps"]),
                 "execution_summary": self._create_execution_summary(pipeline_result)
             })
             
-            self.logger.info(" Pipeline completo ejecutado exitosamente")
+            self.logger.info("="*80)
+            self.logger.info("✅ PIPELINE COMPLETO CON PREDICTOR HÍBRIDO FINALIZADO")
+            self.logger.info(f"   Pasos completados: {pipeline_result['total_steps_completed']}/{pipeline_result['total_steps']}")
+            self.logger.info("="*80)
+            
             return pipeline_result
             
         except Exception as e:
-            self.logger.error(f" Error en pipeline completo: {str(e)}")
+            self.logger.error("="*80)
+            self.logger.error(f"❌ ERROR CRÍTICO EN PIPELINE COMPLETO: {str(e)}")
+            self.logger.error("="*80)
+            import traceback
+            self.logger.error(traceback.format_exc())
+            
             return {
                 "success": False,
                 "error": str(e),
                 "timestamp": datetime.now().isoformat(),
-                "pipeline_steps": pipeline_result.get("pipeline_steps", [])
+                "pipeline_steps": pipeline_result.get("pipeline_steps", []),
+                "traceback": traceback.format_exc()
             }
-    
+
+    def _count_generated_files(self) -> int:
+        """Cuenta archivos generados en data_outputs"""
+        try:
+            output_dir = Path(DATA_OUTPUT_DIR)
+            if output_dir.exists():
+                return len(list(output_dir.glob("*.*")))
+            return 0
+        except Exception as e:
+            self.logger.warning(f"No se pudo contar archivos: {e}")
+            return 0
+
+
     def _create_execution_summary(self, pipeline_result: Dict) -> Dict:
-        """Crear resumen ejecutivo del pipeline"""
-        successful_steps = sum(1 for step in pipeline_result["pipeline_steps"] if step["success"])
+        """
+        Crear resumen ejecutivo mejorado incluyendo métricas del predictor híbrido
+        
+        Args:
+            pipeline_result: Diccionario con resultados del pipeline
+            
+        Returns:
+            Dict con resumen ejecutivo consolidado
+        """
+        successful_steps = sum(1 for step in pipeline_result["pipeline_steps"] if step.get("success"))
         total_steps = len(pipeline_result["pipeline_steps"])
         
-        return {
+        summary = {
             "pipeline_completion": f"{successful_steps}/{total_steps}",
             "success_rate": (successful_steps / total_steps) * 100 if total_steps > 0 else 0,
-            "pdf_pages_processed": pipeline_result.get("pdf_extraction", {}).get("total_pages_extracted", 0),
+            "pdf_pages_processed": pipeline_result.get("pdf_extraction", {}).get("pages_extracted", 0),
             "agents_executed": len(pipeline_result.get("financial_analysis", {}).get("agents_results", {})),
-            "predictions_generated": len(pipeline_result.get("predictions", {}).get("predictions", {})) if pipeline_result.get("predictions") else 0,
             "files_generated": self._count_generated_files(),
-            "execution_time": "calculated_in_production"  # Se calcularía en tiempo real
+            "mode": pipeline_result.get("mode", "standard"),
+            "timestamp": pipeline_result.get("timestamp", datetime.now().isoformat())
         }
-    
-    def _count_generated_files(self) -> int:
-        """Contar archivos generados en directorio de salida"""
-        try:
-            output_files = list(DATA_OUTPUT_DIR.glob("*.csv"))
-            return len(output_files)
-        except:
-            return 0
+        
+        # Agregar métricas del predictor híbrido si está disponible
+        hybrid_preds = pipeline_result.get("hybrid_predictions", {})
+        if hybrid_preds:
+            ml_predictions = hybrid_preds.get("ml_predictions", [])
+            validation_results = hybrid_preds.get("validation_results", {})
+            recommendations = hybrid_preds.get("recommendations", {})
+            
+            summary.update({
+                "ml_predictions_count": len(ml_predictions) if isinstance(ml_predictions, list) else 0,
+                "validation_metrics_count": len(validation_results) if isinstance(validation_results, dict) else 0,
+                "recommendations_count": len(recommendations) if isinstance(recommendations, dict) else 0,
+                "hybrid_predictor_enabled": True
+            })
+        else:
+            summary.update({
+                "ml_predictions_count": 0,
+                "validation_metrics_count": 0,
+                "recommendations_count": 0,
+                "hybrid_predictor_enabled": False
+            })
+        
+        return summary
 
     # =============================
     # MÉTODOS EXISTENTES ACTUALIZADOS
@@ -338,142 +536,345 @@ class FinancialExtractionSystem:
             for file in output_files:
                 print(f"  • {file.name}")
 
-# =============================
-# MODO INTERACTIVO MEJORADO CON PIPELINE COMPLETO
-# =============================
+# ============================================================================
+# MODO INTERACTIVO CON PREDICTOR HÍBRIDO
+# ============================================================================
 
-async def interactive_mode():
-    """Modo interactivo mejorado con pipeline completo"""
-    print("\n" + "="*70)
-    print(" SISTEMA MULTI-AGENTE FINANCIERO - MODO INTERACTIVO COMPLETO")
-    print("="*70)
-    print(" Comandos especiales:")
-    print("  • 'quit', 'exit', 'salir' - Salir del sistema")
-    print("  • 'help', 'ayuda' - Mostrar ejemplos de preguntas")
-    print("  • 'status' - Estado del sistema y agentes")
-    print("  • 'agents' - Lista de agentes disponibles")
-    print("  • 'pipeline' - Mostrar estado del pipeline")
-    print("  • 'extract' - Ejecutar solo extractor PDF")
-    print("  • 'predict on/off' - Activar/desactivar predicciones")
-    print("="*70)
-
-    # Inicializar sistema
-    system = FinancialExtractionSystem()
+async def interactive_mode_hybrid(system: FinancialExtractionSystem, use_hybrid: bool = True):
+    """
+    Modo interactivo optimizado para predictor híbrido
+    Permite hacer múltiples preguntas sin reiniciar el sistema
+    SIEMPRE GENERA NUEVAS PREDICCIONES ML en cada ejecución
     
-    # Verificar estado inicial
-    pdf_paths = get_pdf_paths()
-    input_pdf_exists = Path(pdf_paths['input_pdf']).exists()
+    Args:
+        system: Instancia de FinancialExtractionSystem
+        use_hybrid: Si usar predictor híbrido (default: True)
+    """
     
-    print(" SISTEMA LISTO - Pipeline completo disponible")
-    print(f" PDF fuente: {' Disponible' if input_pdf_exists else ' No encontrado'}")
-    print(f" Predicciones: {' Habilitadas' if PREDICTOR_AGENT_CONFIG['enabled'] else ' Deshabilitadas'}")
+    # Banner de bienvenida
+    print("\n" + "="*80)
+    print(" 🚀 SISTEMA MULTI-AGENTE FINANCIERO - MODO INTERACTIVO")
+    if use_hybrid:
+        print(" ✅ PREDICTOR HÍBRIDO ACTIVADO")
+        print(" 🆕 Generación automática de NUEVAS predicciones ML en cada consulta")
+    else:
+        print(" ℹ️ Modo básico (sin predictor híbrido)")
+    print("="*80)
     
-    predictions_enabled = PREDICTOR_AGENT_CONFIG['enabled']
+    # Verificar disponibilidad del predictor híbrido
+    if use_hybrid and (not system.hybrid_predictor or not HYBRID_PREDICTOR_AVAILABLE):
+        print("\n⚠️ ADVERTENCIA: Predictor híbrido no disponible")
+        print("   Verifica que los siguientes módulos existan:")
+        print("   • main_predictor.py")
+        print("   • update_predictor_agent.py")
+        print("   • validation_module.py")
+        print("   • hybrid_predictor_agent.py")
+        print("   • regulatory_config_agent.py")
+        print("\n   El sistema funcionará en modo básico\n")
+        use_hybrid = False
     
+    # Mostrar comandos especiales
+    print("\n 📖 COMANDOS ESPECIALES:")
+    print(" • 'quit', 'exit', 'salir' → Cierra el sistema")
+    print(" • 'help' → Muestra ayuda detallada")
+    print(" • 'status' → Muestra estado del sistema y componentes")
+    print(" • 'clear' → Limpia la pantalla")
+    print(" • Cualquier otra cosa → Se interpreta como pregunta financiera")
+    print("="*80)
+    
+    print("\n✅ Sistema listo. Escribe tu pregunta o comando.\n")
+    
+    # Contador de preguntas
+    question_count = 0
+    
+    # Loop interactivo infinito
     while True:
         try:
-            print("\n" + "-"*50)
-            prompt = " Tu pregunta (pipeline completo): " if predictions_enabled else " Tu pregunta: "
+            # Solicitar pregunta al usuario
+            if use_hybrid:
+                prompt = f"\n🤔 Tu pregunta [HYBRID] [{question_count}]: "
+            else:
+                prompt = f"\n🤔 Tu pregunta [{question_count}]: "
+            
             question = input(prompt).strip()
             
+            # Ignorar entradas vacías
             if not question:
                 continue
-                
-            # Comandos especiales
+            
+            # ========== COMANDOS ESPECIALES ==========
+            
+            # COMANDO: quit/exit/salir
             if question.lower() in ['quit', 'exit', 'salir']:
-                print(" ¡Hasta luego! Gracias por usar el sistema.")
+                print("\n" + "="*80)
+                print("👋 Cerrando sistema. ¡Hasta luego!")
+                print("="*80)
                 break
-                
-            elif question.lower() in ['help', 'ayuda', '?']:
-                show_enhanced_help()
-                continue
-                
-            elif question.lower() in ['status', 'estado']:
-                await show_system_status(system)
-                continue
-                
-            elif question.lower() in ['agents', 'agentes']:
-                show_agents_info(system)
-                continue
-                
-            elif question.lower() == 'pipeline':
-                show_pipeline_status()
-                continue
-                
-            elif question.lower() == 'extract':
-                print(" Ejecutando solo extractor PDF...")
-                result = await system.pdf_extractor.extract_financial_statements()
-                if result["success"]:
-                    print(f" PDF extraído: {result['pages_extracted']} páginas")
-                else:
-                    print(f" Error: {result['error']}")
-                continue
-                
-            elif question.lower().startswith('predict'):
-                if 'on' in question.lower():
-                    predictions_enabled = True
-                    print(" Predicciones activadas")
-                elif 'off' in question.lower():
-                    predictions_enabled = False
-                    print(" Solo análisis histórico activado")
-                else:
-                    print(f" Estado predicciones: {'ON' if predictions_enabled else 'OFF'}")
-                continue
-
-            # Procesar pregunta con pipeline completo
-            print(" Ejecutando pipeline completo...")
             
-            pipeline_result = await system.run_complete_pipeline(question)
+            # COMANDO: help
+            elif question.lower() == 'help':
+                print("\n" + "="*80)
+                print("📖 AYUDA DEL SISTEMA MULTI-AGENTE FINANCIERO")
+                print("="*80)
+                print("\n🔍 TIPOS DE PREGUNTAS QUE PUEDES HACER:")
+                print("-" * 80)
+                print("• Balance general y activos:")
+                print("  - ¿Cuál es el total de activos?")
+                print("  - ¿Cuánto efectivo tiene la empresa?")
+                print("  - ¿Cuál es la estructura del balance?")
+                print("\n• Estado de resultados e ingresos:")
+                print("  - ¿Cuáles son los ingresos totales?")
+                print("  - ¿Cuál es el margen de beneficio?")
+                print("  - ¿Cómo han evolucionado las ventas?")
+                print("\n• Flujos de caja:")
+                print("  - ¿Cuál es el flujo de caja operativo?")
+                print("  - ¿Hay flujo de caja positivo?")
+                print("  - ¿Cuánto cash genera la empresa?")
+                print("\n• Patrimonio y capital:")
+                print("  - ¿Cuál es el patrimonio neto?")
+                print("  - ¿Cómo está distribuido el capital?")
+                print("  - ¿Hay dividendos?")
+                
+                if use_hybrid:
+                    print("\n• Predicciones y proyecciones (PREDICTOR HÍBRIDO):")
+                    print("  - ¿Cuál será el ROA proyectado?")
+                    print("  - ¿Cómo evolucionará la solvencia?")
+                    print("  - ¿Qué predicciones hay para el próximo trimestre?")
+                
+                print("\n" + "-" * 80)
+                if use_hybrid:
+                    print("⚡ PIPELINE EJECUTADO POR CADA PREGUNTA:")
+                    print("-" * 80)
+                    print("  1. Extracción de datos PDF")
+                    print("  2. Análisis de agentes especializados")
+                    print("  3. 🆕 Generación de NUEVAS predicciones ML (Prophet + XGBoost)")
+                    print("  4. Validación walk-forward temporal")
+                    print("  5. Análisis híbrido (LLM + ML + Regulatorio)")
+                    print("  6. Exportación de resultados consolidados")
+                else:
+                    print("⚡ PIPELINE EJECUTADO POR CADA PREGUNTA:")
+                    print("-" * 80)
+                    print("  1. Extracción de datos PDF")
+                    print("  2. Análisis de agentes especializados")
+                    print("  3. Predictor básico")
+                print("="*80)
+                continue
             
-            if pipeline_result["success"]:
-                print(" PIPELINE COMPLETADO EXITOSAMENTE")
+            # COMANDO: status
+            elif question.lower() == 'status':
+                print("\n" + "="*80)
+                print("📊 ESTADO DEL SISTEMA")
+                print("="*80)
                 
-                # Mostrar resumen
-                summary = pipeline_result["execution_summary"]
-                print(f" Pipeline: {summary['pipeline_completion']} pasos")
-                print(f" Páginas procesadas: {summary['pdf_pages_processed']}")
-                print(f" Agentes ejecutados: {summary['agents_executed']}")
+                print("\n🔧 COMPONENTES:")
+                print("-" * 80)
+                print(f"✅ Predictor híbrido: {'ACTIVO' if use_hybrid and system.hybrid_predictor else 'INACTIVO'}")
+                print(f"✅ Generación automática ML: {'ACTIVO' if use_hybrid else 'INACTIVO'}")
+                print(f"✅ Agentes especializados: {len(system.agents)}")
+                print(f"   - Balance Agent")
+                print(f"   - Income Agent")
+                print(f"   - CashFlows Agent")
+                print(f"   - Equity Agent")
+                print(f"✅ Extractor PDF: DISPONIBLE")
+                print(f"✅ Coordinador: DISPONIBLE")
                 
-                # Mostrar respuesta de coordinador
-                financial_analysis = pipeline_result.get("financial_analysis", {})
-                if financial_analysis.get("answer"):
-                    print(f"\n RESPUESTA:")
-                    print(financial_analysis["answer"])
+                if use_hybrid and system.hybrid_predictor:
+                    print(f"✅ Validador walk-forward: DISPONIBLE")
+                    print(f"✅ Agente regulatorio: DISPONIBLE")
                 
-                # Mostrar predicciones si están disponibles
-                predictions = pipeline_result.get("predictions", {})
-                if predictions and predictions.get("success") and predictions_enabled:
-                    print(f"\n PREDICCIONES GENERADAS:")
-                    pred_count = len(predictions.get("predictions", {}))
-                    print(f" Total predicciones: {pred_count}")
-                    
-                    # Mostrar algunas predicciones clave
-                    preds = predictions.get("predictions", {})
-                    if "revenue_growth" in preds:
-                        growth = preds["revenue_growth"]
-                        print(f" Crecimiento ingresos: {growth.get('predicted_growth_rate', 'N/A')}")
-                    
-                    if "risk_assessment" in preds:
-                        risk = preds["risk_assessment"]
-                        print(f" Nivel de riesgo: {risk.get('overall_risk_level', 'N/A')}")
+                print("\n📁 DIRECTORIOS:")
+                print("-" * 80)
+                print(f"   Entrada: {DATA_INPUT_DIR}")
+                print(f"   Salida: {DATA_OUTPUT_DIR}")
                 
-                # Archivos generados
-                if summary.get('files_generated', 0) > 0:
-                    print(f" Archivos generados: {summary['files_generated']}")
-                    
+                print("\n📈 ESTADÍSTICAS:")
+                print("-" * 80)
+                print(f"   Preguntas procesadas en esta sesión: {question_count}")
+                
+                print("="*80)
+                continue
+            
+            # COMANDO: clear
+            elif question.lower() == 'clear':
+                import os
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print("\n✅ Pantalla limpiada. Sistema listo.\n")
+                continue
+            
+            # ========== PROCESAR PREGUNTA FINANCIERA ==========
+            
+            question_count += 1
+            
+            print("\n" + "="*80)
+            print(f"⏳ PROCESANDO PREGUNTA {question_count}...")
+            print("="*80)
+            
+            if use_hybrid:
+                print("🔄 Ejecutando pipeline completo con predictor híbrido...")
+                print("🆕 Generando NUEVAS predicciones ML automáticamente...\n")
+                
+                # Ejecutar pipeline con predictor híbrido
+                result = await system.run_complete_pipeline_with_hybrid_predictor(
+                    question=question
+                )
             else:
-                print(f" ERROR EN PIPELINE: {pipeline_result.get('error', 'Error desconocido')}")
+                print("🔄 Ejecutando pipeline estándar...\n")
                 
-                # Mostrar qué pasos fallaron
-                failed_steps = [s["step"] for s in pipeline_result.get("pipeline_steps", []) if not s["success"]]
-                if failed_steps:
-                    print(f" Pasos fallidos: {', '.join(failed_steps)}")
-                    
+                # Ejecutar pipeline estándar (sin predictor híbrido)
+                result = await system.run_complete_pipeline(question)
+            
+            # Mostrar resultados
+            print_pipeline_results(result)
+            
+            # Mostrar información de archivos generados
+            if result.get("success"):
+                print(f"\n📁 RESULTADOS GUARDADOS EN: {DATA_OUTPUT_DIR}")
+                print("-" * 80)
+                print("   Archivos disponibles:")
+                if use_hybrid:
+                    print("   • consolidated_results_YYYYMMDD_HHMMSS.json")
+                    print("   • evolutionary_predictions.csv (🆕 NUEVAS predicciones)")
+                    print("   • hybrid_analysis_YYYYMMDD_HHMMSS.json")
+                    print("   • executive_summary_YYYYMMDD_HHMMSS.txt")
+                else:
+                    print("   • financial_analysis_results.json")
+                print("-" * 80)
+            
+            print("\n💡 Escribe otra pregunta o 'quit' para salir.\n")
+            
         except KeyboardInterrupt:
-            print("\n\n Interrumpido por el usuario. ¡Hasta luego!")
-            break
+            # Manejar Ctrl+C sin cerrar abruptamente
+            print("\n\n" + "="*80)
+            print("⚠️ Interrumpido por usuario (Ctrl+C)")
+            print("="*80)
+            
+            confirm = input("\n¿Deseas salir del sistema? (s/n): ").strip().lower()
+            
+            if confirm in ['s', 'si', 'yes', 'y']:
+                print("\n👋 Cerrando sistema...")
+                break
+            else:
+                print("\n✅ Continuando en modo interactivo...\n")
+                continue
+        
         except Exception as e:
-            print(f" Error inesperado: {e}")
+            # Manejar errores sin cerrar el sistema
+            print("\n" + "="*80)
+            print(f"❌ ERROR AL PROCESAR PREGUNTA")
+            print("="*80)
+            print(f"Error: {str(e)}")
+            
+            # Mostrar traceback detallado
+            import traceback
+            print("\n📋 DETALLES DEL ERROR:")
+            print("-" * 80)
+            traceback.print_exc()
+            print("-" * 80)
+            
+            print("\n💡 CONSEJOS:")
+            print("   • Verifica los logs en: predictor_pipeline.log")
+            print("   • Revisa que los archivos PDF estén disponibles")
+            print("   • Comprueba la conectividad de las APIs")
+            print("   • Intenta reformular tu pregunta")
+            
+            print("\n✅ El sistema sigue activo. Puedes hacer otra pregunta.\n")
+            continue
+    
+    # Mensaje de despedida final
+    print("\n" + "="*80)
+    print(f"📊 RESUMEN DE LA SESIÓN")
+    print("="*80)
+    print(f"   Preguntas procesadas: {question_count}")
+    print(f"   Directorio de salida: {DATA_OUTPUT_DIR}")
+    print("="*80)
+    print("👋 ¡Gracias por usar el Sistema Multi-Agente Financiero!")
+    print("="*80 + "\n")
+
+
+# ============================================================================
+# FUNCIÓN HELPER PARA MOSTRAR RESULTADOS
+# ============================================================================
+
+def print_pipeline_results(result: Dict):
+    """
+    Mostrar resultados del pipeline de forma legible y estructurada
+    
+    Args:
+        result: Diccionario con resultados del pipeline
+    """
+    print("\n" + "="*80)
+    print("📊 RESULTADOS DEL PIPELINE")
+    print("="*80)
+    
+    if result.get("success"):
+        summary = result.get("execution_summary", {})
+        
+        # Información general
+        print(f"\n✅ Estado: EXITOSO")
+        print(f"📈 Pipeline: {summary.get('pipeline_completion', 'N/A')}")
+        print(f"⭐ Tasa de éxito: {summary.get('success_rate', 0):.1f}%")
+        print(f"📄 Páginas PDF procesadas: {summary.get('pdf_pages_processed', 0)}")
+        print(f"🤖 Agentes ejecutados: {summary.get('agents_executed', 0)}")
+        
+        # Métricas del predictor híbrido (si está disponible)
+        if summary.get('hybrid_predictor_enabled') and summary.get('ml_predictions_count', 0) > 0:
+            print("\n" + "-" * 80)
+            print("🔬 PREDICTOR HÍBRIDO:")
+            print("-" * 80)
+            print(f"🆕 NUEVAS predicciones ML generadas: {summary['ml_predictions_count']}")
+            print(f"✅ Métricas validadas: {summary.get('validation_metrics_count', 0)}")
+            print(f"💡 Recomendaciones generadas: {summary.get('recommendations_count', 0)}")
+        
+        # Archivos generados
+        print("\n" + "-" * 80)
+        print(f"📁 Archivos generados totales: {summary.get('files_generated', 0)}")
+        print("-" * 80)
+        
+        # Detalles de pasos ejecutados
+        pipeline_steps = result.get('pipeline_steps', [])
+        if pipeline_steps:
+            print("\n📋 PASOS EJECUTADOS:")
+            print("-" * 80)
+            for step in pipeline_steps:
+                status_icon = "✅" if step.get('success') else "❌"
+                step_name = step.get('step', 'unknown').replace('_', ' ').title()
+                print(f"   {status_icon} {step_name}")
+                
+                # Mostrar info adicional de predictor híbrido
+                if step.get('step') == 'hybrid_predictor' and step.get('new_predictions_generated'):
+                    print(f"      🆕 Nuevas predicciones ML generadas")
+                    components = step.get('components', {})
+                    if components.get('ml_predictions'):
+                        print(f"      ✓ Prophet + XGBoost")
+                    if components.get('walk_forward_validation'):
+                        print(f"      ✓ Validación temporal")
+                    if components.get('regulatory_config'):
+                        print(f"      ✓ Configuración regulatoria")
+            print("-" * 80)
+        
+        # Timestamp
+        print(f"\n🕐 Timestamp: {summary.get('timestamp', 'N/A')}")
+        
+    else:
+        # Error en el pipeline
+        print(f"\n❌ Estado: ERROR")
+        print(f"🔴 Error: {result.get('error', 'Unknown error')}")
+        
+        # Mostrar pasos que fallaron
+        pipeline_steps = result.get('pipeline_steps', [])
+        if pipeline_steps:
+            print("\n📋 PASOS EJECUTADOS:")
+            print("-" * 80)
+            for step in pipeline_steps:
+                status_icon = "✅" if step.get('success') else "❌"
+                step_name = step.get('step', 'unknown').replace('_', ' ').title()
+                print(f"   {status_icon} {step_name}")
+                if not step.get('success') and step.get('error'):
+                    print(f"      Error: {step.get('error')}")
+            print("-" * 80)
+    
+    print("="*80)
+
 
 def show_enhanced_help():
     """Mostrar ayuda mejorada con información del pipeline"""
@@ -610,176 +1011,227 @@ async def batch_mode_wrapper(args):
     except Exception as e:
         print(f" System error: {str(e)}")
         sys.exit(1)
+# ============================================================================
+# PUNTO DE ENTRADA PRINCIPAL
+# ============================================================================
 
-# =============================
-# FUNCIÓN MAIN COMPLETA
-# =============================
-
-async def main():
-    """Función main con soporte para pipeline completo"""
+def main():
+    """
+    Punto de entrada principal del sistema multi-agente financiero
+    Soporta múltiples modos: interactivo, batch, pregunta única
+    """
     
-    # ===== CONFIGURACIÓN PREDEFINIDA =====
-    DEFAULT_CONFIG = {
-        "pdf": str(Path(PDF_EXTRACTOR_CONFIG['output_path']) / PDF_EXTRACTOR_CONFIG['output_filename']),
-        "out": str(DATA_OUTPUT_DIR),
-        "anchor_page": 55,
-        "anchor_titles": ["statement of financial position", "garantibank international"],
-        "max_steps": 20
-    }
-
+    # Configuración de argumentos CLI
     parser = argparse.ArgumentParser(
-        description="Sistema Multi-Agente Financiero - Pipeline Completo con Extractor PDF y Predictor",
+        description="Sistema Multi-Agente de Análisis Financiero con Predictor Híbrido",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos de uso:
-
-MODO INTERACTIVO (recomendado):
+  
+  # Modo interactivo con predictor híbrido (RECOMENDADO)
   python main_system.py --interactive
-
-PIPELINE COMPLETO:
-  python main_system.py --question "¿Cuál es la situación financiera?"
-  python main_system.py --question "Analiza todos los estados financieros"
-
-PREGUNTAS ESPECÍFICAS:
-  python main_system.py --question "¿Cuál es el total de activos?"
-  python main_system.py --question "¿Cuál fue el beneficio neto?" --agent balance
-
-PREGUNTAS PREDICTIVAS:
-  python main_system.py --question "¿Cuál será la tendencia futura?"
-  python main_system.py --question "¿Qué riesgos se anticipan?"
-
-MODO BATCH CON PIPELINE:
+  
+  # Pregunta única con predictor híbrido
+  python main_system.py --question "¿Cuál es el ROA proyectado?"
+  
+  # Modo batch (procesar todos los PDFs)
   python main_system.py --batch
-  python main_system.py --pdf documento.pdf --agents balance,income
-
-CARACTERÍSTICAS NUEVAS:
-- Pipeline completo: PDF Extractor → Agentes Especializados → Predictor
-- Extracción automática de estados financieros (páginas 54-60)
-- Análisis predictivo integrado
-- Ejecución paralela de agentes especializados
-- Monitoreo completo del pipeline
-- Modo interactivo mejorado con comandos de control
+  
+  # Modo básico sin predictor híbrido
+  python main_system.py --no-hybrid --question "¿Cuál es el total de activos?"
+  
+  # Solo extracción PDF
+  python main_system.py --extract-only
         """
     )
-
-    # ===== ARGUMENTOS PRINCIPALES =====
-    parser.add_argument("--question", type=str, help="Pregunta específica para el análisis financiero")
-    parser.add_argument("--pdf", default=DEFAULT_CONFIG["pdf"], help=f"Ruta al PDF a analizar (por defecto: PDF extraído)")
-    parser.add_argument("--agent", choices=['balance', 'income', 'cashflows', 'equity'], help="Forzar uso de agente específico")
-    parser.add_argument("--agents", help="Lista de agentes a ejecutar (separados por comas)")
-
-    # ===== ARGUMENTOS DE PIPELINE =====
-    parser.add_argument("--pipeline", action='store_true', help="Ejecutar pipeline completo (PDF → Agentes → Predictor)")
-    parser.add_argument("--extract-only", action='store_true', help="Solo ejecutar extractor PDF")
-    parser.add_argument("--no-predict", action='store_true', help="Deshabilitar predicciones para esta ejecución")
-
+    
     # ===== MODOS DE OPERACIÓN =====
-    parser.add_argument("--interactive", action='store_true', help="Modo interactivo mejorado con pipeline completo")
-    parser.add_argument("--batch", action='store_true', help="Modo batch con pipeline completo")
-
+    mode_group = parser.add_argument_group('Modos de operación')
+    mode_group.add_argument(
+        '--interactive', '-i',
+        action='store_true',
+        help='Modo interactivo (permite múltiples preguntas)'
+    )
+    mode_group.add_argument(
+        '--batch', '-b',
+        action='store_true',
+        help='Procesamiento batch de todos los PDFs'
+    )
+    mode_group.add_argument(
+        '--question', '-q',
+        type=str,
+        help='Pregunta específica (modo no interactivo)'
+    )
+    mode_group.add_argument(
+        '--extract-only',
+        action='store_true',
+        help='Solo ejecutar extractor PDF (sin análisis)'
+    )
+    
+    # ===== CONFIGURACIÓN DEL PREDICTOR =====
+    predictor_group = parser.add_argument_group('Configuración del predictor')
+    predictor_group.add_argument(
+        '--no-hybrid',
+        action='store_true',
+        help='Desactivar predictor híbrido (usar predictor básico)'
+    )
+    predictor_group.add_argument(
+        '--no-predict',
+        action='store_true',
+        help='Deshabilitar predicciones completamente'
+    )
+    
     # ===== ARGUMENTOS OPCIONALES =====
-    parser.add_argument("--out", default=DEFAULT_CONFIG["out"], help=f"Directorio de salida (por defecto: {DEFAULT_CONFIG['out']})")
-    parser.add_argument("--input_dir", help="Directorio de entrada para modo batch")
-    parser.add_argument("--validate_only", action='store_true', help="Solo validar PDFs sin procesarlos")
-    parser.add_argument("--verbose", action='store_true', help="Mostrar información detallada del proceso")
-
+    optional_group = parser.add_argument_group('Opciones adicionales')
+    optional_group.add_argument(
+        '--pdf',
+        type=str,
+        help='Ruta específica al PDF a analizar'
+    )
+    optional_group.add_argument(
+        '--output-dir',
+        type=str,
+        default=str(DATA_OUTPUT_DIR),
+        help=f'Directorio de salida (default: {DATA_OUTPUT_DIR})'
+    )
+    optional_group.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Mostrar información detallada del proceso'
+    )
+    
     args = parser.parse_args()
-
-    # ===== CONFIGURAR RUTAS =====
-    pdf_path = Path(args.pdf)
-    output_dir = Path(args.out)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # ===== MOSTRAR CONFIGURACIÓN =====
-    print(f" Sistema Multi-Agente Financiero v4.0 - Pipeline Completo")
-    print(f" PDF: {pdf_path}")
-    print(f" Salida: {output_dir}")
+    
+    # ===== BANNER INICIAL =====
+    print("\n" + "="*80)
+    print("  SISTEMA MULTI-AGENTE DE ANÁLISIS FINANCIERO")
+    print("="*80)
+    print(f" Versión: 4.0 - Pipeline Completo")
     print(f" Configuración: Groq {GROQ_MODEL} + Azure {AZURE_OPENAI_DEPLOYMENT}")
     print(f" Pipeline: {' → '.join(PIPELINE_ORDER)}")
-    print("="*60)
-
+    print("="*80)
+    
+    # ===== DETERMINAR SI USAR PREDICTOR HÍBRIDO =====
+    use_hybrid = not args.no_hybrid and HYBRID_PREDICTOR_AVAILABLE
+    
+    if not use_hybrid and not args.no_hybrid:
+        print("\n ADVERTENCIA: Predictor híbrido no disponible")
+        print("   El sistema funcionará en modo básico")
+    elif args.no_hybrid:
+        print("\n ℹPredictor híbrido desactivado manualmente")
+    elif use_hybrid:
+        print("\n Predictor híbrido ACTIVADO")
+        print("   Generación automática de nuevas predicciones ML")
+    
+    print("="*80 + "\n")
+    
     try:
-        # Crear sistema
+        # ===== CREAR INSTANCIA DEL SISTEMA =====
         system = FinancialExtractionSystem()
         
-        # ===== DETERMINAR MODO DE OPERACIÓN =====
-        if args.interactive:
-            # Modo interactivo mejorado con pipeline completo
-            await interactive_mode()
-            
-        elif args.extract_only:
-            # Solo ejecutar extractor PDF
-            print(" Ejecutando solo extractor PDF...")
-            result = await system.pdf_extractor.extract_financial_statements()
+        # ===== MODO 1: SOLO EXTRACCIÓN PDF =====
+        if args.extract_only:
+            print(" Modo: Solo extracción PDF\n")
+            result = asyncio.run(system.pdf_extractor.extract_financial_statements())
             
             if result["success"]:
-                print(f" PDF extraído exitosamente:")
-                print(f"   Páginas procesadas: {result['total_pages_extracted']}")
-                print(f"   Archivo generado: {result['output_file']}")
+                print("\nPDF extraído exitosamente:")
+                print(f"   Páginas procesadas: {result.get('total_pages_extracted', 0)}")
+                print(f"   Archivo generado: {result.get('output_file', 'N/A')}")
             else:
-                print(f" Error en extracción: {result['error']}")
-                
-        elif args.question:
-            # Procesar pregunta con pipeline completo
-            print(f" Pregunta: {args.question}")
-            print(" Ejecutando pipeline completo...")
+                print(f"\n❌ Error en extracción: {result.get('error', 'Unknown error')}")
             
-            pipeline_result = await system.run_complete_pipeline(args.question)
-            
-            if pipeline_result["success"]:
-                print(" PIPELINE COMPLETADO EXITOSAMENTE")
-                
-                # Mostrar respuesta principal
-                financial_analysis = pipeline_result.get("financial_analysis", {})
-                if financial_analysis.get("answer"):
-                    print(f"\n RESPUESTA:")
-                    print(financial_analysis["answer"])
-                
-                # Mostrar resumen de ejecución
-                summary = pipeline_result["execution_summary"]
-                print(f"\n RESUMEN DE EJECUCIÓN:")
-                print(f"  Pipeline: {summary['pipeline_completion']}")
-                print(f"  Páginas procesadas: {summary['pdf_pages_processed']}")
-                print(f"  Agentes ejecutados: {summary['agents_executed']}")
-                
-                # Mostrar predicciones si están disponibles
-                if not args.no_predict:
-                    predictions = pipeline_result.get("predictions", {})
-                    if predictions and predictions.get("success"):
-                        pred_count = len(predictions.get("predictions", {}))
-                        print(f"   Predicciones generadas: {pred_count}")
-                
-            else:
-                print(f" ERROR EN PIPELINE: {pipeline_result.get('error', 'Error desconocido')}")
-                
+            return
+        
+        # ===== MODO 2: BATCH =====
         elif args.batch:
-            # Modo batch con pipeline completo
-            agents_list = args.agents.split(',') if args.agents else None
-            await batch_mode_wrapper(args)
-            
-        else:
-            # Por defecto: ejecutar pipeline completo
-            print(" Ejecutando pipeline completo por defecto...")
-            pipeline_result = await system.run_complete_pipeline()
-            
-            if pipeline_result["success"]:
-                print(" Pipeline completo ejecutado exitosamente")
-                summary = pipeline_result["execution_summary"]
-                print(f" Resumen: {summary['pipeline_completion']} completado")
+            print("📦 Modo: Procesamiento batch\n")
+            result = asyncio.run(system.run_batch_extraction())
+            return
+        
+        # ===== MODO 3: INTERACTIVO =====
+        elif args.interactive:
+            print("💬 Modo: Interactivo")
+            if use_hybrid:
+                print("🔬 Con predictor híbrido avanzado\n")
             else:
-                print(f" Error en pipeline: {pipeline_result.get('error')}")
-
+                print("📊 Con predictor básico\n")
+            
+            asyncio.run(interactive_mode_hybrid(system, use_hybrid=use_hybrid))
+            return
+        
+        # ===== MODO 4: PREGUNTA ÚNICA =====
+        elif args.question:
+            print(f"❓ Modo: Pregunta única")
+            print(f"   Pregunta: {args.question}\n")
+            
+            if use_hybrid:
+                print("🔄 Ejecutando pipeline con predictor híbrido...\n")
+                result = asyncio.run(
+                    system.run_complete_pipeline_with_hybrid_predictor(
+                        question=args.question
+                    )
+                )
+            else:
+                print("🔄 Ejecutando pipeline estándar...\n")
+                result = asyncio.run(
+                    system.run_complete_pipeline(args.question)
+                )
+            
+            # Mostrar resultados
+            print_pipeline_results(result)
+            
+            # Mostrar respuesta principal si existe
+            if result.get("success"):
+                financial_analysis = result.get("financial_analysis", {})
+                if financial_analysis.get("answer"):
+                    print("\n" + "="*80)
+                    print("💡 RESPUESTA")
+                    print("="*80)
+                    print(financial_analysis["answer"])
+                    print("="*80)
+            
+            return
+        
+        # ===== MODO 5: POR DEFECTO (INTERACTIVO) =====
+        else:
+            print("💬 Modo por defecto: Interactivo")
+            print("   (Usa --help para ver otras opciones)\n")
+            
+            if use_hybrid:
+                print("🔬 Predictor híbrido ACTIVADO\n")
+            
+            asyncio.run(interactive_mode_hybrid(system, use_hybrid=use_hybrid))
+            return
+    
+    except KeyboardInterrupt:
+        print("\n\n" + "="*80)
+        print("⚠️ Proceso interrumpido por el usuario")
+        print("="*80)
+        sys.exit(0)
+    
     except Exception as e:
-        print(f" Error durante la ejecución: {e}")
+        print("\n" + "="*80)
+        print("❌ ERROR CRÍTICO")
+        print("="*80)
+        print(f"Error: {str(e)}")
+        
         if args.verbose:
             import traceback
+            print("\n📋 TRACEBACK COMPLETO:")
+            print("-" * 80)
             traceback.print_exc()
-        return 1
+            print("-" * 80)
+        
+        print("\n💡 CONSEJOS:")
+        print("   • Verifica que los archivos PDF estén disponibles")
+        print("   • Revisa los logs del sistema")
+        print("   • Usa --verbose para más detalles")
+        print("   • Contacta al administrador si el error persiste")
+        print("="*80)
+        
+        sys.exit(1)
 
-    print(f"\n Sistema completado exitosamente!")
-    return 0
 
 if __name__ == "__main__":
-    # Ejecutar main con asyncio para soportar pipeline async
-    import sys
-    sys.exit(asyncio.run(main()))
+    main()

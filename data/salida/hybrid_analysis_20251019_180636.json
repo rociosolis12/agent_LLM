@@ -1,0 +1,103 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Error: Error code: 403 - {'error': {'code': '403', 'message': 'Access denied due to Virtual Network/Firewall rules.'}}"
+      }
+    },
+    "timestamp": "2025-10-19T18:06:35.764224",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T18:06:36.016488",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Error: Error code: 403 - {'error': {'code': '403', 'message': 'Access denied due to Virtual Network/Firewall rules.'}}"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Error: Error code: 403 - {'error': {'code': '403', 'message': 'Access denied due to Virtual Network/Firewall rules.'}}"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {
+    "capital_ratios": {
+      "cet1_minimum": 4.5,
+      "cet1_with_buffers": 10.0,
+      "tier1_minimum": 6.0,
+      "total_capital_minimum": 12.0,
+      "leverage_ratio_minimum": 3.0
+    },
+    "liquidity_ratios": {
+      "lcr_minimum": 100.0,
+      "nsfr_minimum": 100.0
+    },
+    "performance_benchmarks": {
+      "roa_healthy": 0.8,
+      "roa_warning": 0.0,
+      "roe_healthy": 10.0,
+      "roe_warning": 5.0
+    },
+    "risk_thresholds": {
+      "solvency_critical": 4.5,
+      "solvency_warning": 8.0,
+      "liquidity_critical": 80.0,
+      "liquidity_warning": 100.0
+    },
+    "metadata": {
+      "regulation_framework": "Turkish Basel III",
+      "effective_date": "2019-01-01",
+      "source": "BRSA (Turkish Banking Regulator)",
+      "notes": "Turkish subsidiaries including Garanti BBVA",
+      "is_fallback": true
+    }
+  }
+}

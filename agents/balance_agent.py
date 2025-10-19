@@ -66,17 +66,31 @@ class AzureChatClient:
         )
         self.deployment = AZURE_OPENAI_DEPLOYMENT
 
-    def chat(self, messages: List[Dict[str, str]], max_tokens: int = 1000) -> str:
+    def chat(self, messages: List[Dict[str, str]], max_tokens: int = 1000, tools: List = None):
+        """
+        Llama a Azure OpenAI con soporte para tool calls
+        """
         try:
-            response = self.client.chat.completions.create(
-                model=self.deployment,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=0.1
-            )
-            return response.choices[0].message.content
+            params = {
+                "model": self.deployment,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": 0.1
+            }
+            
+            # Agregar tools si se proporcionan
+            if tools:
+                params["tools"] = tools
+                params["tool_choice"] = "auto"
+            
+            response = self.client.chat.completions.create(**params)
+            
+            # Devolver el mensaje completo (con tool_calls si existen)
+            return response.choices[0].message
+            
         except Exception as e:
             raise RuntimeError(f"Azure OpenAI API error: {str(e)}")
+
 
 class GroqEmbeddingClient:
     def __init__(self):
@@ -604,96 +618,174 @@ EMPEZAR AHORA con analyze_balance_structure para página 55.
 # =============================
 
 def execute_react_step(history: List[Dict[str, str]], tools_ctx: Dict[str, Any]) -> Tuple[List[Dict[str, str]], bool]:
+    """
+    Ejecuta un paso ReAct con soporte REAL para tool calls de Azure OpenAI
+    """
     try:
-        assistant_text = chat_client.chat(history, max_tokens=1500)
-        history.append({"role": "assistant", "content": assistant_text})
+        # Llamar al LLM - AHORA DEVUELVE EL MENSAJE COMPLETO (no solo texto)
+        message = chat_client.chat(history, max_tokens=1500)
         
+        # Extraer contenido de texto
+        assistant_text = message.content if hasattr(message, 'content') and message.content else ""
+        
+        # Agregar al historial
+        history.append({"role": "assistant", "content": assistant_text})
         print(f"[DEBUG] Respuesta del asistente: {assistant_text[:200]}...")
         
-        # SOLUCIÓN 1: DETECCIÓN MEJORADA DE FRASES DE FINALIZACIÓN
+        # ==========================================
+        # MÉTODO 1: VERIFICAR TOOL CALLS REALES (Azure OpenAI)
+        # ==========================================
+        if hasattr(message, 'tool_calls') and message.tool_calls:
+            tool_call = message.tool_calls[0]
+            tool_name = tool_call.function.name
+            params = json.loads(tool_call.function.arguments)
+            
+            print(f"[SUCCESS] Tool call REAL detectada: {tool_name}")
+            print(f"[EXECUTING] {tool_name} con parámetros: {list(params.keys())}")
+            
+            # Ejecutar herramienta
+            tool_obj = TOOLS_REGISTRY.get(tool_name)
+            if tool_obj:
+                try:
+                    result = tool_obj.run(**params)
+                    
+                    if result.get("success", False):
+                        print(f"[SUCCESS] {tool_name} ejecutado correctamente")
+                        
+                        # Actualizar contexto
+                        if tool_name == "analyze_balance_structure":
+                            tools_ctx["last_analysis"] = result
+                        elif tool_name == "extract_balance_statement":
+                            tools_ctx["last_extraction"] = result  
+                        elif tool_name == "validate_balance_quality":
+                            tools_ctx["last_validation"] = result
+                        elif tool_name == "save_balance_results":
+                            tools_ctx["last_saved"] = result
+                            print("[FORCING COMPLETION] Archivos guardados - finalizando")
+                            return history, True
+                        
+                        feedback = f"Tool {tool_name} ejecutada exitosamente: {result.get('message', 'OK')}"
+                    else:
+                        feedback = f"Error en {tool_name}: {result.get('error', 'Error desconocido')}"
+                    
+                    # Agregar resultado al historial
+                    history.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": tool_name,
+                        "content": json.dumps(result)
+                    })
+                    return history, False
+                    
+                except Exception as e:
+                    print(f"[ERROR] Ejecutando {tool_name}: {str(e)}")
+                    error_feedback = f"Error ejecutando {tool_name}: {str(e)}"
+                    history.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": tool_name,
+                        "content": error_feedback
+                    })
+                    return history, False
+        
+        # ==========================================
+        # MÉTODO 2: DETECCIÓN DE FINALIZACIÓN (FALLBACK)
+        # ==========================================
         completion_phrases = [
-            "balanceextractioncompleted", "extraction completed successfully", 
-            "archivos guardados exitosamente", "task completed", "analysis completed"
+            "balance_extraction_completed", 
+            "extraction completed successfully", 
+            "archivos guardados exitosamente", 
+            "task completed", 
+            "analysis completed"
         ]
         
         for phrase in completion_phrases:
             if phrase.lower() in assistant_text.lower():
-                print(f"[SUCCESS] Finalizacion detectada: {phrase}")
+                print(f"[SUCCESS] Finalización detectada: {phrase}")
                 return history, True
         
-        # SOLUCIÓN 2: DETECCIÓN ROBUSTA DE TOOL CALLS
-        toolname = None
+        # ==========================================
+        # MÉTODO 3: DETECCIÓN POR NOMBRE (LEGACY - FALLBACK)
+        # ==========================================
+        tool_name = None
         params = {}
         
-        # Método 1: Buscar herramientas por nombre directo
-        tool_names = ["analyzebalancestructure", "extractbalancestatement", "validatebalancequality", "savebalanceresults"]
+        tool_names = [
+            "analyze_balance_structure", 
+            "extract_balance_statement", 
+            "validate_balance_quality", 
+            "save_balance_results"
+        ]
         
         for tool in tool_names:
-            if tool in assistant_text.lower():
-                toolname = tool
-                print(f"[SUCCESS] Tool detectada: {toolname}")
+            if tool.replace("_", "") in assistant_text.lower().replace("_", ""):
+                tool_name = tool
+                print(f"[FALLBACK] Tool detectada por texto: {tool_name}")
                 
-                # Extraer parámetros básicos del contexto
-                if toolname == "analyzebalancestructure":
+                # Construir parámetros desde el contexto
+                if tool_name == "analyze_balance_structure":
                     params = {
-                        "pdfpath": tools_ctx["pdfpath"],
-                        "anchorpage": tools_ctx.get("anchorpage", 55),
-                        "maxpages": 60,
+                        "pdf_path": tools_ctx["pdf_path"],
+                        "anchor_page": tools_ctx.get("anchor_page", 55),
+                        "max_pages": 60,
                         "extend": 1
                     }
-                elif toolname == "extractbalancestatement":
+                elif tool_name == "extract_balance_statement":
                     params = {
-                        "pdfpath": tools_ctx["pdfpath"],
-                        "analysisjson": tools_ctx.get("lastanalysis", {}),
-                        "extractsemanticchunks": True
+                        "pdf_path": tools_ctx["pdf_path"],
+                        "analysis_json": tools_ctx.get("last_analysis", {}),
+                        "extract_semantic_chunks": True
                     }
-                elif toolname == "validatebalancequality":
+                elif tool_name == "validate_balance_quality":
                     params = {
-                        "extraction": tools_ctx.get("lastextraction", {"text": assistant_text, "confidence": 0.8})
+                        "extraction": tools_ctx.get("last_extraction", {
+                            "text": assistant_text, 
+                            "confidence": 0.8
+                        })
                     }
-                elif toolname == "savebalanceresults":
+                elif tool_name == "save_balance_results":
                     params = {
-                        "outputdir": tools_ctx["outputdir"],
-                        "pdfname": str(tools_ctx["pdfpath"]),
-                        "analysis": tools_ctx.get("lastanalysis", {}),
-                        "extraction": tools_ctx.get("lastextraction", {}),
-                        "validation": tools_ctx.get("lastvalidation", {})
+                        "output_dir": tools_ctx["output_dir"],
+                        "pdf_name": str(tools_ctx["pdf_path"]),
+                        "analysis": tools_ctx.get("last_analysis", {}),
+                        "extraction": tools_ctx.get("last_extraction", {}),
+                        "validation": tools_ctx.get("last_validation", {})
                     }
                 break
         
-        # EJECUTAR HERRAMIENTA
-        if toolname:
-            tool_obj = TOOLS_REGISTRY.get(toolname)
+        # Ejecutar herramienta (fallback)
+        if tool_name:
+            tool_obj = TOOLS_REGISTRY.get(tool_name)
             if tool_obj:
                 try:
-                    print(f"[EXECUTING] {toolname} con parámetros: {list(params.keys())}")
+                    print(f"[EXECUTING FALLBACK] {tool_name} con parámetros: {list(params.keys())}")
                     result = tool_obj.run(**params)
                     
                     if result.get("success", False):
-                        print(f"[SUCCESS] {toolname} ejecutado correctamente")
+                        print(f"[SUCCESS] {tool_name} ejecutado correctamente")
                         
                         # Actualizar contexto
-                        if toolname == "analyzebalancestructure":
-                            tools_ctx["lastanalysis"] = result
-                        elif toolname == "extractbalancestatement":
-                            tools_ctx["lastextraction"] = result  
-                        elif toolname == "validatebalancequality":
-                            tools_ctx["lastvalidation"] = result
-                        elif toolname == "savebalanceresults":
-                            tools_ctx["lastsaved"] = result
+                        if tool_name == "analyze_balance_structure":
+                            tools_ctx["last_analysis"] = result
+                        elif tool_name == "extract_balance_statement":
+                            tools_ctx["last_extraction"] = result  
+                        elif tool_name == "validate_balance_quality":
+                            tools_ctx["last_validation"] = result
+                        elif tool_name == "save_balance_results":
+                            tools_ctx["last_saved"] = result
                             print("[FORCING COMPLETION] Archivos guardados - finalizando")
                             return history, True
                         
-                        feedback = f"{toolname} ejecutado exitosamente."
+                        feedback = f"{tool_name} ejecutado exitosamente."
                     else:
-                        feedback = f"Error en {toolname}: {result.get('error', 'Error desconocido')}"
+                        feedback = f"Error en {tool_name}: {result.get('error', 'Error desconocido')}"
                     
                     history.append({"role": "user", "content": feedback})
                     return history, False
                     
                 except Exception as e:
-                    print(f"[ERROR] Ejecutando {toolname}: {str(e)}")
-                    error_feedback = f"Error ejecutando {toolname}: {str(e)}"
+                    print(f"[ERROR] Ejecutando {tool_name}: {str(e)}")
+                    error_feedback = f"Error ejecutando {tool_name}: {str(e)}"
                     history.append({"role": "user", "content": error_feedback})
                     return history, False
         
@@ -702,7 +794,10 @@ def execute_react_step(history: List[Dict[str, str]], tools_ctx: Dict[str, Any])
         
     except Exception as e:
         print(f"[ERROR] En execute_react_step: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return history, False
+
 
 
 def run_balance_agent(pdf_path: Path, output_dir: Path, max_steps: int = 20,  # ← AUMENTADO DE 12 A 20

@@ -1,5 +1,10 @@
+// src/App.jsx
+
 import React, { useState, useEffect } from 'react';
 import './App.css';
+
+// Importar el nuevo componente del predictor
+import { HybridPredictorDashboard } from './components/predictor/HybridPredictorDashboard';
 
 function App() {
   const [systemStatus, setSystemStatus] = useState(null);
@@ -9,11 +14,13 @@ function App() {
   const [showChat, setShowChat] = useState(false);
   const [chatQuestion, setChatQuestion] = useState('');
   const [modalResponse, setModalResponse] = useState(null);
+  
+  // NUEVO: Estado para navegación entre secciones
+  const [currentSection, setCurrentSection] = useState('dashboard'); // 'dashboard' o 'predictor'
 
   // Verificar estado del backend al cargar
   useEffect(() => {
     checkBackendStatus();
-    // Verificar estado cada 30 segundos
     const interval = setInterval(checkBackendStatus, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -30,427 +37,239 @@ function App() {
   };
 
   const handleFunctionClick = async (functionName) => {
-    setLoading(true);
+    if (loading) return;
+    
     setSelectedFunction(functionName);
-    
-    // Mapeo de preguntas más específicas y detalladas
-    const questionMap = {
-      'balance': '¿Puedes analizar el balance general del documento? Incluye activos totales, pasivos, patrimonio y ratios financieros importantes. Proporciona cifras específicas y análisis detallado.',
-      'income': '¿Cuáles son los principales ingresos y gastos del estado de resultados? Analiza la rentabilidad, márgenes y evolución financiera con datos concretos.',
-      'cashflows': '¿Cómo están los flujos de efectivo? Analiza flujos operativos, de inversión y financiación. Incluye variaciones y tendencias importantes.',
-      'equity': '¿Cuál es la situación del patrimonio y capital? Examina cambios en capital social, reservas y resultados acumulados con análisis detallado.',
-      'predictions': '¿Qué predicciones y recomendaciones puedes hacer sobre estas finanzas? Incluye tendencias futuras, riesgos y oportunidades basadas en los datos.'
-    };
-
-    try {
-      const question = questionMap[functionName] || 'Analiza el documento financiero de manera integral';
-      
-      console.log('🔍 Enviando solicitud a:', 'http://127.0.0.1:8000/ask-question');
-      console.log('📝 Pregunta:', question);
-      
-      // ✅ URL CORREGIDA - ask-question en lugar de query
-      const response = await fetch('http://127.0.0.1:8000/ask-question', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ question: question })
-      });
-
-      console.log('📡 Status de respuesta:', response.status, response.statusText);
-
-      if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Datos recibidos:', result);
-      
-      // Extraer respuesta con múltiples campos posibles
-      const responseText = result.answer || result.response || result.message || result.data || 'No se pudo obtener una respuesta específica del agente.';
-      
-      // Agregar respuesta al historial
-      const newResponse = {
-        id: Date.now(),
-        function: functionName,
-        question: question,
-        answer: responseText,
-        timestamp: new Date().toLocaleTimeString(),
-        fullTimestamp: new Date().toLocaleString()
-      };
-      
-      setResponses(prev => [newResponse, ...prev]);
-      
-      // Mostrar en modal en lugar de alert simple
-      setModalResponse({
-        title: `📊 Análisis: ${functions.find(f => f.id === functionName)?.name}`,
-        content: responseText,
-        timestamp: newResponse.fullTimestamp,
-        functionName: functionName
-      });
-      
-    } catch (error) {
-      console.error('❌ Error completo:', error);
-      
-      // Manejo de errores mejorado
-      const errorMessage = `Error al consultar ${functionName}: ${error.message}`;
-      
-      const errorResponse = {
-        id: Date.now(),
-        function: functionName,
-        question: 'Error de conexión',
-        answer: error.message,
-        timestamp: new Date().toLocaleTimeString(),
-        fullTimestamp: new Date().toLocaleString(),
-        isError: true
-      };
-      
-      setResponses(prev => [errorResponse, ...prev]);
-      
-      // Mostrar error en modal
-      setModalResponse({
-        title: `❌ Error en ${functionName}`,
-        content: errorMessage,
-        timestamp: new Date().toLocaleString(),
-        isError: true
-      });
-      
-    } finally {
-      // Siempre limpiar el estado de loading
-      setLoading(false);
-      setSelectedFunction(null);
-    }
-  };
-
-  const handleCustomQuestion = async () => {
-    if (!chatQuestion.trim()) return;
-    
     setLoading(true);
+    setShowChat(false);
     
     try {
-      console.log('🔍 Enviando consulta personalizada a:', 'http://127.0.0.1:8000/ask-question');
-      console.log('📝 Pregunta personalizada:', chatQuestion);
-      
-      // ✅ URL CORREGIDA - ask-question en lugar de query
-      const response = await fetch('http://127.0.0.1:8000/ask-question', {
+      const response = await fetch('http://127.0.0.1:8000/execute-function', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question: chatQuestion })
+        body: JSON.stringify({ 
+          function_name: functionName,
+          question: functionName === 'text_to_sql' ? chatQuestion : null
+        }),
       });
-
+      
       if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status}`);
+        throw new Error(`Error: ${response.status}`);
       }
-
-      const result = await response.json();
-      const responseText = result.answer || result.response || result.message || 'No se pudo obtener respuesta.';
       
-      const newResponse = {
-        id: Date.now(),
-        function: 'custom',
-        question: chatQuestion,
-        answer: responseText,
-        timestamp: new Date().toLocaleTimeString(),
-        fullTimestamp: new Date().toLocaleString()
-      };
+      const data = await response.json();
       
-      setResponses(prev => [newResponse, ...prev]);
+      setResponses(prev => [{
+        function: functionName,
+        data: data,
+        timestamp: new Date().toISOString()
+      }, ...prev]);
       
-      // Mostrar respuesta personalizada en modal
-      setModalResponse({
-        title: '💬 Consulta Personalizada',
-        content: responseText,
-        timestamp: newResponse.fullTimestamp,
-        question: chatQuestion
-      });
-      
-      setChatQuestion('');
+      if (functionName === 'text_to_sql') {
+        setShowChat(false);
+        setChatQuestion('');
+      }
       
     } catch (error) {
-      console.error('❌ Error en consulta personalizada:', error);
-      
-      const errorResponse = {
-        id: Date.now(),
-        function: 'custom',
-        question: chatQuestion,
-        answer: error.message,
-        timestamp: new Date().toLocaleTimeString(),
-        fullTimestamp: new Date().toLocaleString(),
-        isError: true
-      };
-      
-      setResponses(prev => [errorResponse, ...prev]);
-      
-      setModalResponse({
-        title: '❌ Error en Consulta',
-        content: `Error: ${error.message}`,
-        timestamp: new Date().toLocaleString(),
-        isError: true
-      });
+      console.error('Error:', error);
+      alert(`Error ejecutando ${functionName}: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearHistory = () => {
-    setResponses([]);
+  const handleChatSubmit = (e) => {
+    e.preventDefault();
+    if (chatQuestion.trim()) {
+      handleFunctionClick('text_to_sql');
+    }
+  };
+
+  const openModal = (response) => {
+    setModalResponse(response);
+  };
+
+  const closeModal = () => {
+    setModalResponse(null);
+  };
+
+  const formatResponse = (data) => {
+    if (typeof data === 'object') {
+      return JSON.stringify(data, null, 2);
+    }
+    return String(data);
+  };
+
+  const getStatusColor = () => {
+    if (!systemStatus) return '#ff4444';
+    return systemStatus.status === 'operational' ? '#4CAF50' : '#ff9800';
   };
 
   const functions = [
     { 
-      id: 'balance', 
-      icon: '📊', 
-      name: 'Balance General',
-      description: 'Activos, pasivos y patrimonio',
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      name: 'ingest_retrieve', 
+      title: 'Ingest & Retrieve',
+      description: 'Procesar documentos y realizar búsquedas',
+      icon: '📄'
     },
     { 
-      id: 'income', 
-      icon: '💰', 
-      name: 'Estado de Resultados',
-      description: 'Ingresos, gastos y rentabilidad',
-      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+      name: 'text_to_sql', 
+      title: 'Text to SQL',
+      description: 'Convertir preguntas en consultas SQL',
+      icon: '💬',
+      requiresInput: true
     },
     { 
-      id: 'cashflows', 
-      icon: '💧', 
-      name: 'Flujos de Efectivo',
-      description: 'Operativos, inversión y financiación',
-      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+      name: 'embeddings_memory', 
+      title: 'Embeddings con Memory',
+      description: 'Vector store con memoria persistente',
+      icon: '🧠'
     },
     { 
-      id: 'equity', 
-      icon: '📈', 
-      name: 'Estado de Patrimonio',
-      description: 'Capital y reservas',
-      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
-    },
-    { 
-      id: 'predictions', 
-      icon: '🔮', 
-      name: 'Predicciones AI',
-      description: 'Proyecciones inteligentes',
-      color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+      name: 'text_to_cypher', 
+      title: 'Text to Cypher',
+      description: 'Consultas en bases de datos de grafos',
+      icon: '🔗'
     }
   ];
 
   return (
     <div className="App">
-      <header className="App-header">
-        <div className="header-content">
-          <h1>🤖 Sistema Multi-Agente Financiero</h1>
-          
-          <div className="status-indicator">
+      {/* NUEVO: Navegación entre secciones */}
+      <div className="section-nav">
+        <button 
+          className={`section-tab ${currentSection === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setCurrentSection('dashboard')}
+        >
+          📊 Dashboard Principal
+        </button>
+        <button 
+          className={`section-tab ${currentSection === 'predictor' ? 'active' : ''}`}
+          onClick={() => setCurrentSection('predictor')}
+        >
+          🚀 Predictor Híbrido <span className="beta-badge">Beta</span>
+        </button>
+      </div>
+
+      {/* Mostrar Dashboard Original */}
+      {currentSection === 'dashboard' && (
+        <div className="App-header">
+          <div className="status-indicator" style={{ backgroundColor: getStatusColor() }}>
             {systemStatus ? (
-              <div className="status-active">
-                ✅ Sistema operativo - {systemStatus.available_agents?.length || 5} agentes activos
-                <div className="health-score">
-                  Salud del sistema: {Math.round((systemStatus.system_health?.health_score || 1) * 100)}%
-                </div>
-              </div>
+              <>
+                <span className="status-dot"></span>
+                Backend: {systemStatus.status}
+              </>
             ) : (
-              <div className="status-checking">
-                ⚠️ Verificando conexión con backend...
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="main-content">
-          <div className="functions-section">
-            <h2>🎯 Análisis Financiero Especializado</h2>
-            
-            <div className="functions-grid">
-              {functions.map((func) => (
-                <div 
-                  key={func.id}
-                  className={`function-card ${selectedFunction === func.id ? 'active' : ''}`}
-                  onClick={() => handleFunctionClick(func.id)}
-                  style={{
-                    background: func.color,
-                    cursor: loading ? 'wait' : 'pointer',
-                    opacity: loading && selectedFunction !== func.id ? 0.7 : 1
-                  }}
-                >
-                  <div className="function-icon">{func.icon}</div>
-                  <div className="function-content">
-                    <h3>{func.name}</h3>
-                    <p>{func.description}</p>
-                    {selectedFunction === func.id && loading && (
-                      <div className="loading-spinner">
-                        <div className="spinner"></div>
-                        Procesando análisis...
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="chat-section">
-            <div className="chat-header">
-              <h3>💬 Consulta Personalizada</h3>
-              <button 
-                className="toggle-chat"
-                onClick={() => setShowChat(!showChat)}
-              >
-                {showChat ? '🔼 Ocultar' : '🔽 Mostrar'}
-              </button>
-            </div>
-            
-            {showChat && (
-              <div className="chat-interface">
-                <div className="chat-input">
-                  <input
-                    type="text"
-                    value={chatQuestion}
-                    onChange={(e) => setChatQuestion(e.target.value)}
-                    placeholder="Ejemplo: ¿Cuál es la liquidez de la empresa? ¿Cómo han evolucionado los ingresos?"
-                    onKeyPress={(e) => e.key === 'Enter' && handleCustomQuestion()}
-                    disabled={loading}
-                  />
-                  <button 
-                    onClick={handleCustomQuestion}
-                    disabled={loading || !chatQuestion.trim()}
-                    className="send-button"
-                  >
-                    {loading ? '⏳' : '📤'}
-                  </button>
-                </div>
-                <div className="chat-examples">
-                  <p><strong>💡 Ejemplos de preguntas:</strong></p>
-                  <button onClick={() => setChatQuestion('¿Cuáles son los principales riesgos financieros?')}>
-                    💸 Riesgos financieros
-                  </button>
-                  <button onClick={() => setChatQuestion('¿Cómo ha evolucionado la rentabilidad?')}>
-                    📈 Evolución rentabilidad
-                  </button>
-                  <button onClick={() => setChatQuestion('¿Cuál es la situación de liquidez?')}>
-                    💰 Análisis liquidez
-                  </button>
-                </div>
-              </div>
+              <>
+                <span className="status-dot offline"></span>
+                Backend: Offline
+              </>
             )}
           </div>
 
-          <div className="responses-section">
-            <div className="responses-header">
-              <h3>📋 Historial de Análisis ({responses.length})</h3>
-              {responses.length > 0 && (
-                <button onClick={clearHistory} className="clear-history">
-                  🗑️ Limpiar Historial
-                </button>
-              )}
-            </div>
-            
-            <div className="responses-container">
-              {responses.length === 0 ? (
-                <div className="no-responses">
-                  <div className="no-responses-icon">📊</div>
-                  <p>Haz clic en una funcionalidad o usa el chat para comenzar el análisis financiero</p>
-                  <p className="no-responses-tip">💡 Tip: Cada análisis se guardará aquí para tu referencia</p>
-                </div>
-              ) : (
-                responses.map((response) => (
-                  <div 
-                    key={response.id} 
-                    className={`response-card ${response.isError ? 'error' : ''}`}
-                  >
-                    <div className="response-header">
-                      <span className="response-function">
-                        {functions.find(f => f.id === response.function)?.icon || '💬'} 
-                        {functions.find(f => f.id === response.function)?.name || 'Consulta personalizada'}
-                      </span>
-                      <span className="response-time">{response.timestamp}</span>
-                    </div>
-                    <div className="response-question">
-                      <strong>Pregunta:</strong> {response.question.length > 100 ? 
-                        response.question.substring(0, 100) + '...' : response.question}
-                    </div>
-                    <div className="response-answer">
-                      <strong>Respuesta:</strong> {response.answer.length > 200 ? 
-                        response.answer.substring(0, 200) + '...' : response.answer}
-                    </div>
-                    <button 
-                      className="view-full-response"
-                      onClick={() => setModalResponse({
-                        title: `${functions.find(f => f.id === response.function)?.icon || '💬'} ${functions.find(f => f.id === response.function)?.name || 'Consulta personalizada'}`,
-                        content: response.answer,
-                        timestamp: response.fullTimestamp,
-                        question: response.question
-                      })}
-                    >
-                      👁️ Ver completo
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <h1>🤖 Sistema Multi-Agente LLM</h1>
+          <h2>Selecciona una función para ejecutar</h2>
 
-          <div className="links-section">
-            <h3>🔗 Enlaces del Sistema</h3>
-            <div className="links-grid">
-              <a href="http://127.0.0.1:8000" target="_blank" rel="noopener noreferrer">
-                📡 API Backend
-              </a>
-              <a href="http://127.0.0.1:8000/docs" target="_blank" rel="noopener noreferrer">
-                📚 Documentación API
-              </a>
-              <a href="http://127.0.0.1:8000/system-status" target="_blank" rel="noopener noreferrer">
-                🔍 Estado del Sistema
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Modal para mostrar respuestas completas */}
-      {modalResponse && (
-        <div className="modal-overlay" onClick={() => setModalResponse(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{modalResponse.title}</h2>
-              <button 
-                className="modal-close" 
-                onClick={() => setModalResponse(null)}
-              >
-                ✕
-              </button>
-            </div>
-            
-            {modalResponse.question && (
-              <div className="modal-question">
-                <strong>📝 Pregunta:</strong>
-                <p>{modalResponse.question}</p>
-              </div>
-            )}
-            
-            <div className="modal-response">
-              <strong>🤖 Respuesta del Sistema:</strong>
-              <div className="modal-content-text">
-                {modalResponse.content}
-              </div>
-            </div>
-            
-            <div className="modal-footer">
-              <span className="modal-timestamp">
-                📅 {modalResponse.timestamp}
-              </span>
-              <button 
-                className="modal-copy"
+          <div className="functions-grid">
+            {functions.map((func) => (
+              <div
+                key={func.name}
+                className={`function-card ${selectedFunction === func.name ? 'active' : ''} ${loading ? 'disabled' : ''}`}
                 onClick={() => {
-                  navigator.clipboard.writeText(modalResponse.content);
-                  alert('📋 Respuesta copiada al portapapeles');
+                  if (func.requiresInput) {
+                    setShowChat(true);
+                    setSelectedFunction(func.name);
+                  } else {
+                    handleFunctionClick(func.name);
+                  }
                 }}
               >
-                📋 Copiar respuesta
-              </button>
-            </div>
+                <div className="function-icon">{func.icon}</div>
+                <h3>{func.title}</h3>
+                <p>{func.description}</p>
+                {loading && selectedFunction === func.name && (
+                  <div className="loading-spinner">
+                    <div className="spinner"></div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
+
+          {showChat && selectedFunction === 'text_to_sql' && (
+            <div className="chat-interface">
+              <h3>💬 Ingresa tu pregunta</h3>
+              <form onSubmit={handleChatSubmit}>
+                <input
+                  type="text"
+                  value={chatQuestion}
+                  onChange={(e) => setChatQuestion(e.target.value)}
+                  placeholder="Ej: ¿Cuáles son las ventas del último mes?"
+                  className="chat-input"
+                  autoFocus
+                />
+                <button 
+                  type="submit" 
+                  className="chat-submit"
+                  disabled={loading || !chatQuestion.trim()}
+                >
+                  {loading ? 'Procesando...' : 'Enviar'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {responses.length > 0 && (
+            <div className="responses-section">
+              <h2>📋 Historial de Respuestas</h2>
+              <div className="responses-grid">
+                {responses.map((response, index) => (
+                  <div key={index} className="response-card">
+                    <div className="response-header">
+                      <h3>{functions.find(f => f.name === response.function)?.title || response.function}</h3>
+                      <small>{new Date(response.timestamp).toLocaleString()}</small>
+                    </div>
+                    <div className="response-preview">
+                      <pre>{formatResponse(response.data).substring(0, 200)}...</pre>
+                    </div>
+                    <button 
+                      className="view-details-btn"
+                      onClick={() => openModal(response)}
+                    >
+                      Ver detalles completos
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {modalResponse && (
+            <div className="modal-overlay" onClick={closeModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{functions.find(f => f.name === modalResponse.function)?.title || modalResponse.function}</h2>
+                  <button className="close-btn" onClick={closeModal}>✕</button>
+                </div>
+                <div className="modal-body">
+                  <pre>{formatResponse(modalResponse.data)}</pre>
+                </div>
+                <div className="modal-footer">
+                  <small>Timestamp: {new Date(modalResponse.timestamp).toLocaleString()}</small>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* NUEVO: Mostrar Predictor Híbrido */}
+      {currentSection === 'predictor' && (
+        <div className="predictor-section">
+          <HybridPredictorDashboard bankSymbol="BBVA.MC" />
         </div>
       )}
     </div>

@@ -1,23 +1,66 @@
-# Dependencias existentes del sistema
-pandas>=1.5.0
-numpy>=1.21.0
-openai>=1.0.0
-groq>=0.4.0
-httpx==0.27.2
-pdfplumber>=0.9.0
-scikit-learn>=1.1.0
-python-dotenv>=0.19.0
-pathlib>=1.0.1
-typing-extensions>=4.0.0
-python-dateutil>=2.8.0
+# ================================
+# DEPENDENCIAS CORE DEL SISTEMA
+# ================================
 
-# Nuevas dependencias para el frontend API
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
+# FastAPI y servidor web (PRIORITARIO)
+fastapi>=0.104.0,<0.115.0
+uvicorn[standard]>=0.24.0,<0.31.0
 python-multipart>=0.0.6
 
-# PyMuPDF - IMPORTANTE: usar el nombre correcto
-PyMuPDF>=1.23.0
+# Procesamiento de datos core
+pandas>=1.5.0,<2.3.0
+numpy>=1.21.0,<2.2.0
 
-# Dependencias adicionales
-aiofiles>=23.2.0
+# APIs de IA (versiones compatibles)
+openai>=1.0.0,<2.0.0
+groq>=0.4.0,<1.0.0
+
+# HTTP client (versión específica para evitar conflictos)
+httpx>=0.25.0,<0.28.0
+
+# Procesamiento de PDFs - usar UNA sola librería
+pdfplumber>=0.9.0,<0.12.0
+# PyMuPDF>=1.23.0  # COMENTADO para evitar conflictos
+
+# Utilidades Python
+python-dotenv>=0.19.0
+python-dateutil>=2.8.0
+typing-extensions>=4.0.0,<5.0.0
+
+# Machine Learning básico
+scikit-learn>=1.1.0,<1.6.0
+
+# I/O asíncrono
+aiofiles>=23.2.0,<25.0.0
+
+# Requests para APIs HTTP
+requests>=2.28.0,<3.0.0
+
+# ================================
+# DEPENDENCIAS ADICIONALES OPCIONALES
+# (Instalar solo si es necesario)
+# ================================
+
+# # Prophet para forecasting (OPCIONAL - causa conflictos)
+# # prophet>=1.1.5
+# # cmdstanpy>=1.2.0
+# # pystan>=3.8.0
+
+# # APIs financieras (OPCIONAL)
+# # yfinance>=0.2.28
+# # alpha-vantage>=2.3.1
+
+# # Visualización (OPCIONAL)
+# # plotly>=5.17.0
+# # streamlit>=1.28.0
+
+# # ML avanzado (OPCIONAL)
+# # xgboost>=2.0.0
+# # lightgbm>=4.0.0
+
+# # Experiment tracking (OPCIONAL)
+# # optuna>=3.4.0
+# # mlflow>=2.8.0
+
+# Paralelización
+joblib>=1.3.0,<1.5.0

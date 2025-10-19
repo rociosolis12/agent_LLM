@@ -1,0 +1,76 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para poder proporcionarte un análisis cualitativo detallado, necesitaría que me proporciones los datos financieros específicos de Garanti BBVA que deseas que analice. Sin embargo, puedo ofrecerte una estructura general de cómo abordar el análisis una vez que dispongas de los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización Sólida:** Si los ratios de capital, como el CET1 (Common Equity Tier 1), son altos, esto indica una buena capacidad de absorción de pérdidas.\n   - **Rentabilidad:** Un alto ROE (Return on Equity) o ROA (Return on Assets) sugiere eficiencia en la generación de beneficios a partir de los activos y el capital.\n   - **Crecimiento de Ingresos:** Un crecimiento consistente en los ingresos netos por intereses y comisiones puede indicar una base de ingresos diversificada y sólida.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Exposición a Riesgos de Mercado:** Si hay una alta exposición a la volatilidad de la lira turca o a tipos de interés fluctuantes, esto podría ser un riesgo significativo.\n   - **Calidad de Activos:** Un aumento en los préstamos no productivos (NPLs) podría indicar problemas en la calidad de la cartera de préstamos.\n   - **Dependencia de Financiación Externa:** Una alta proporción de financiación a corto plazo o en moneda extranjera podría ser riesgosa en un entorno económico volátil.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Tendencia de Margen de Interés Neto:** Un margen de interés neto creciente podría indicar una gestión efectiva de los costos de financiación y la capacidad de prestar a tasas más altas.\n   - **Evolución de la Eficiencia Operativa:** Un ratio de eficiencia decreciente sugiere mejoras en la gestión de costos operativos.\n   - **Cambio en la Liquidez:** Un aumento en el ratio de cobertura de liquidez (LCR) podría indicar una mejor gestión de la liquidez.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Diversificación de Ingresos:** Expandir las fuentes de ingresos no basadas en intereses para mitigar el riesgo de fluctuaciones en las tasas de interés.\n   - **Gestión de Riesgos:** Implementar estrategias de cobertura para mitigar el riesgo cambiario y de tasas de interés.\n   - **Fortalecimiento de la Base de Capital:** Considerar opciones para aumentar el capital si los ratios de capital están cerca de los mínimos regulatorios.\n   - **Innovación Digital:** Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa.\n\nSi puedes proporcionar los datos específicos, podré ofrecerte un análisis más detallado y adaptado a la situación actual de Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T11:58:37.332425",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T11:58:37.340348",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para poder proporcionarte un análisis cualitativo detallado, necesitaría que me proporciones los datos financieros específicos de Garanti BBVA que deseas que analice. Sin embargo, puedo ofrecerte una estructura general de cómo abordar el análisis una vez que dispongas de los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización Sólida:** Si los ratios de capital, como el CET1 (Common Equity Tier 1), son altos, esto indica una buena capacidad de absorción de pérdidas.\n   - **Rentabilidad:** Un alto ROE (Return on Equity) o ROA (Return on Assets) sugiere eficiencia en la generación de beneficios a partir de los activos y el capital.\n   - **Crecimiento de Ingresos:** Un crecimiento consistente en los ingresos netos por intereses y comisiones puede indicar una base de ingresos diversificada y sólida.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Exposición a Riesgos de Mercado:** Si hay una alta exposición a la volatilidad de la lira turca o a tipos de interés fluctuantes, esto podría ser un riesgo significativo.\n   - **Calidad de Activos:** Un aumento en los préstamos no productivos (NPLs) podría indicar problemas en la calidad de la cartera de préstamos.\n   - **Dependencia de Financiación Externa:** Una alta proporción de financiación a corto plazo o en moneda extranjera podría ser riesgosa en un entorno económico volátil.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Tendencia de Margen de Interés Neto:** Un margen de interés neto creciente podría indicar una gestión efectiva de los costos de financiación y la capacidad de prestar a tasas más altas.\n   - **Evolución de la Eficiencia Operativa:** Un ratio de eficiencia decreciente sugiere mejoras en la gestión de costos operativos.\n   - **Cambio en la Liquidez:** Un aumento en el ratio de cobertura de liquidez (LCR) podría indicar una mejor gestión de la liquidez.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Diversificación de Ingresos:** Expandir las fuentes de ingresos no basadas en intereses para mitigar el riesgo de fluctuaciones en las tasas de interés.\n   - **Gestión de Riesgos:** Implementar estrategias de cobertura para mitigar el riesgo cambiario y de tasas de interés.\n   - **Fortalecimiento de la Base de Capital:** Considerar opciones para aumentar el capital si los ratios de capital están cerca de los mínimos regulatorios.\n   - **Innovación Digital:** Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa.\n\nSi puedes proporcionar los datos específicos, podré ofrecerte un análisis más detallado y adaptado a la situación actual de Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Claro, para poder proporcionarte un análisis cualitativo detallado, necesitaría que me proporciones los datos financieros específicos de Garanti BBVA que deseas que analice. Sin embargo, puedo ofrecerte una estructura general de cómo abordar el análisis una vez que dispongas de los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización Sólida:** Si los ratios de capital, como el CET1 (Common Equity Tier 1), son altos, esto indica una buena capacidad de absorción d"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {}
+}

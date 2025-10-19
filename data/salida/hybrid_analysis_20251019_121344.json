@@ -1,0 +1,107 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Para proporcionarte un análisis cualitativo detallado, necesitaría que completes los datos financieros específicos de Garanti BBVA que deseas analizar. Sin embargo, puedo ofrecerte una estructura general sobre cómo abordar el análisis de una entidad bancaria como Garanti BBVA, teniendo en cuenta la regulación BRSA y el contexto financiero turco:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización y Solvencia:** Si los ratios de capital, como el Capital Adequacy Ratio (CAR), son altos, esto indica una buena capacidad para absorber pérdidas.\n   - **Rentabilidad:** Un alto Return on Equity (ROE) o Return on Assets (ROA) sugiere eficiencia en la generación de beneficios.\n   - **Diversificación de ingresos:** Una cartera diversificada de productos financieros puede mitigar riesgos específicos de mercado.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Exposición a la volatilidad de la lira turca:** La depreciación de la moneda puede afectar la estabilidad financiera y la capacidad de pago de los prestatarios.\n   - **Riesgo de crédito:** Altos niveles de préstamos no productivos (NPLs) pueden indicar problemas en la calidad de los activos.\n   - **Regulación y entorno macroeconómico:** Cambios en la política monetaria o fiscal pueden impactar las operaciones bancarias.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Crecimiento de préstamos y depósitos:** Un crecimiento sostenido puede indicar confianza del mercado, pero también puede aumentar el riesgo si no se gestiona adecuadamente.\n   - **Margen de interés neto (NIM):** Un aumento en el NIM puede reflejar una mejor gestión de los costos de financiación y la rentabilidad de los activos.\n   - **Eficiencia operativa:** Una mejora en el ratio de eficiencia (coste-ingreso) sugiere una mejor gestión de los gastos operativos.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Gestión de riesgos cambiarios:** Implementar coberturas para mitigar el impacto de la volatilidad de la lira.\n   - **Fortalecimiento de la cartera de crédito:** Mejorar los procesos de evaluación de crédito para reducir el riesgo de NPLs.\n   - **Innovación digital:** Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa.\n   - **Expansión internacional:** Considerar oportunidades de diversificación geográfica para reducir la dependencia del mercado turco.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y preciso.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T12:13:44.059725",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T12:13:44.076622",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Para proporcionarte un análisis cualitativo detallado, necesitaría que completes los datos financieros específicos de Garanti BBVA que deseas analizar. Sin embargo, puedo ofrecerte una estructura general sobre cómo abordar el análisis de una entidad bancaria como Garanti BBVA, teniendo en cuenta la regulación BRSA y el contexto financiero turco:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización y Solvencia:** Si los ratios de capital, como el Capital Adequacy Ratio (CAR), son altos, esto indica una buena capacidad para absorber pérdidas.\n   - **Rentabilidad:** Un alto Return on Equity (ROE) o Return on Assets (ROA) sugiere eficiencia en la generación de beneficios.\n   - **Diversificación de ingresos:** Una cartera diversificada de productos financieros puede mitigar riesgos específicos de mercado.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Exposición a la volatilidad de la lira turca:** La depreciación de la moneda puede afectar la estabilidad financiera y la capacidad de pago de los prestatarios.\n   - **Riesgo de crédito:** Altos niveles de préstamos no productivos (NPLs) pueden indicar problemas en la calidad de los activos.\n   - **Regulación y entorno macroeconómico:** Cambios en la política monetaria o fiscal pueden impactar las operaciones bancarias.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Crecimiento de préstamos y depósitos:** Un crecimiento sostenido puede indicar confianza del mercado, pero también puede aumentar el riesgo si no se gestiona adecuadamente.\n   - **Margen de interés neto (NIM):** Un aumento en el NIM puede reflejar una mejor gestión de los costos de financiación y la rentabilidad de los activos.\n   - **Eficiencia operativa:** Una mejora en el ratio de eficiencia (coste-ingreso) sugiere una mejor gestión de los gastos operativos.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Gestión de riesgos cambiarios:** Implementar coberturas para mitigar el impacto de la volatilidad de la lira.\n   - **Fortalecimiento de la cartera de crédito:** Mejorar los procesos de evaluación de crédito para reducir el riesgo de NPLs.\n   - **Innovación digital:** Invertir en tecnología para mejorar la experiencia del cliente y la eficiencia operativa.\n   - **Expansión internacional:** Considerar oportunidades de diversificación geográfica para reducir la dependencia del mercado turco.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y preciso.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Para proporcionarte un análisis cualitativo detallado, necesitaría que completes los datos financieros específicos de Garanti BBVA que deseas analizar. Sin embargo, puedo ofrecerte una estructura general sobre cómo abordar el análisis de una entidad bancaria como Garanti BBVA, teniendo en cuenta la regulación BRSA y el contexto financiero turco:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Capitalización y Solvencia:** Si los ratios de capital, como el Capital Adequacy Ratio "
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {
+    "capital_ratios": {
+      "cet1_minimum": 4.5,
+      "cet1_with_buffers": 7.0,
+      "tier1_minimum": 6.0,
+      "total_capital_minimum": 8.0,
+      "leverage_ratio_minimum": 3.0
+    },
+    "liquidity_ratios": {
+      "lcr_minimum": 100.0,
+      "nsfr_minimum": 100.0
+    },
+    "performance_benchmarks": {
+      "roa_healthy": 1.0,
+      "roa_warning": 0.5,
+      "roe_healthy": 10.0,
+      "roe_warning": 5.0
+    },
+    "risk_thresholds": {
+      "solvency_critical": 3.0,
+      "solvency_warning": 5.0,
+      "liquidity_critical": 80.0,
+      "liquidity_warning": 90.0
+    },
+    "metadata": {
+      "regulation_framework": "Basel III/IV",
+      "effective_date": "2025-10-19",
+      "source": "BRSA (Banking Regulation and Supervision Agency of Turkey)",
+      "notes": "Applies Basel III standards with local adjustments by BRSA.",
+      "retrieval_timestamp": "2025-10-19T12:13:38.622930"
+    }
+  }
+}

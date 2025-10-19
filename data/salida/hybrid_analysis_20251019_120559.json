@@ -1,0 +1,76 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para proporcionar un análisis financiero cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos. Sin embargo, puedo ofrecerte un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Sólida base de capital:** Si los ratios de capital como el CET1 (Common Equity Tier 1) son altos, esto indica una buena capacidad para absorber pérdidas.\n   - **Crecimiento en ingresos netos por intereses:** Un aumento en este indicador sugiere una gestión efectiva de los márgenes de interés.\n   - **Diversificación de ingresos:** La presencia de múltiples fuentes de ingresos (por ejemplo, banca minorista, comercial, y de inversión) puede reducir la dependencia de un solo segmento.\n   - **Buena calidad de activos:** Un bajo ratio de préstamos no productivos (NPL) indica una cartera de préstamos de alta calidad.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Alta exposición a riesgos cambiarios:** Dado que Garanti BBVA opera en Turquía, la volatilidad de la lira turca puede impactar significativamente.\n   - **Dependencia de financiamiento a corto plazo:** Un alto nivel de financiamiento a corto plazo podría indicar vulnerabilidad a cambios en las condiciones del mercado.\n   - **Entorno macroeconómico desafiante:** Factores como alta inflación o inestabilidad política pueden afectar negativamente las operaciones bancarias.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Evolución del ratio de eficiencia:** Una mejora en este ratio sugiere una gestión operativa más eficiente.\n   - **Cambio en el ratio de morosidad:** Un aumento podría indicar un deterioro en la calidad de la cartera de préstamos.\n   - **Variaciones en el ROE (Return on Equity):** Un aumento en el ROE puede reflejar una mayor rentabilidad para los accionistas.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Fortalecer la gestión de riesgos cambiarios:** Implementar coberturas efectivas para mitigar el impacto de la volatilidad de la moneda.\n   - **Diversificar la cartera de préstamos:** Ampliar la base de clientes y sectores para reducir riesgos concentrados.\n   - **Optimizar la estructura de costos:** Identificar áreas para mejorar la eficiencia operativa y reducir gastos innecesarios.\n   - **Expandir la digitalización:** Invertir en tecnología para mejorar la experiencia del cliente y aumentar la eficiencia operativa.\n\nUna vez que tengas los datos específicos, podrías aplicar este marco para obtener insights más detallados y específicos sobre Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T12:05:59.402305",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T12:05:59.405019",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, para proporcionar un análisis financiero cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos. Sin embargo, puedo ofrecerte un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Sólida base de capital:** Si los ratios de capital como el CET1 (Common Equity Tier 1) son altos, esto indica una buena capacidad para absorber pérdidas.\n   - **Crecimiento en ingresos netos por intereses:** Un aumento en este indicador sugiere una gestión efectiva de los márgenes de interés.\n   - **Diversificación de ingresos:** La presencia de múltiples fuentes de ingresos (por ejemplo, banca minorista, comercial, y de inversión) puede reducir la dependencia de un solo segmento.\n   - **Buena calidad de activos:** Un bajo ratio de préstamos no productivos (NPL) indica una cartera de préstamos de alta calidad.\n\n2. **Áreas de preocupación o riesgo:**\n   - **Alta exposición a riesgos cambiarios:** Dado que Garanti BBVA opera en Turquía, la volatilidad de la lira turca puede impactar significativamente.\n   - **Dependencia de financiamiento a corto plazo:** Un alto nivel de financiamiento a corto plazo podría indicar vulnerabilidad a cambios en las condiciones del mercado.\n   - **Entorno macroeconómico desafiante:** Factores como alta inflación o inestabilidad política pueden afectar negativamente las operaciones bancarias.\n\n3. **Tendencias observables en los ratios clave:**\n   - **Evolución del ratio de eficiencia:** Una mejora en este ratio sugiere una gestión operativa más eficiente.\n   - **Cambio en el ratio de morosidad:** Un aumento podría indicar un deterioro en la calidad de la cartera de préstamos.\n   - **Variaciones en el ROE (Return on Equity):** Un aumento en el ROE puede reflejar una mayor rentabilidad para los accionistas.\n\n4. **Recomendaciones estratégicas de alto nivel:**\n   - **Fortalecer la gestión de riesgos cambiarios:** Implementar coberturas efectivas para mitigar el impacto de la volatilidad de la moneda.\n   - **Diversificar la cartera de préstamos:** Ampliar la base de clientes y sectores para reducir riesgos concentrados.\n   - **Optimizar la estructura de costos:** Identificar áreas para mejorar la eficiencia operativa y reducir gastos innecesarios.\n   - **Expandir la digitalización:** Invertir en tecnología para mejorar la experiencia del cliente y aumentar la eficiencia operativa.\n\nUna vez que tengas los datos específicos, podrías aplicar este marco para obtener insights más detallados y específicos sobre Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Claro, para proporcionar un análisis financiero cualitativo de Garanti BBVA, necesitaría que me proporciones los datos financieros específicos. Sin embargo, puedo ofrecerte un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas:**\n   - **Sólida base de capital:** Si los ratios de capital como el CET1 (Common Equity Tier 1) son altos, esto indica una buena capacidad para absorber pérdidas.\n   - **Crecimiento en ingreso"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {}
+}

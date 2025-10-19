@@ -1,0 +1,76 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, estaré encantado de ayudarte con el análisis financiero de Garanti BBVA. Sin embargo, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Una vez que tenga esos datos, podré ofrecerte un análisis detallado y recomendaciones estratégicas. Por favor, proporciona los datos financieros para proceder.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T12:00:02.622356",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T12:00:02.626730",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, estaré encantado de ayudarte con el análisis financiero de Garanti BBVA. Sin embargo, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Una vez que tenga esos datos, podré ofrecerte un análisis detallado y recomendaciones estratégicas. Por favor, proporciona los datos financieros para proceder.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Claro, estaré encantado de ayudarte con el análisis financiero de Garanti BBVA. Sin embargo, necesitaría que me proporciones los datos financieros específicos que deseas analizar. Una vez que tenga esos datos, podré ofrecerte un análisis detallado y recomendaciones estratégicas. Por favor, proporciona los datos financieros para proceder."
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {}
+}

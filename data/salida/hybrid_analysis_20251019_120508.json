@@ -1,0 +1,76 @@
+{
+  "llm_extraction": {
+    "extracted_data": {},
+    "completeness": {
+      "sufficient": false,
+      "completeness_score": 0.0,
+      "available_data": [],
+      "missing_critical": [
+        "balance.total_assets",
+        "balance.total_equity",
+        "income.net_income",
+        "cashflows.operating_cash",
+        "equity.retained_earnings"
+      ],
+      "data_quality": "insufficient"
+    },
+    "qualitative_analysis": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, estaré encantado de ayudarte a analizar los datos financieros de Garanti BBVA. Sin embargo, parece que no se han proporcionado datos específicos en tu solicitud. Si puedes proporcionar los datos financieros, estaré encantado de realizar un análisis detallado. Mientras tanto, te puedo ofrecer un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas**:\n   - **Capitalización y Solvencia**: Evalúa el ratio de capital de nivel 1 (CET1) y el ratio de adecuación de capital total. Un alto nivel de capitalización indica una buena capacidad para absorber pérdidas.\n   - **Rentabilidad**: Observa el retorno sobre activos (ROA) y el retorno sobre capital (ROE). Un ROE alto sugiere que el banco está generando buenos rendimientos sobre el capital de los accionistas.\n   - **Crecimiento de Activos**: Un crecimiento constante en los activos totales puede indicar una expansión saludable y una mayor capacidad para generar ingresos.\n\n2. **Áreas de preocupación o riesgo**:\n   - **Calidad de Activos**: Analiza el ratio de préstamos no productivos (NPL) para evaluar la calidad de la cartera de préstamos. Un aumento en los NPL podría indicar problemas de calidad de crédito.\n   - **Liquidez**: Revisa los ratios de liquidez, como el LCR (Liquidity Coverage Ratio), para asegurarte de que el banco tiene suficiente liquidez para cumplir con sus obligaciones a corto plazo.\n   - **Exposición Cambiaria**: Dado que Garanti BBVA opera en Turquía, la volatilidad de la lira turca puede impactar significativamente en sus resultados financieros.\n\n3. **Tendencias observables en los ratios clave**:\n   - **Margen de Interés Neto (NIM)**: Un aumento en el NIM puede indicar una gestión eficaz de los márgenes de interés, mientras que una disminución podría sugerir presión sobre los ingresos por intereses.\n   - **Crecimiento de Depósitos**: Un crecimiento en los depósitos puede reflejar una mayor confianza de los clientes y proporcionar una base de financiación estable.\n   - **Eficiencia Operativa**: Observa el ratio de eficiencia (coste/ingreso) para evaluar cómo el banco gestiona sus gastos en relación con sus ingresos.\n\n4. **Recomendaciones estratégicas de alto nivel**:\n   - **Diversificación de Ingresos**: Considera estrategias para diversificar las fuentes de ingresos, reduciendo la dependencia de los ingresos por intereses.\n   - **Gestión de Riesgos**: Fortalece las prácticas de gestión de riesgos, especialmente en la gestión de la calidad de los activos y la exposición cambiaria.\n   - **Innovación Digital**: Invierte en tecnología y digitalización para mejorar la eficiencia operativa y la experiencia del cliente.\n   - **Expansión Prudente**: Evalúa oportunidades de expansión en mercados menos volátiles o en productos financieros innovadores que puedan ofrecer mejores márgenes.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y adaptado a la situación actual de Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "timestamp": "2025-10-19T12:05:08.049127",
+    "bank_context": {
+      "symbol": "GARAN.IS",
+      "jurisdiction": "TR",
+      "parent_bank": "BBVA"
+    }
+  },
+  "ml_predictions": {
+    "predictions": {},
+    "note": "Insufficient data for ML predictions"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-10-19T12:05:08.057166",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "qualitative_insights": {
+      "scenario_analysis": {
+        "note": "Escenarios cuantitativos requieren datos de ROA"
+      },
+      "llm_insights": {
+        "narrative_analysis": "Claro, estaré encantado de ayudarte a analizar los datos financieros de Garanti BBVA. Sin embargo, parece que no se han proporcionado datos específicos en tu solicitud. Si puedes proporcionar los datos financieros, estaré encantado de realizar un análisis detallado. Mientras tanto, te puedo ofrecer un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas**:\n   - **Capitalización y Solvencia**: Evalúa el ratio de capital de nivel 1 (CET1) y el ratio de adecuación de capital total. Un alto nivel de capitalización indica una buena capacidad para absorber pérdidas.\n   - **Rentabilidad**: Observa el retorno sobre activos (ROA) y el retorno sobre capital (ROE). Un ROE alto sugiere que el banco está generando buenos rendimientos sobre el capital de los accionistas.\n   - **Crecimiento de Activos**: Un crecimiento constante en los activos totales puede indicar una expansión saludable y una mayor capacidad para generar ingresos.\n\n2. **Áreas de preocupación o riesgo**:\n   - **Calidad de Activos**: Analiza el ratio de préstamos no productivos (NPL) para evaluar la calidad de la cartera de préstamos. Un aumento en los NPL podría indicar problemas de calidad de crédito.\n   - **Liquidez**: Revisa los ratios de liquidez, como el LCR (Liquidity Coverage Ratio), para asegurarte de que el banco tiene suficiente liquidez para cumplir con sus obligaciones a corto plazo.\n   - **Exposición Cambiaria**: Dado que Garanti BBVA opera en Turquía, la volatilidad de la lira turca puede impactar significativamente en sus resultados financieros.\n\n3. **Tendencias observables en los ratios clave**:\n   - **Margen de Interés Neto (NIM)**: Un aumento en el NIM puede indicar una gestión eficaz de los márgenes de interés, mientras que una disminución podría sugerir presión sobre los ingresos por intereses.\n   - **Crecimiento de Depósitos**: Un crecimiento en los depósitos puede reflejar una mayor confianza de los clientes y proporcionar una base de financiación estable.\n   - **Eficiencia Operativa**: Observa el ratio de eficiencia (coste/ingreso) para evaluar cómo el banco gestiona sus gastos en relación con sus ingresos.\n\n4. **Recomendaciones estratégicas de alto nivel**:\n   - **Diversificación de Ingresos**: Considera estrategias para diversificar las fuentes de ingresos, reduciendo la dependencia de los ingresos por intereses.\n   - **Gestión de Riesgos**: Fortalece las prácticas de gestión de riesgos, especialmente en la gestión de la calidad de los activos y la exposición cambiaria.\n   - **Innovación Digital**: Invierte en tecnología y digitalización para mejorar la eficiencia operativa y la experiencia del cliente.\n   - **Expansión Prudente**: Evalúa oportunidades de expansión en mercados menos volátiles o en productos financieros innovadores que puedan ofrecer mejores márgenes.\n\nSi puedes proporcionar datos específicos, podré ofrecerte un análisis más detallado y adaptado a la situación actual de Garanti BBVA.",
+        "model_used": null,
+        "context": "Garanti BBVA (Turkey) under BRSA regulation"
+      }
+    },
+    "quantitative_forecasts": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "LLM Analysis",
+          "insight": "Claro, estaré encantado de ayudarte a analizar los datos financieros de Garanti BBVA. Sin embargo, parece que no se han proporcionado datos específicos en tu solicitud. Si puedes proporcionar los datos financieros, estaré encantado de realizar un análisis detallado. Mientras tanto, te puedo ofrecer un marco general de análisis que podrías aplicar una vez que tengas los datos:\n\n1. **Principales fortalezas financieras identificadas**:\n   - **Capitalización y Solvencia**: Evalúa el ratio de capital"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    },
+    "quality_metrics": {
+      "data_completeness": 0,
+      "ml_models_used": [
+        "Prophet",
+        "XGBoost",
+        "Ensemble"
+      ],
+      "confidence_level": "LOW"
+    }
+  },
+  "regulatory_config": {}
+}

@@ -11,9 +11,8 @@ import json
 import time
 import argparse
 from pathlib import Path
+import fitz
 from typing import Any, Dict, List, Optional
-
-import fitz  # PyMuPDF
 import pandas as pd
 from dotenv import load_dotenv
 from openai import AzureOpenAI
