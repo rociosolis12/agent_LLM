@@ -1058,7 +1058,7 @@ MEJORAS IMPLEMENTADAS:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         if not pdf_path.exists():
-            print(f"❌ Error: PDF no encontrado en {pdf_path}")
+            print(f"Error: PDF no encontrado en {pdf_path}")
             return
         
         # CREAR AGENTE Y EJECUTAR
