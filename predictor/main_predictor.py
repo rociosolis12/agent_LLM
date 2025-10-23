@@ -97,21 +97,21 @@ class PredictorOrchestrator:
         
         # Inicializar componentes del sistema predictor
         logger.info("=" * 80)
-        logger.info("🚀 Inicializando Orquestador del Sistema Predictor Híbrido")
+        logger.info("Inicializando Orquestador del Sistema Predictor Híbrido")
         logger.info("=" * 80)
         
         # 1. Agente Predictor Evolutivo (ML)
-        logger.info("📊 Inicializando EvolutionaryPredictorAgent...")
+        logger.info("Inicializando EvolutionaryPredictorAgent...")
         self.evo_predictor = EvolutionaryPredictorAgent(
             alpha_vantage_key=alpha_vantage_key
         )
         
         # 2. Validador Walk-Forward
-        logger.info("✅ Inicializando WalkForwardValidator...")
+        logger.info("Inicializando WalkForwardValidator...")
         self.validator = WalkForwardValidator(self.evo_predictor)
         
         # 3. Agente Híbrido (LLM + ML + Regulatory)
-        logger.info("🔄 Inicializando HybridPredictorAgent...")
+        logger.info("Inicializando HybridPredictorAgent...")
         self.hybrid_agent = HybridPredictorAgent(
             bank_symbol=bank_symbol,
             alpha_vantage_key=alpha_vantage_key,

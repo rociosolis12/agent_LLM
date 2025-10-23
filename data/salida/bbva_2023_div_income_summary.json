@@ -24,11 +24,11 @@
         "2023",
         "2022",
         "2023",
-        "2019",
+        "2021",
+        "2023",
         "2020",
         "2022",
-        "2021",
-        "2023"
+        "2019"
       ],
       "net_interest_income": [],
       "fee_commission_income": [
@@ -62,7 +62,7 @@
     ],
     "financial_categories_found": 4
   },
-  "processing_timestamp": "2025-10-19 21:50:24",
+  "processing_timestamp": "2025-10-20 10:56:31",
   "quality_metrics": {
     "data_categories_found": 4,
     "quality_score": 58,
