@@ -54,10 +54,10 @@ class WalkForwardValidator:
         Returns:
             Tuple con (validation_summary, validation_results)
         """
-        logger.info(f"🔄 Iniciando validación walk-forward para {metric_name}")
+        logger.info(f" Iniciando validación walk-forward para {metric_name}")
         
         if len(data) < min_train_size + 2:
-            logger.warning(f"⚠️ Datos insuficientes para validación de {metric_name}")
+            logger.warning(f" Datos insuficientes para validación de {metric_name}")
             return self._create_dummy_validation(), {}
         
         results = {
@@ -142,7 +142,7 @@ class WalkForwardValidator:
         # Calcula métricas finales
         validation_summary = self._calculate_validation_metrics(results)
         
-        logger.info(f"✅ Validación completada: {len(results['actual_values'])} períodos validados")
+        logger.info(f" Validación completada: {len(results['actual_values'])} períodos validados")
 
         best_model = validation_summary['best_model']
         model_key = f'{best_model}_mae'
@@ -246,7 +246,7 @@ class WalkForwardValidator:
             available_metrics = ['ROA', 'ROE', 'ratio_solvencia', 'liquidez', 'beneficio_neto']
             metrics = [col for col in financial_data.columns if col in available_metrics]
         
-        logger.info(f"🎯 Validación cruzada para {len(metrics)} métricas: {metrics}")
+        logger.info(f" Validación cruzada para {len(metrics)} métricas: {metrics}")
         
         all_results = {}
         
@@ -255,7 +255,7 @@ class WalkForwardValidator:
                 series = financial_data[metric].dropna()
                 
                 if len(series) >= 10:  # Mínimo para validación robusta
-                    logger.info(f"\n📊 Validando {metric}...")
+                    logger.info(f"\n Validando {metric}...")
                     validation_summary, validation_results = self.walk_forward_validate(
                         series, metric, n_splits
                     )
@@ -264,7 +264,7 @@ class WalkForwardValidator:
                         'details': validation_results
                     }
                 else:
-                    logger.warning(f"⚠️ {metric}: datos insuficientes ({len(series)} < 10)")
+                    logger.warning(f" {metric}: datos insuficientes ({len(series)} < 10)")
                     all_results[metric] = {
                         'summary': self._create_dummy_validation(),
                         'details': {}
@@ -273,7 +273,7 @@ class WalkForwardValidator:
         # Resumen general
         overall_summary = self._create_overall_summary(all_results)
         
-        logger.info("\n✅ Validación cruzada completada para todas las métricas")
+        logger.info("\n Validación cruzada completada para todas las métricas")
         logger.info(f"   Promedio Ensemble MAE: {overall_summary['avg_ensemble_mae']:.4f}")
         logger.info(f"   Promedio Ensemble R²: {overall_summary['avg_ensemble_r2']:.4f}")
         logger.info(f"   Mejor métrica: {overall_summary['best_performing_metric']}")
@@ -366,23 +366,23 @@ class HybridPredictorValidator:
         if self.ml_agent:
             try:
                 self.validator = WalkForwardValidator(self.ml_agent)
-                logger.info("  ✓ Walk-forward Validator creado")
+                logger.info("   Walk-forward Validator creado")
             except Exception as e:
-                logger.warning(f"⚠️ Error creando validator: {e}")
+                logger.warning(f" Error creando validator: {e}")
                 # Usar validator existente del hybrid_agent si está disponible
                 self.validator = getattr(hybrid_predictor_agent, 'validator', None)
         else:
             # Usar el validator existente del hybrid_agent
             self.validator = getattr(hybrid_predictor_agent, 'validator', None)
-            logger.warning("⚠️ No se encontró ml_agent, usando validator del hybrid_agent")
+            logger.warning(" No se encontró ml_agent, usando validator del hybrid_agent")
         
-        logger.info("✅ HybridPredictorValidator inicializado")
+        logger.info(" HybridPredictorValidator inicializado")
         if self.llm_agent:
-            logger.info("  ✓ LLM Agent disponible")
+            logger.info("   LLM Agent disponible")
         if self.ml_agent:
-            logger.info("  ✓ ML/Evo Agent disponible")
+            logger.info("   ML/Evo Agent disponible")
         if self.validator:
-            logger.info("  ✓ Validator disponible")
+            logger.info("   Validator disponible")
         
     def validate_predictions(
                 self, 
@@ -419,7 +419,7 @@ class HybridPredictorValidator:
                 }
                 
                 logger.info("="*60)
-                logger.info("✅ VALIDACIÓN COMPLETADA")
+                logger.info(" VALIDACIÓN COMPLETADA")
                 logger.info("="*60)
                 
                 return validation_report
@@ -488,7 +488,7 @@ class HybridPredictorValidator:
                 Returns:
                     Diccionario con resultados de validación cruzada
                 """
-                logger.info("🎯 Iniciando validación cruzada de métricas financieras...")
+                logger.info(" Iniciando validación cruzada de métricas financieras...")
                 
                 if self.validator:
                     overall_summary, all_results = self.validator.cross_validate_all_metrics(
@@ -507,7 +507,7 @@ class HybridPredictorValidator:
                         'timestamp': datetime.now().isoformat()
                     }
                 else:
-                    logger.warning("⚠️ Validator no disponible para validación cruzada")
+                    logger.warning(" Validator no disponible para validación cruzada")
                     return {
                         'error': 'Validator not available',
                         'timestamp': datetime.now().isoformat()
@@ -524,13 +524,13 @@ def test_validation_module():
     Test del módulo de validación integrado
     """
     print("\n" + "="*70)
-    print("🧪 TEST DEL MÓDULO DE VALIDACIÓN INTEGRADO")
+    print(" TEST DEL MÓDULO DE VALIDACIÓN INTEGRADO")
     print("="*70)
     
     try:
         
         # Crea datos de prueba
-        print("\n📊 Generando datos de prueba...")
+        print("\n Generando datos de prueba...")
         dates = pd.date_range('2020-01-01', periods=24, freq='Q')
         test_data = pd.DataFrame({
             'ROA': 1.2 + 0.1 * np.sin(2 * np.pi * np.arange(24) / 4) + np.random.normal(0, 0.05, 24),
@@ -541,15 +541,15 @@ def test_validation_module():
         print(f"   Datos generados: {len(test_data)} períodos, {len(test_data.columns)} métricas")
         
         # Crea predictor
-        print("\n🤖 Inicializando predictor evolutivo...")
+        print("\n Inicializando predictor evolutivo...")
         predictor = EvolutionaryPredictorAgent()
         
         # Crea validador
-        print("\n🔍 Inicializando validador walk-forward...")
+        print("\n Inicializando validador walk-forward...")
         validator = WalkForwardValidator(predictor)
         
         # Ejecuta validación
-        print("\n🚀 Ejecutando validación cruzada...")
+        print("\n Ejecutando validación cruzada...")
         overall_summary, all_results = validator.cross_validate_all_metrics(
             financial_data=test_data,
             n_splits=6
@@ -557,7 +557,7 @@ def test_validation_module():
         
         # Muestra resultados
         print("\n" + "="*70)
-        print("📈 RESULTADOS DE VALIDACIÓN")
+        print(" RESULTADOS DE VALIDACIÓN")
         print("="*70)
         print(f"\nMétricas validadas: {overall_summary['metrics_validated']}")
         print(f"Promedio Ensemble MAE: {overall_summary['avg_ensemble_mae']:.4f}")
@@ -565,15 +565,15 @@ def test_validation_module():
         print(f"Mejor métrica: {overall_summary['best_performing_metric']}")
         print(f"Peor métrica: {overall_summary['worst_performing_metric']}")
         
-        print("\n✅ Test completado exitosamente!")
+        print("\n Test completado exitosamente!")
         return True
         
     except ImportError as e:
-        print(f"\n⚠️ Error de importación: {e}")
+        print(f"\n Error de importación: {e}")
         print("   Asegúrate de que EvolutionaryPredictorAgent esté disponible")
         return False
     except Exception as e:
-        print(f"\n❌ Error en test: {e}")
+        print(f"\n Error en test: {e}")
         import traceback
         traceback.print_exc()
         return False

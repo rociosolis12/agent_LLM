@@ -179,7 +179,7 @@ class EvolutionaryPredictorAgent:
             preds = model.predict(X.tail(periods))
             return {'model': model, 'predictions': preds.tolist()}
         except Exception as e:
-            logger.error(f"❌ Error XGBoost: {e}")
+            logger.error(f" Error XGBoost: {e}")
             return self._simple_xgb_prediction(df, periods)
 
     def _simple_xgb_prediction(self, df, periods):
@@ -243,7 +243,7 @@ class EvolutionaryPredictorAgent:
 
 # Test rápido
 def test_evolutionary_predictor():
-    logger.info("🧪 Iniciando test del EvolutionaryPredictorAgent...")
+    logger.info(" Iniciando test del EvolutionaryPredictorAgent...")
     dates = pd.date_range('2020-01-01', periods=16, freq='Q')
     np.random.seed(42)
     financial_data = pd.DataFrame({

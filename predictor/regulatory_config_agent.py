@@ -58,10 +58,10 @@ class RegulatoryConfigAgent:
         cache_key = f"{bank_symbol}_{jurisdiction}_{bank_type}_{reference_date}"
         
         if cache_key in self.config_cache:
-            logger.info("✅ Usando configuración en caché")
+            logger.info(" Usando configuración en caché")
             return self.config_cache[cache_key]
         
-        logger.info(f"🔍 Obteniendo umbrales regulatorios para {bank_symbol}...")
+        logger.info(f"Obteniendo umbrales regulatorios para {bank_symbol}...")
         
         prompt = self._build_regulatory_prompt(
             bank_symbol, jurisdiction, bank_type, reference_date
@@ -94,11 +94,11 @@ class RegulatoryConfigAgent:
             # Cachea resultado
             self.config_cache[cache_key] = validated_config
             
-            logger.info("✅ Configuración regulatoria obtenida exitosamente")
+            logger.info(" Configuración regulatoria obtenida exitosamente")
             return validated_config
             
         except Exception as e:
-            logger.error(f"❌ Error obteniendo configuración: {e}")
+            logger.error(f" Error obteniendo configuración: {e}")
             return self._get_fallback_config(jurisdiction)
     
     
@@ -183,7 +183,7 @@ class RegulatoryConfigAgent:
         
         for key in required_keys:
             if key not in config:
-                logger.warning(f"⚠️ Clave faltante: {key}. Usando fallback.")
+                logger.warning(f" Clave faltante: {key}. Usando fallback.")
                 config[key] = self._get_fallback_config(jurisdiction)[key]
         
         # Valida rangos razonables
@@ -215,7 +215,7 @@ class RegulatoryConfigAgent:
             
             if value is not None and not (min_val <= value <= max_val):
                 logger.warning(
-                    f"⚠️ Valor fuera de rango para {path}: {value}. "
+                    f" Valor fuera de rango para {path}: {value}. "
                     f"Esperado entre {min_val} y {max_val}"
                 )
         
@@ -227,7 +227,7 @@ class RegulatoryConfigAgent:
         Configuración de respaldo basada en Basel III/IV estándar
         Fuentes: BIS, ECB, Fed
         """
-        logger.warning("⚠️ Usando configuración de respaldo (Basel III estándar)")
+        logger.warning(" Usando configuración de respaldo (Basel III estándar)")
         
         base_config = {
             "capital_ratios": {
@@ -301,7 +301,7 @@ class RegulatoryConfigAgent:
         Returns:
             Dict con configuración ML óptima
         """
-        logger.info("🤖 Obteniendo configuración ML dinámica...")
+        logger.info(" Obteniendo configuración ML dinámica...")
         
         num_periods = data_characteristics.get('num_periods', 0)
         frequency = data_characteristics.get('frequency', 'monthly')
@@ -396,7 +396,7 @@ class DynamicHybridPredictorAgent:
         """
         Ejecuta análisis con configuración dinámica inyectada
         """
-        logger.info("🔧 Obteniendo configuración dinámica...")
+        logger.info(" Obteniendo configuración dinámica...")
         
         # PASO 1: Obtiene configuración regulatoria
         self.regulatory_config = self.config_agent.get_regulatory_thresholds(
@@ -475,7 +475,7 @@ def test_dynamic_configuration():
     """
     Test del sistema de configuración dinámica para Garanti BBVA
     """
-    print("🧪 Testing Dynamic Configuration System for Garanti BBVA...")
+    print(" Testing Dynamic Configuration System for Garanti BBVA...")
     
     config_agent = RegulatoryConfigAgent()
     
@@ -483,7 +483,7 @@ def test_dynamic_configuration():
     # Test 1: Configuración regulatoria para Garanti BBVA (Turquía)
     # ================================================================
     print("\n" + "="*70)
-    print("📊 TEST 1: Garanti BBVA (Turkey) - Regulatory Thresholds")
+    print(" TEST 1: Garanti BBVA (Turkey) - Regulatory Thresholds")
     print("="*70)
     
     garanti_config = config_agent.get_regulatory_thresholds(
@@ -495,7 +495,7 @@ def test_dynamic_configuration():
     print(json.dumps(garanti_config, indent=2, ensure_ascii=False))
     
     # Muestra resumen
-    print("\n📋 Resumen de Umbrales Aplicables:")
+    print("\n Resumen de Umbrales Aplicables:")
     print(f"  Marco regulatorio: {garanti_config['metadata']['regulation_framework']}")
     print(f"  Fuente: {garanti_config['metadata']['source']}")
     print(f"  CET1 mínimo: {garanti_config['capital_ratios']['cet1_minimum']}%")
@@ -506,7 +506,7 @@ def test_dynamic_configuration():
     # Test 2: Configuración ML
     # ================================================================
     print("\n" + "="*70)
-    print("🤖 TEST 2: ML Configuration (Prophet + XGBoost)")
+    print(" TEST 2: ML Configuration (Prophet + XGBoost)")
     print("="*70)
     
     ml_config = config_agent.get_ml_configuration({
@@ -517,16 +517,16 @@ def test_dynamic_configuration():
     
     print(json.dumps(ml_config, indent=2, ensure_ascii=False))
     
-    print("\n📋 Modelos ML Habilitados:")
-    print(f"  Prophet: {'✅ Habilitado' if ml_config['use_prophet'] else '❌ Deshabilitado'}")
-    print(f"  XGBoost: {'✅ Habilitado' if ml_config['use_xgboost'] else '❌ Deshabilitado'}")
-    print(f"  Ensemble: {'✅ Habilitado' if ml_config['use_ensemble'] else '❌ Deshabilitado'}")
+    print("\n Modelos ML Habilitados:")
+    print(f"  Prophet: {' Habilitado' if ml_config['use_prophet'] else ' Deshabilitado'}")
+    print(f"  XGBoost: {' Habilitado' if ml_config['use_xgboost'] else ' Deshabilitado'}")
+    print(f"  Ensemble: {' Habilitado' if ml_config['use_ensemble'] else ' Deshabilitado'}")
     
     # ================================================================
     # Test 3 (Opcional): Comparación con BBVA matriz
     # ================================================================
     print("\n" + "="*70)
-    print("📊 TEST 3 (Comparación): BBVA Matriz (Spain/EU, G-SIB)")
+    print(" TEST 3 (Comparación): BBVA Matriz (Spain/EU, G-SIB)")
     print("="*70)
     
     bbva_config = config_agent.get_regulatory_thresholds(
@@ -543,12 +543,12 @@ def test_dynamic_configuration():
     print(f"    CET1 con buffers: {garanti_config['capital_ratios']['cet1_with_buffers']}%")
     print(f"    Marco: {garanti_config['metadata']['regulation_framework']}")
     
-    print("\n  ℹ️ Nota: Diferentes reguladores aplican umbrales distintos")
+    print("\n   Nota: Diferentes reguladores aplican umbrales distintos")
     print("     BBVA matriz → ECB/EBA (Unión Europea)")
     print("     Garanti BBVA → BRSA (Regulador turco)")
     
     print("\n" + "="*70)
-    print("✅ Tests completados exitosamente!")
+    print(" Tests completados exitosamente!")
     print("="*70)
 
 

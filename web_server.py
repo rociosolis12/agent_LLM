@@ -24,10 +24,10 @@ sys.path.append(str(Path(__file__).parent))
 try:
     from main_system import FinancialExtractionSystem
     SYSTEM_AVAILABLE = True
-    logger.info("✅ FinancialExtractionSystem importado correctamente")
+    logger.info(" FinancialExtractionSystem importado correctamente")
 except ImportError as e:
     SYSTEM_AVAILABLE = False
-    logger.error(f"❌ Error importando FinancialExtractionSystem: {e}")
+    logger.error(f" Error importando FinancialExtractionSystem: {e}")
 
 app = Flask(__name__)
 CORS(app)
@@ -36,13 +36,13 @@ app.config['DEBUG'] = True
 @app.route('/ask-question', methods=['POST'])
 def ask_question():
     try:
-        logger.info("🔄 Procesando solicitud...")
+        logger.info(" Procesando solicitud...")
         data = request.get_json()
         question = data.get('question', '')
-        logger.info(f"📨 Pregunta recibida: {question}")
+        logger.info(f" Pregunta recibida: {question}")
         
         if not SYSTEM_AVAILABLE:
-            logger.warning("⚠️ Sistema no disponible")
+            logger.warning(" Sistema no disponible")
             return jsonify({
                 'status': 'error',
                 'message': 'Sistema no disponible'
@@ -50,10 +50,10 @@ def ask_question():
         
         try:
             system = FinancialExtractionSystem()
-            logger.info("🤖 Sistema inicializado")
+            logger.info(" Sistema inicializado")
             
             result = asyncio.run(system.process_question(question))
-            logger.info(f"✅ Respuesta generada: {result[:100]}...")
+            logger.info(f" Respuesta generada: {result[:100]}...")
             
             return jsonify({
                 'status': 'success',
@@ -61,7 +61,7 @@ def ask_question():
             })
             
         except Exception as e:
-            logger.error(f"❌ Error en process_question: {e}")
+            logger.error(f" Error en process_question: {e}")
             traceback.print_exc()
             return jsonify({
                 'status': 'error',
@@ -69,7 +69,7 @@ def ask_question():
             }), 500
             
     except Exception as e:
-        logger.error(f"❌ Error general: {e}")
+        logger.error(f" Error general: {e}")
         traceback.print_exc()
         return jsonify({
             'status': 'error',
@@ -152,7 +152,7 @@ def run_hybrid_analysis():
         return response
     
     try:
-        logger.info("🔄 Ejecutando análisis híbrido completo con BBVA...")
+        logger.info(" Ejecutando análisis híbrido completo con BBVA...")
         
         if not SYSTEM_AVAILABLE:
             logger.warning("⚠️ Sistema no disponible")
@@ -164,7 +164,7 @@ def run_hybrid_analysis():
         try:
             # Inicializar el sistema
             system = FinancialExtractionSystem()
-            logger.info("🤖 Sistema multi-agente inicializado")
+            logger.info(" Sistema multi-agente inicializado")
             
             # Ejecutar el pipeline completo con predictor híbrido
             # Este método ejecuta:
@@ -178,7 +178,7 @@ def run_hybrid_analysis():
                 )
             )
             
-            logger.info(f"✅ Pipeline completado: {result.get('success', False)}")
+            logger.info(f" Pipeline completado: {result.get('success', False)}")
             
             # Extraer métricas del resultado
             execution_summary = result.get('execution_summary', {})
@@ -211,14 +211,14 @@ def run_hybrid_analysis():
                 }
             }
             
-            logger.info(f"📊 Predicciones ML: {response_data['analysis']['ml_predictions_count']}")
-            logger.info(f"✔️ Métricas validadas: {response_data['analysis']['validation_metrics_count']}")
-            logger.info(f"💡 Recomendaciones: {response_data['analysis']['recommendations_count']}")
+            logger.info(f" Predicciones ML: {response_data['analysis']['ml_predictions_count']}")
+            logger.info(f" Métricas validadas: {response_data['analysis']['validation_metrics_count']}")
+            logger.info(f" Recomendaciones: {response_data['analysis']['recommendations_count']}")
             
             return jsonify(response_data)
             
         except Exception as e:
-            logger.error(f"❌ Error ejecutando pipeline híbrido: {e}")
+            logger.error(f" Error ejecutando pipeline híbrido: {e}")
             traceback.print_exc()
             return jsonify({
                 'status': 'error',
@@ -226,7 +226,7 @@ def run_hybrid_analysis():
             }), 500
             
     except Exception as e:
-        logger.error(f"❌ Error general: {e}")
+        logger.error(f" Error general: {e}")
         traceback.print_exc()
         return jsonify({
             'status': 'error',

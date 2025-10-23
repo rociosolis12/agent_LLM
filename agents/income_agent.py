@@ -27,7 +27,7 @@ os.chdir(project_root)
 if not env_path.exists():
     print(f"Warning: Archivo .env no encontrado en {env_path}")
 
-print("🔧 Cargar .env desde el directorio raíz del proyecto...")
+print(" Cargar .env desde el directorio raíz del proyecto...")
 
 # ----- Azure OpenAI Configuration -----
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -35,10 +35,10 @@ AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
 
-print("🔧 ----- Azure OpenAI Configuration -----")
-print(f"🔗 Endpoint: {AZURE_OPENAI_ENDPOINT}")
-print(f"🔑 API Key: {'✓' if AZURE_OPENAI_API_KEY else '✗'}")
-print(f"📋 Deployment: {AZURE_OPENAI_DEPLOYMENT}")
+print(" ----- Azure OpenAI Configuration -----")
+print(f" Endpoint: {AZURE_OPENAI_ENDPOINT}")
+print(f" API Key: {'✓' if AZURE_OPENAI_API_KEY else '✗'}")
+print(f" Deployment: {AZURE_OPENAI_DEPLOYMENT}")
 
 # Validación de credenciales
 if not AZURE_OPENAI_ENDPOINT or not AZURE_OPENAI_API_KEY:
@@ -48,9 +48,9 @@ if not AZURE_OPENAI_ENDPOINT or not AZURE_OPENAI_API_KEY:
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-print("🔧 ----- Groq Configuration -----")
-print(f"🔑 API Key: {'✓' if GROQ_API_KEY else '✗'}")
-print(f"🤖 Model: {GROQ_MODEL}")
+print(" ----- Groq Configuration -----")
+print(f" API Key: {'✓' if GROQ_API_KEY else '✗'}")
+print(f" Model: {GROQ_MODEL}")
 
 # ===== CLIENTE CHAT =====
 class ChatClient:
@@ -291,7 +291,7 @@ def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
                     if clean_number is not None and clean_number > 0:
                         values.append(clean_number)
                 except Exception as e:
-                    print(f"⚠️ Error convirtiendo '{match}': {e}")
+                    print(f" Error convirtiendo '{match}': {e}")
                     continue
         
         # Remover duplicados manteniendo orden
@@ -386,10 +386,10 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
                     ratios[f'{category}_growth'] = growth
                     
             except Exception as e:
-                print(f"⚠️ Error calculando growth para {category}: {e}")
+                print(f" Error calculando growth para {category}: {e}")
                 continue
     
-    print(f"🔍 DEBUG: Ratios calculados: {list(ratios.keys())}")
+    print(f" DEBUG: Ratios calculados: {list(ratios.keys())}")
     return ratios
 
 # ===== CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME =====
@@ -439,17 +439,17 @@ class IncomeREACTAgent:
             save_result = self.save_income_results_enhanced(pdf_file, output_dir, extraction_result, validation_result)
             
             # GENERAR RESPUESTA ESPECÍFICA MEJORADA CON DEBUGGING
-            print(f"🔍 DEBUG: Iniciando generación de respuesta específica...")
+            print(f" DEBUG: Iniciando generación de respuesta específica...")
             if question:
-                print(f"❓ Pregunta específica recibida: {question}")
+                print(f" Pregunta específica recibida: {question}")
             
             specific_answer = self.generate_enhanced_income_analysis_fixed(question, extraction_result, validation_result)
-            print(f"🔍 DEBUG: Respuesta generada con {len(specific_answer)} caracteres")
+            print(f" DEBUG: Respuesta generada con {len(specific_answer)} caracteres")
             
             end_time = time.time()
             processing_time = end_time - start_time
             
-            print("✅ Income extraction completed successfully (AUTÓNOMO)")
+            print(" Income extraction completed successfully (AUTÓNOMO)")
             
             return {
                 "status": "task_completed",
@@ -469,7 +469,7 @@ class IncomeREACTAgent:
             }
             
         except Exception as e:
-            print(f"❌ Error en IncomeREACTAgent: {str(e)}")
+            print(f" Error en IncomeREACTAgent: {str(e)}")
             return {
                 "status": "error",
                 "steps_taken": 0,
@@ -483,7 +483,7 @@ class IncomeREACTAgent:
     def extract_income_data_enhanced(self, pdf_file: Path) -> Dict[str, Any]:
         """NUEVA FUNCIÓN: Extracción mejorada de datos de cuenta de resultados"""
         try:
-            print(f"🔍 Extrayendo cuenta de resultados de: {pdf_file}")
+            print(f"Extrayendo cuenta de resultados de: {pdf_file}")
             
             # Páginas más probables para cuenta de resultados en documentos bancarios
             target_pages = [1, 2, 3, 4, 5, 6, 7, 8]  # Ampliar búsqueda
@@ -539,7 +539,7 @@ class IncomeREACTAgent:
             
             # Si no se encontró contenido relevante, extraer páginas por defecto
             if total_chars < 1000:
-                print("⚠️ Poco contenido relevante encontrado, extrayendo páginas por defecto...")
+                print(" Poco contenido relevante encontrado, extrayendo páginas por defecto...")
                 with fitz.open(pdf_file) as pdf:
                     for page_num in range(min(10, len(pdf))):
                         page = pdf[page_num]
@@ -547,12 +547,12 @@ class IncomeREACTAgent:
                         extracted_text += f"\n=== PÁGINA {page_num + 1} (DEFAULT) ===\n{text}"
                         total_chars += len(text)
             
-            print(f"📊 Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+            print(f" Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
             
             # NUEVA: Extracción total mejorada
             if financial_data:
                 total_extracted = sum(len(values) for values in financial_data.values() if values)
-                print(f"📈 Total extraído: {total_extracted} entradas financieras")
+                print(f" Total extraído: {total_extracted} entradas financieras")
             
             confidence = 1.0 if total_chars > 3000 else 0.8 if total_chars > 1500 else 0.6
             
@@ -585,34 +585,34 @@ class IncomeREACTAgent:
             # Verificar secciones principales (peso variable)
             if any(normalize_text(term) in text_lower for term in ["interest income", "margen intereses", "ingresos intereses"]):
                 quality_score += 20
-                validation_details.append("✅ Ingresos por intereses encontrados")
+                validation_details.append(" Ingresos por intereses encontrados")
             
             if any(normalize_text(term) in text_lower for term in ["commission", "comisiones", "fee income"]):
                 quality_score += 15
-                validation_details.append("✅ Ingresos por comisiones encontrados")
+                validation_details.append(" Ingresos por comisiones encontrados")
             
             if any(normalize_text(term) in text_lower for term in ["operating expenses", "gastos explotación", "gastos operativos"]):
                 quality_score += 20
-                validation_details.append("✅ Gastos operativos encontrados")
+                validation_details.append(" Gastos operativos encontrados")
             
             if any(normalize_text(term) in text_lower for term in ["staff costs", "gastos personal", "personnel expenses"]):
                 quality_score += 15
-                validation_details.append("✅ Gastos de personal encontrados")
+                validation_details.append(" Gastos de personal encontrados")
             
             if any(normalize_text(term) in text_lower for term in ["provisions", "provisiones", "impairment"]):
                 quality_score += 10
-                validation_details.append("✅ Provisiones encontradas")
+                validation_details.append(" Provisiones encontradas")
             
             if any(normalize_text(term) in text_lower for term in ["net profit", "beneficio neto", "net income"]):
                 quality_score += 15
-                validation_details.append("✅ Beneficio neto encontrado")
+                validation_details.append(" Beneficio neto encontrado")
             
             # NUEVA: Bonificaciones por datos financieros específicos
             if financial_data:
                 categories_with_data = sum(1 for values in financial_data.values() if values)
                 data_bonus = min(15, categories_with_data * 2)  # Máximo 15 puntos extra
                 quality_score += data_bonus
-                validation_details.append(f"✅ Datos financieros específicos: {categories_with_data} categorías")
+                validation_details.append(f" Datos financieros específicos: {categories_with_data} categorías")
             
             # Determinar calidad final
             if quality_score >= 80:
@@ -626,7 +626,7 @@ class IncomeREACTAgent:
             
             final_confidence = min(confidence + (quality_score / 100 * 0.3), 1.0)
             
-            print(f"✅ Validación completada: {quality} (puntuación: {quality_score}/100, confianza: {final_confidence:.3f})")
+            print(f" Validación completada: {quality} (puntuación: {quality_score}/100, confianza: {final_confidence:.3f})")
             
             return {
                 "success": True,
@@ -710,7 +710,7 @@ MÉTRICAS DE CALIDAD:
                 f.write(quality_report)
             files_created += 1
             
-            print(f"💾 Archivos guardados: {files_created}")
+            print(f" Archivos guardados: {files_created}")
             
             return {
                 "success": True,
@@ -724,44 +724,44 @@ MÉTRICAS DE CALIDAD:
     def generate_enhanced_income_analysis_fixed(self, question: str, extraction: Dict, validation: Dict) -> str:
         """FUNCIÓN CORREGIDA: Genera análisis con debugging y manejo robusto de errores"""
         try:
-            print("🔍 DEBUG: Iniciando generate_enhanced_income_analysis_fixed")
+            print(" DEBUG: Iniciando generate_enhanced_income_analysis_fixed")
             
             text = extraction.get("text", "")
             confidence = validation.get("confidence", 0.8)
             quality = validation.get("quality", "unknown")
             financial_data = extraction.get("financial_data", {})
             
-            print(f"🔍 DEBUG: Texto length: {len(text)}")
-            print(f"🔍 DEBUG: Financial data categories: {len(financial_data)}")
-            print(f"🔍 DEBUG: Financial data sample: {dict(list(financial_data.items())[:3])}")
-            print(f"🔍 DEBUG: Quality: {quality}, Confidence: {confidence}")
+            print(f" DEBUG: Texto length: {len(text)}")
+            print(f" DEBUG: Financial data categories: {len(financial_data)}")
+            print(f" DEBUG: Financial data sample: {dict(list(financial_data.items())[:3])}")
+            print(f" DEBUG: Quality: {quality}, Confidence: {confidence}")
             
             if not text or len(text.strip()) < 500:
-                print("❌ DEBUG: Texto insuficiente para análisis detallado")
+                print(" DEBUG: Texto insuficiente para análisis detallado")
                 return "El contenido extraído de la cuenta de resultados es insuficiente para realizar un análisis detallado profesional."
             
             # VERIFICAR QUE HAY DATOS FINANCIEROS
             has_financial_data = any(values for values in financial_data.values() if values)
-            print(f"🔍 DEBUG: Has financial data: {has_financial_data}")
+            print(f" DEBUG: Has financial data: {has_financial_data}")
             
             if not has_financial_data:
-                print("⚠️ DEBUG: No hay datos financieros específicos, re-extrayendo con patrones mejorados...")
+                print(" DEBUG: No hay datos financieros específicos, re-extrayendo con patrones mejorados...")
                 # Re-extraer con patrones más amplios
                 financial_data = extract_comprehensive_income_data(text)
-                print(f"🔍 DEBUG: Re-extracción result: {dict(list(financial_data.items())[:2])}")
+                print(f" DEBUG: Re-extracción result: {dict(list(financial_data.items())[:2])}")
             
             # Calcular ratios financieros CON VALIDACIÓN
             ratios = {}
             try:
                 ratios = calculate_financial_ratios(financial_data) if financial_data else {}
-                print(f"🔍 DEBUG: Ratios calculados exitosamente: {len(ratios)}")
+                print(f" DEBUG: Ratios calculados exitosamente: {len(ratios)}")
             except Exception as ratio_error:
-                print(f"⚠️ DEBUG: Error calculando ratios: {ratio_error}")
+                print(f" DEBUG: Error calculando ratios: {ratio_error}")
                 ratios = {}
             
             # ANÁLISIS SIMPLIFICADO PRIMERO (para debugging)
             try:
-                print("🔍 DEBUG: Intentando análisis con LLM...")
+                print(" DEBUG: Intentando análisis con LLM...")
                 
                 # Prompt más conciso para evitar problemas
                 analysis_prompt = f"""
@@ -795,35 +795,35 @@ IMPORTANTE:
                 
                 # Llamada al LLM con manejo de errores mejorado
                 try:
-                    print("🔍 DEBUG: Llamando al chat_client...")
+                    print(" DEBUG: Llamando al chat_client...")
                     analysis_response = self.chat_client.chat([
                         {"role": "system", "content": "Eres un analista financiero experto en banca con 15 años de experiencia."},
                         {"role": "user", "content": analysis_prompt}
                     ], max_tokens=1800)
                     
-                    print(f"🔍 DEBUG: LLM respondió con {len(analysis_response)} caracteres")
+                    print(f" DEBUG: LLM respondió con {len(analysis_response)} caracteres")
                     
                     if not analysis_response or len(analysis_response.strip()) < 200:
-                        print("⚠️ DEBUG: Respuesta LLM muy corta, usando fallback")
+                        print(" DEBUG: Respuesta LLM muy corta, usando fallback")
                         raise Exception("Respuesta LLM insuficiente")
                     
-                    print("✅ DEBUG: Respuesta LLM exitosa")
+                    print(" DEBUG: Respuesta LLM exitosa")
                     
                 except Exception as llm_error:
-                    print(f"❌ DEBUG: Error en LLM: {str(llm_error)}")
-                    print("🔄 DEBUG: Usando análisis fallback...")
+                    print(f" DEBUG: Error en LLM: {str(llm_error)}")
+                    print(" DEBUG: Usando análisis fallback...")
                     analysis_response = self.generate_fallback_income_analysis(text, confidence, quality, financial_data, ratios)
                 
                 # CONSTRUIR RESPUESTA FINAL
-                print("🔍 DEBUG: Construyendo respuesta final...")
+                print(" DEBUG: Construyendo respuesta final...")
                 
                 response_parts = [
-                    "📊 **ANÁLISIS PROFESIONAL DE CUENTA DE RESULTADOS - BBVA**",
+                    " **ANÁLISIS PROFESIONAL DE CUENTA DE RESULTADOS - BBVA**",
                     "=" * 70,
                     "",
                     analysis_response,
                     "",
-                    "### 📋 **INFORMACIÓN TÉCNICA DEL ANÁLISIS**",
+                    "###  **INFORMACIÓN TÉCNICA DEL ANÁLISIS**",
                     f"• **Calidad de extracción**: {quality.title()} (puntuación: {validation.get('score', 0)}/100)",
                     f"• **Confianza en datos**: {confidence:.1%}",
                     f"• **Caracteres analizados**: {len(text):,} del documento original",
@@ -835,24 +835,24 @@ IMPORTANTE:
                     "• **Fuente**: Cuenta de resultados consolidada de BBVA",
                     "",
                     "=" * 70,
-                    "📊 *Análisis generado por sistema de IA especializada en análisis de rentabilidad bancaria*"
+                    " *Análisis generado por sistema de IA especializada en análisis de rentabilidad bancaria*"
                 ]
                 
                 final_response = "\n".join(response_parts)
-                print(f"✅ DEBUG: Respuesta final construida con {len(final_response)} caracteres")
+                print(f" DEBUG: Respuesta final construida con {len(final_response)} caracteres")
                 
                 return final_response
                 
             except Exception as analysis_error:
-                print(f"❌ DEBUG: Error en análisis: {str(analysis_error)}")
+                print(f" DEBUG: Error en análisis: {str(analysis_error)}")
                 # Usar fallback completo
                 return self.generate_fallback_income_analysis(text, confidence, quality, financial_data, ratios)
                 
         except Exception as e:
-            print(f"❌ DEBUG: Error crítico en generate_enhanced_income_analysis_fixed: {str(e)}")
+            print(f" DEBUG: Error crítico en generate_enhanced_income_analysis_fixed: {str(e)}")
             # ÚLTIMO FALLBACK: Respuesta básica garantizada
             return f"""
-📊 **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**
+ **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**
 
 ### Resumen del Análisis
 
@@ -879,13 +879,13 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
         """Análisis de respaldo basado en extracción de datos específicos"""
         
         response_parts = []
-        response_parts.append("📊 **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**")
+        response_parts.append(" **ANÁLISIS DE CUENTA DE RESULTADOS - BBVA**")
         response_parts.append("=" * 60)
         
         text_lower = normalize_text(text)
         
         # Análisis de ingresos principales
-        response_parts.append("\n### 💰 **ANÁLISIS DE INGRESOS PRINCIPALES**")
+        response_parts.append("\n###  **ANÁLISIS DE INGRESOS PRINCIPALES**")
         
         # Margen de intereses
         if financial_data.get('net_interest_income'):
@@ -905,12 +905,12 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
                 growth = ratios['fee_commission_income_growth']
                 response_parts.append(f"  - Variación: {growth:+.1f}% respecto período anterior")
                 if growth < -50:
-                    response_parts.append("  - ⚠️ ATENCIÓN: Caída significativa que requiere análisis estratégico")
+                    response_parts.append("  -  ATENCIÓN: Caída significativa que requiere análisis estratégico")
         elif any(term in text_lower for term in ["commission", "comisiones"]):
             response_parts.append("• **Ingresos por comisiones**: Fuente complementaria de ingresos identificada")
         
         # Análisis de gastos
-        response_parts.append("\n### 💸 **ANÁLISIS DE GASTOS OPERATIVOS**")
+        response_parts.append("\n###  **ANÁLISIS DE GASTOS OPERATIVOS**")
         
         if financial_data.get('operating_expenses'):
             amounts = financial_data['operating_expenses']
@@ -919,9 +919,9 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
                 efficiency = ratios['efficiency_ratio']
                 response_parts.append(f"  - Ratio de eficiencia: {efficiency:.1f}%")
                 if efficiency < 50:
-                    response_parts.append("  - ✅ Eficiencia operativa superior al promedio sectorial")
+                    response_parts.append("  -  Eficiencia operativa superior al promedio sectorial")
                 elif efficiency > 60:
-                    response_parts.append("  - ⚠️ Oportunidades de mejora en eficiencia operativa")
+                    response_parts.append("  -  Oportunidades de mejora en eficiencia operativa")
         
         if financial_data.get('staff_costs'):
             amounts = financial_data['staff_costs']
@@ -931,7 +931,7 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
                 response_parts.append(f"  - Ratio sobre ingresos: {staff_ratio:.1f}%")
         
         # Provisiones y calidad crediticia
-        response_parts.append("\n### 🛡️ **PROVISIONES Y CALIDAD CREDITICIA**")
+        response_parts.append("\n###  **PROVISIONES Y CALIDAD CREDITICIA**")
         
         if financial_data.get('provisions'):
             amounts = financial_data['provisions']
@@ -941,7 +941,7 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
             response_parts.append("• **Provisiones**: Identificadas como parte de la gestión de riesgos")
         
         # Rentabilidad
-        response_parts.append("\n### 📈 **ANÁLISIS DE RENTABILIDAD**")
+        response_parts.append("\n###  **ANÁLISIS DE RENTABILIDAD**")
         
         if financial_data.get('net_profit'):
             amounts = financial_data['net_profit']
@@ -950,19 +950,19 @@ El análisis de la cuenta de resultados ha sido completado. Los datos extraídos
                 margin = ratios['net_profit_margin']
                 response_parts.append(f"  - Margen neto: {margin:.1f}%")
                 if margin > 15:
-                    response_parts.append("  - ✅ Rentabilidad sólida para el sector bancario")
+                    response_parts.append("  -  Rentabilidad sólida para el sector bancario")
                 elif margin < 10:
-                    response_parts.append("  - ⚠️ Margen por debajo del promedio sectorial")
+                    response_parts.append("  -  Margen por debajo del promedio sectorial")
         
         # Ratios adicionales
         if ratios:
-            response_parts.append("\n### 📊 **RATIOS FINANCIEROS CALCULADOS**")
+            response_parts.append("\n###  **RATIOS FINANCIEROS CALCULADOS**")
             for ratio_name, value in ratios.items():
                 if not ratio_name.endswith('_growth'):
                     response_parts.append(f"• **{ratio_name.replace('_', ' ').title()}**: {value:.2f}%")
         
         # Conclusiones
-        response_parts.append("\n### 🎯 **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
+        response_parts.append("\n###  **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
         response_parts.append(f"• **Calidad del análisis**: {quality.title()} con {confidence:.1%} de confianza")
         response_parts.append(f"• **Contenido procesado**: {len(text):,} caracteres de información financiera")
         
@@ -1044,12 +1044,12 @@ MEJORAS IMPLEMENTADAS:
     args = parser.parse_args()
     
     # MOSTRAR CONFIGURACIÓN
-    print("🚀 Income Agent v4.2 AUTÓNOMO Multi-Agent - ERRORES CORREGIDOS")
-    print(f"📄 PDF: {args.pdf}")
-    print(f"📁 Salida: {args.out}")
-    print(f"⚙️ Groq/Azure OpenAI: Configuración optimizada")
-    print(f"🔧 Max steps: {args.maxsteps}")
-    print("🆕 CARACTERÍSTICAS: Conversión segura de tipos, patrones mejorados, debugging completo")
+    print(" Income Agent v4.2 AUTÓNOMO Multi-Agent - ERRORES CORREGIDOS")
+    print(f" PDF: {args.pdf}")
+    print(f" Salida: {args.out}")
+    print(f" Groq/Azure OpenAI: Configuración optimizada")
+    print(f" Max steps: {args.maxsteps}")
+    print("CARACTERÍSTICAS: Conversión segura de tipos, patrones mejorados, debugging completo")
     
     try:
         # VERIFICAR PDF
@@ -1065,19 +1065,19 @@ MEJORAS IMPLEMENTADAS:
         agent = IncomeREACTAgent()
         
         if args.question:
-            print(f"❓ Pregunta específica: {args.question}")
+            print(f" Pregunta específica: {args.question}")
             result = agent.run_final_financial_extraction_agent(str(pdf_path), args.question)
         else:
             result = agent.run_final_financial_extraction_agent(str(pdf_path))
         
         # MOSTRAR RESULTADOS
-        print("🎯 ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
-        print(f"Estado: {'✅ EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
+        print(" ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
+        print(f"Estado: {' EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
         print(f"Pasos completados: {result.get('steps_taken', 0)}")
         print(f"Archivos generados: {result.get('files_generated', 0)}")
         
         if result.get('status') == 'task_completed':
-            print("📋 ==== ANÁLISIS DETALLADO GENERADO ====")
+            print(" ==== ANÁLISIS DETALLADO GENERADO ====")
             analysis = result.get("specific_answer", "No hay respuesta específica disponible")
             print(f"Longitud del análisis: {len(analysis)} caracteres")
             
@@ -1086,15 +1086,15 @@ MEJORAS IMPLEMENTADAS:
             print(f"Categorías financieras: {summary.get('financial_data_categories', 0)}")
             print(f"Confianza: {summary.get('confidence', 0.8):.1%}")
             print(f"Calidad: {summary.get('quality', 'unknown').title()}")
-            print("✅ Análisis detallado con conversión segura de tipos completado")
+            print(" Análisis detallado con conversión segura de tipos completado")
         else:
-            print(f"❌ Error: {result.get('error_details', 'Error desconocido')}")
+            print(f" Error: {result.get('error_details', 'Error desconocido')}")
         
-        print("🎉 Análisis de cuenta de resultados completado!")
-        print("🤖 IncomeREACTAgent con errores corregidos disponible para sistema multi-agente")
+        print(" Análisis de cuenta de resultados completado!")
+        print(" IncomeREACTAgent con errores corregidos disponible para sistema multi-agente")
         
     except Exception as e:
-        print(f"❌ Error durante la ejecución: {e}")
+        print(f" Error durante la ejecución: {e}")
         raise
 
 if __name__ == "__main__":

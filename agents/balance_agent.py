@@ -571,27 +571,27 @@ AGENTE FINANCIERO ReAct - EXTRACCIÓN DE BALANCE
 OBJETIVO: Extraer el balance consolidado de GarantiBank International N.V.
 
 UBICACIÓN EXACTA DEL BALANCE:
-📍 PÁGINA: 'Statement of Financial Position'
-📍 FECHA: As at 31 December 2023
-📍 ENTIDAD: GarantiBank International N.V.
-📍 MONEDA: Thousands of Euros
+ PÁGINA: 'Statement of Financial Position'
+ FECHA: As at 31 December 2023
+ ENTIDAD: GarantiBank International N.V.
+ MONEDA: Thousands of Euros
 
 DATOS ESPECÍFICOS A EXTRAER:
-🔵 ACTIVOS:
+ ACTIVOS:
 - Cash and balances with central banks
 - Loans and advances to customers
 - Financial assets at fair value
 - Property and equipment
 - Otros activos
 
-🔴 PASIVOS:
+ PASIVOS:
 - Deposits from customers
 - Deposits from banks
 - Financial liabilities at fair value
 - Tax liabilities
 - Other liabilities
 
-🟢 PATRIMONIO:
+ PATRIMONIO:
 - Share capital
 - Retained earnings
 - Other reserves
@@ -823,12 +823,12 @@ def run_balance_agent(pdf_path: Path, output_dir: Path, max_steps: int = 20,  # 
         "anchor_titles": [t.lower() for t in (anchor_titles or [])]
     }
 
-    print(f"🚀 Iniciando Balance Agent MEJORADO para bbva_2023_div.pdf")
-    print(f"📄 PDF: {pdf_path}")
-    print(f"📁 Output: {output_dir}")
-    print(f"🎯 Anchor page: {anchor_page}")
-    print(f"🔍 Anchor titles: {anchor_titles}")
-    print(f"⚙️ MEJORAS: Max steps aumentado a {max_steps}, detección mejorada")
+    print(f" Iniciando Balance Agent MEJORADO para bbva_2023_div.pdf")
+    print(f" PDF: {pdf_path}")
+    print(f" Output: {output_dir}")
+    print(f" Anchor page: {anchor_page}")
+    print(f" Anchor titles: {anchor_titles}")
+    print(f" MEJORAS: Max steps aumentado a {max_steps}, detección mejorada")
 
     history = [
         {"role": "system", "content": REACT_SYSTEM_PROMPT},
@@ -838,18 +838,18 @@ def run_balance_agent(pdf_path: Path, output_dir: Path, max_steps: int = 20,  # 
     done = False
     steps = 0
     while not done and steps < max_steps:
-        print(f"\n📍 Paso ReAct {steps + 1}/{max_steps}")
+        print(f"\n Paso ReAct {steps + 1}/{max_steps}")
         history, done = execute_react_step(history, tools_ctx)
         steps += 1
 
     if not done:
-        print("⚠️ Alcanzado límite máximo de pasos")
+        print(" Alcanzado límite máximo de pasos")
         # ===== MEJORA: VERIFICAR SI SE GUARDARON ARCHIVOS AUNQUE NO SE DETECTÓ FINALIZACIÓN =====
         if tools_ctx.get("last_saved", {}).get("success", False):
-            print("🔄 FORZANDO FINALIZACIÓN: Archivos guardados exitosamente detectados")
+            print(" FORZANDO FINALIZACIÓN: Archivos guardados exitosamente detectados")
             done = True
     else:
-        print("✅ Análisis completado exitosamente")
+        print(" Análisis completado exitosamente")
 
     return {
         "history": history,
@@ -887,7 +887,7 @@ class BalanceREACTAgent:
             Dict con el resultado y respuesta específica generada por LLM
         """
         try:
-            print(f"🔧 BalanceREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
+            print(f" BalanceREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
             
             pdf_file = Path(pdf_path)
             output_dir = Path("data/salida")
@@ -905,7 +905,7 @@ class BalanceREACTAgent:
             extraction_successful = any(success_indicators)
             
             if not extraction_successful:
-                print("⚠️ Balance extraction failed")
+                print(" Balance extraction failed")
                 return {
                     "status": "error", 
                     "steps_taken": result.get("steps_completed", 0),
@@ -931,7 +931,7 @@ class BalanceREACTAgent:
             }
                 
         except Exception as e:
-            print(f"❌ Error en BalanceREACTAgent: {str(e)}")
+            print(f" Error en BalanceREACTAgent: {str(e)}")
             return {
                 "status": "error",
                 "steps_taken": 0,
@@ -959,7 +959,7 @@ class BalanceREACTAgent:
             return result
             
         except Exception as e:
-            print(f"❌ Error en extracción core: {str(e)}")
+            print(f" Error en extracción core: {str(e)}")
             return {
                 "finished": False,
                 "steps_completed": 0,
@@ -1005,7 +1005,7 @@ class BalanceREACTAgent:
                 return self._generate_rule_based_response(question, extracted_text, financial_data)
                 
         except Exception as e:
-            print(f"❌ Error generando respuesta LLM: {str(e)}")
+            print(f" Error generando respuesta LLM: {str(e)}")
             return f"He completado la extracción del balance exitosamente, pero hubo un error al generar la respuesta específica: {str(e)}"
 
     def _extract_financial_numbers(self, text: str) -> Dict[str, str]:
@@ -1054,7 +1054,7 @@ class BalanceREACTAgent:
         Genera resumen general sin pregunta específica
         """
         if financial_data:
-            summary_parts = ["📊 **RESUMEN DEL BALANCE EXTRAÍDO**\n"]
+            summary_parts = [" **RESUMEN DEL BALANCE EXTRAÍDO**\n"]
             
             if 'total_assets' in financial_data:
                 summary_parts.append(f"• **Total de Activos**: €{financial_data['total_assets']} miles")
@@ -1069,7 +1069,7 @@ class BalanceREACTAgent:
             
             return "\n".join(summary_parts)
         
-        return "✅ He extraído exitosamente el balance consolidado. Los datos financieros están disponibles en los archivos generados para análisis detallado."
+        return "He extraído exitosamente el balance consolidado. Los datos financieros están disponibles en los archivos generados para análisis detallado."
 
     def _ask_llm_specific_question(self, question: str, extracted_text: str, financial_data: Dict) -> str:
         """
@@ -1279,7 +1279,7 @@ Esta versión incluye BalanceREACTAgent AUTÓNOMO para integración con main_sys
         print(" Versión autónoma con generación de respuestas específicas usando LLM")
 
     except Exception as e:
-        print(f"❌ Error durante la ejecución: {e}")
+        print(f" Error durante la ejecución: {e}")
         raise
 
 if __name__ == "__main__":

@@ -123,7 +123,7 @@ class PredictorOrchestrator:
         )
         
         # 4. Validador híbrido avanzado
-        logger.info("🎯 Inicializando HybridPredictorValidator...")
+        logger.info(" Inicializando HybridPredictorValidator...")
         self.hybrid_validator = HybridPredictorValidator(self.hybrid_agent)
         
         # Almacenamiento de resultados consolidados
@@ -141,21 +141,21 @@ class PredictorOrchestrator:
             'recommendations': {}
         }
         
-        logger.info("✅ Orquestador inicializado correctamente")
+        logger.info(" Orquestador inicializado correctamente")
         logger.info("=" * 80)
     
     def run_ml_predictions(self, generate_new: bool = False) -> pd.DataFrame:
         """Carga predicciones ML existentes"""
-        logger.info("📈 Ejecutando predicciones ML evolutivas...")
+        logger.info(" Ejecutando predicciones ML evolutivas...")
         
         # Ruta correcta a las predicciones
         csv_path = Path(self.output_dir) / "evolutionary_predictions.csv"
         
         # Cargar predicciones existentes
         if csv_path.exists():
-            logger.info("📂 Cargando predicciones ML existentes...")
+            logger.info(" Cargando predicciones ML existentes...")
             ml_predictions = pd.read_csv(csv_path)
-            logger.info(f"✅ Predicciones ML cargadas: {len(ml_predictions)} registros")
+            logger.info(f" Predicciones ML cargadas: {len(ml_predictions)} registros")
         else:
             raise FileNotFoundError(f"No se encontró: {csv_path}")
         
@@ -179,7 +179,7 @@ class PredictorOrchestrator:
         Returns:
             Diccionario con resultados de validación
         """
-        logger.info("🔍 Ejecutando validación walk-forward...")
+        logger.info(" Ejecutando validación walk-forward...")
         
         if metrics_to_validate is None:
             metrics_to_validate = ["ROA", "ratio_solvencia", "liquidez"]
@@ -215,7 +215,7 @@ class PredictorOrchestrator:
         # Almacenar en resultados consolidados
         self.consolidated_results['validation_results'] = validation_results
         
-        logger.info("✅ Validación completada")
+        logger.info(" Validación completada")
         return validation_results
     
     async def run_hybrid_analysis(
@@ -231,7 +231,7 @@ class PredictorOrchestrator:
         Returns:
             Diccionario con análisis híbrido completo
         """
-        logger.info("🔄 Ejecutando análisis híbrido completo...")
+        logger.info(" Ejecutando análisis híbrido completo...")
         
         try:
             # Ejecutar análisis híbrido
@@ -242,11 +242,11 @@ class PredictorOrchestrator:
             # Almacenar en resultados consolidados
             self.consolidated_results['hybrid_analysis'] = hybrid_results
             
-            logger.info("✅ Análisis híbrido completado")
+            logger.info("Análisis híbrido completado")
             return hybrid_results
             
         except Exception as e:
-            logger.error(f"❌ Error en análisis híbrido: {e}")
+            logger.error(f" Error en análisis híbrido: {e}")
             raise
     
     def run_advanced_validation(
@@ -262,7 +262,7 @@ class PredictorOrchestrator:
         Returns:
             Diccionario con validación avanzada y recomendaciones
         """
-        logger.info("🎯 Ejecutando validación avanzada híbrida...")
+        logger.info(" Ejecutando validación avanzada híbrida...")
         
         try:
             # Validación cruzada de todas las métricas
@@ -275,11 +275,11 @@ class PredictorOrchestrator:
                 'recommendations', {}
             )
             
-            logger.info("✅ Validación avanzada completada")
+            logger.info(" Validación avanzada completada")
             return advanced_results
             
         except Exception as e:
-            logger.error(f"❌ Error en validación avanzada: {e}")
+            logger.error(f" Error en validación avanzada: {e}")
             return {'error': str(e)}
     
     def consolidate_and_export(
@@ -295,7 +295,7 @@ class PredictorOrchestrator:
         Returns:
             Path del archivo exportado
         """
-        logger.info("💾 Consolidando y exportando resultados...")
+        logger.info(" Consolidando y exportando resultados...")
         
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -304,7 +304,7 @@ class PredictorOrchestrator:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(self.consolidated_results, f, indent=2, ensure_ascii=False)
         
-        logger.info(f"✅ Resultados JSON exportados: {json_path}")
+        logger.info(f" Resultados JSON exportados: {json_path}")
         
         # Exportar CSV si se solicita
         if export_format == 'csv':
@@ -313,15 +313,15 @@ class PredictorOrchestrator:
             if self.consolidated_results.get('ml_predictions'):
                 df = pd.DataFrame(self.consolidated_results['ml_predictions'])
                 df.to_csv(csv_path, index=False)
-                logger.info(f"✅ Predicciones CSV exportadas: {csv_path}")
+                logger.info(f" Predicciones CSV exportadas: {csv_path}")
         
         # Exportar resumen ejecutivo
         summary_path = self.output_dir / f"executive_summary_{timestamp}.txt"
         self._export_executive_summary(summary_path)
         
         logger.info("=" * 80)
-        logger.info("✅ PIPELINE COMPLETADO EXITOSAMENTE")
-        logger.info(f"📁 Resultados en: {self.output_dir}")
+        logger.info(" PIPELINE COMPLETADO EXITOSAMENTE")
+        logger.info(f" Resultados en: {self.output_dir}")
         logger.info("=" * 80)
         
         return json_path
@@ -367,7 +367,7 @@ class PredictorOrchestrator:
             
             f.write("\n" + "=" * 80 + "\n")
         
-        logger.info(f"📄 Resumen ejecutivo exportado: {path}")
+        logger.info(f" Resumen ejecutivo exportado: {path}")
     
     async def run_complete_pipeline(
         self,
@@ -386,7 +386,7 @@ class PredictorOrchestrator:
         Returns:
             Diccionario con todos los resultados consolidados
         """
-        logger.info("🚀 INICIANDO PIPELINE COMPLETO DEL SISTEMA PREDICTOR")
+        logger.info(" INICIANDO PIPELINE COMPLETO DEL SISTEMA PREDICTOR")
         logger.info("=" * 80)
         
         try:
@@ -411,7 +411,7 @@ class PredictorOrchestrator:
             return self.consolidated_results
             
         except Exception as e:
-            logger.error(f"❌ Error en pipeline: {e}")
+            logger.error(f" Error en pipeline: {e}")
             raise
 
 

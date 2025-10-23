@@ -76,7 +76,7 @@ class HybridPredictorAgent:
             use_regulatory_config: Si True, usa umbrales dinámicos BRSA vía LLM
         """
         logger.info("="*70)
-        logger.info("🚀 Inicializando HybridPredictorAgent")
+        logger.info(" Inicializando HybridPredictorAgent")
         logger.info(f"   Banco: Garanti BBVA (Türkiye Garanti Bankası A.Ş.)")
         logger.info(f"   Ticker: {bank_symbol}")
         logger.info(f"   Matriz: {parent_bank}")
@@ -119,7 +119,7 @@ class HybridPredictorAgent:
             self._load_regulatory_config()
     
         
-        logger.info("✅ HybridPredictorAgent inicializado correctamente")
+        logger.info(" HybridPredictorAgent inicializado correctamente")
         logger.info("")
     
     
@@ -156,7 +156,7 @@ class HybridPredictorAgent:
             logger.info("")
             
         except Exception as e:
-            logger.warning(f"⚠️ Error cargando configuración BRSA: {e}")
+            logger.warning(f" Error cargando configuración BRSA: {e}")
             logger.warning("Usando configuración de respaldo (Basel III + ajustes BRSA)")
             self.regulatory_config = self._get_fallback_regulatory_config()
             self.results['regulatory_config'] = self.regulatory_config
@@ -165,13 +165,13 @@ class HybridPredictorAgent:
     
     def _get_fallback_regulatory_config(self) -> Dict[str, Any]:
         """
-        🆕 NUEVO: Configuración de respaldo si falla regulatory_agent
+        NUEVO: Configuración de respaldo si falla regulatory_agent
         
         Valores basados en regulación BRSA conocida:
         - BRSA exige capital mínimo más alto que Basel III
         - Turquía tiene requisitos de liquidez más estrictos
         """
-        logger.info("⚙️ Usando configuración de respaldo BRSA (hardcoded)")
+        logger.info(" Usando configuración de respaldo BRSA (hardcoded)")
         
         return {
             'capital_ratios': {
@@ -223,7 +223,7 @@ class HybridPredictorAgent:
         Returns:
             Dict con datos extraídos y análisis cualitativo
         """
-        logger.info("📊 FASE 1: Extracción LLM iniciada...")
+        logger.info(" FASE 1: Extracción LLM iniciada...")
         
         try:
             # Prepara estructura para extract_and_map_data()
@@ -248,9 +248,9 @@ class HybridPredictorAgent:
             score = completeness.get('completeness_score', completeness.get('completeness_percentage', 0))
             if isinstance(score, (int, float)):
                 if score <= 1:
-                    logger.info(f"✅ Datos extraídos - Completitud: {score:.1%}")
+                    logger.info(f" Datos extraídos - Completitud: {score:.1%}")
                 else:
-                    logger.info(f"✅ Datos extraídos - Completitud: {score:.1f}%")
+                    logger.info(f" Datos extraídos - Completitud: {score:.1f}%")
             
             # Genera análisis cualitativo
             qualitative_analysis = self._generate_llm_analysis(extracted_data, completeness)
@@ -270,7 +270,7 @@ class HybridPredictorAgent:
             return self.results['llm_extraction']
             
         except Exception as e:
-            logger.error(f"❌ Error en extracción LLM: {e}")
+            logger.error(f" Error en extracción LLM: {e}")
             raise
     
     
@@ -280,9 +280,9 @@ class HybridPredictorAgent:
         completeness: Dict
     ) -> Dict[str, Any]:
         """
-        🔄 MODIFICADO: Genera análisis cualitativo usando configuración BRSA
+         MODIFICADO: Genera análisis cualitativo usando configuración BRSA
         """
-        logger.info("🤖 Generando análisis cualitativo con LLM...")
+        logger.info(" Generando análisis cualitativo con LLM...")
         
         try:
             analysis = {}
@@ -308,17 +308,17 @@ class HybridPredictorAgent:
             # Contexto cualitativo del LLM
             analysis['llm_insights'] = self._call_azure_openai_for_insights(extracted_data)
             
-            logger.info("✅ Análisis cualitativo completado")
+            logger.info(" Análisis cualitativo completado")
             return analysis
             
         except Exception as e:
-            logger.warning(f"⚠️ Error en análisis LLM: {e}")
+            logger.warning(f" Error en análisis LLM: {e}")
             return {'error': str(e)}
     
     
     def _generate_scenario_analysis(self, extracted_data: Dict) -> Dict[str, Any]:
         """
-        🆕 NUEVO: Genera escenarios cuantitativos basados en datos reales
+        NUEVO: Genera escenarios cuantitativos basados en datos reales
         """
         scenarios = {}
         
@@ -355,7 +355,7 @@ class HybridPredictorAgent:
     
     def _calculate_risk_score_local(self, data: Dict) -> float:
         """
-        🔄 MODIFICADO: Calcula score de riesgo usando umbrales BRSA
+        Calcula score de riesgo usando umbrales BRSA
         
         Sin valores default optimistas - solo evalúa si hay datos
         """
@@ -414,7 +414,7 @@ class HybridPredictorAgent:
     
     def _identify_risk_factors(self, extracted_data: Dict) -> List[str]:
         """
-        🔄 MODIFICADO: Identifica factores de riesgo específicos BRSA
+         MODIFICADO: Identifica factores de riesgo específicos BRSA
         
         SIN valores default optimistas - solo evalúa datos reales
         """
@@ -438,23 +438,23 @@ class HybridPredictorAgent:
             
             if solvency < min_required:
                 risk_factors.append(
-                    f"⚠️ Ratio de capital ({solvency:.2f}%) por debajo del mínimo "
+                    f" Ratio de capital ({solvency:.2f}%) por debajo del mínimo "
                     f"BRSA ({min_required}%) según {framework}"
                 )
         
         # Verificar ROA (SIN default)
         if 'roa' in extracted_data:
             if extracted_data['roa'] < 0:
-                risk_factors.append("⚠️ ROA negativo indica pérdidas operativas")
+                risk_factors.append(" ROA negativo indica pérdidas operativas")
             elif extracted_data['roa'] < 0.5:
-                risk_factors.append(f"⚠️ ROA ({extracted_data['roa']:.2f}%) por debajo de niveles saludables para banca turca")
+                risk_factors.append(f" ROA ({extracted_data['roa']:.2f}%) por debajo de niveles saludables para banca turca")
         
         # Verificar liquidez (SIN default)
         if 'liquidity_ratio' in extracted_data:
             liquidity_ratio = extracted_data['liquidity_ratio']
             if liquidity_ratio < 1:
                 risk_factors.append(
-                    f"🔴 Ratio de liquidez ({liquidity_ratio:.2f}) CRÍTICO - "
+                    f" Ratio de liquidez ({liquidity_ratio:.2f}) CRÍTICO - "
                     f"incapacidad para cubrir pasivos corrientes"
                 )
         
@@ -464,7 +464,7 @@ class HybridPredictorAgent:
             min_lcr = liquidity.get('lcr_minimum', 100.0)
             if lcr < min_lcr:
                 risk_factors.append(
-                    f"⚠️ LCR ({lcr:.1f}%) por debajo del mínimo BRSA ({min_lcr}%)"
+                    f" LCR ({lcr:.1f}%) por debajo del mínimo BRSA ({min_lcr}%)"
                 )
         
         # NPL Ratio (específico banca turca)
@@ -473,7 +473,7 @@ class HybridPredictorAgent:
             warning_level = thresholds.get('npl_ratio_warning', 3.0)
             if npl > warning_level:
                 risk_factors.append(
-                    f"⚠️ NPL Ratio ({npl:.2f}%) elevado - deterioro calidad crediticia"
+                    f" NPL Ratio ({npl:.2f}%) elevado - deterioro calidad crediticia"
                 )
         
         return risk_factors
@@ -520,7 +520,7 @@ class HybridPredictorAgent:
                 return {'narrative_analysis': 'LLM no disponible'}
                 
         except Exception as e:
-            logger.warning(f"⚠️ Error llamando a Azure OpenAI: {e}")
+            logger.warning(f" Error llamando a Azure OpenAI: {e}")
             return {'narrative_analysis': f'Error: {e}'}
     
     
@@ -558,7 +558,7 @@ class HybridPredictorAgent:
         Returns:
             DataFrame con series temporales indexadas por fecha
         """
-        logger.info("🔄 Preparando series temporales para ML...")
+        logger.info(" Preparando series temporales para ML...")
         
         try:
             # Busca datos históricos en los resultados de agentes
@@ -575,15 +575,15 @@ class HybridPredictorAgent:
             historical_data = self._load_historical_data_from_csvs()
             
             if historical_data is not None and len(historical_data) > 0:
-                logger.info(f"✅ Series temporales preparadas: {len(historical_data)} períodos")
+                logger.info(f" Series temporales preparadas: {len(historical_data)} períodos")
                 return historical_data
             else:
                 # Si no hay datos históricos, intenta construirlos desde extracted_data
-                logger.warning("⚠️ Datos históricos limitados, usando datos actuales")
+                logger.warning(" Datos históricos limitados, usando datos actuales")
                 return self._construct_minimal_time_series(extracted_data)
                 
         except Exception as e:
-            logger.error(f"❌ Error preparando series temporales: {e}")
+            logger.error(f" Error preparando series temporales: {e}")
             raise
     
     def _ensure_date_column(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -679,7 +679,7 @@ class HybridPredictorAgent:
             return df
             
         except Exception as e:
-            logger.warning(f"⚠️ Error calculando ratios: {e}")
+            logger.warning(f" Error calculando ratios: {e}")
             return df
     
     
@@ -708,7 +708,7 @@ class HybridPredictorAgent:
         Returns:
             Dict con predicciones ML completas
         """
-        logger.info("🚀 FASE 2: Predicción ML iniciada...")
+        logger.info(" FASE 2: Predicción ML iniciada...")
         
         if metrics_to_predict is None:
             metrics_to_predict = ['ROA', 'ratio_solvencia', 'liquidez', 'net_income']
@@ -720,13 +720,13 @@ class HybridPredictorAgent:
         ]
         
         if len(available_metrics) == 0:
-            logger.error("❌ No hay métricas disponibles para predecir")
+            logger.error(" No hay métricas disponibles para predecir")
             return {
                 'error': 'No metrics available',
                 'predictions': {}
             }
         
-        logger.info(f"📊 Prediciendo {len(available_metrics)} métricas: {available_metrics}")
+        logger.info(f" Prediciendo {len(available_metrics)} métricas: {available_metrics}")
         
         try:
             # Ejecuta predicciones ML
@@ -743,11 +743,11 @@ class HybridPredictorAgent:
                 'timestamp': datetime.now().isoformat()
             }
             
-            logger.info(f"✅ Predicciones ML completadas: {len(ml_results)} métricas")
+            logger.info(f" Predicciones ML completadas: {len(ml_results)} métricas")
             return self.results['ml_predictions']
             
         except Exception as e:
-            logger.error(f"❌ Error en predicciones ML: {e}")
+            logger.error(f" Error en predicciones ML: {e}")
             return {
                 'error': str(e),
                 'predictions': {}
@@ -763,7 +763,7 @@ class HybridPredictorAgent:
         - Predicciones cuantitativas del ML
         - Recomendaciones integradas
         """
-        logger.info("🎯 Sintetizando análisis híbrido...")
+        logger.info(" Sintetizando análisis híbrido...")
         
         try:
             hybrid_analysis = {
@@ -796,11 +796,11 @@ class HybridPredictorAgent:
             
             self.results['hybrid_analysis'] = hybrid_analysis
             
-            logger.info("✅ Análisis híbrido completado")
+            logger.info(" Análisis híbrido completado")
             return hybrid_analysis
             
         except Exception as e:
-            logger.error(f"❌ Error sintetizando análisis: {e}")
+            logger.error(f" Error sintetizando análisis: {e}")
             return {'error': str(e)}
     
     

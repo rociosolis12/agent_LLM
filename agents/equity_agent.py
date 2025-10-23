@@ -756,13 +756,13 @@ Sistema Multi-Agente:
     args = parser.parse_args()
     
     # MOSTRAR CONFIGURACIÓN
-    print("🚀 Equity Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
-    print(f"📄 PDF: {args.pdf}")
-    print(f"📁 Salida: {args.out}")
-    print(f"⚙️ Azure OpenAI: {AZURE_OPENAI_DEPLOYMENT}")
-    print(f"🔧 Max steps: {args.maxsteps}")
-    print(f"🤖 Multi-Agent: EquityREACTAgent AUTÓNOMO class available")
-    print("🆕 CARACTERÍSTICAS: Patrón REACT exitoso, análisis inteligente con LLM, respuestas elaboradas")
+    print(" Equity Agent v3.0 AUTÓNOMO Multi-Agent - Configuración Automática")
+    print(f" PDF: {args.pdf}")
+    print(f" Salida: {args.out}")
+    print(f" Azure OpenAI: {AZURE_OPENAI_DEPLOYMENT}")
+    print(f" Max steps: {args.maxsteps}")
+    print(f" Multi-Agent: EquityREACTAgent AUTÓNOMO class available")
+    print(" CARACTERÍSTICAS: Patrón REACT exitoso, análisis inteligente con LLM, respuestas elaboradas")
     
     try:
         # VERIFICAR PDF
@@ -771,36 +771,36 @@ Sistema Multi-Agente:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         if not pdf_path.exists():
-            print(f"❌ Error: PDF no encontrado en {pdf_path}")
+            print(f" Error: PDF no encontrado en {pdf_path}")
             return
         
         # CREAR AGENTE Y EJECUTAR
         agent = EquityREACTAgent()
         
         if args.question:
-            print(f"❓ Pregunta específica: {args.question}")
+            print(f" Pregunta específica: {args.question}")
             result = agent.run_final_financial_extraction_agent(str(pdf_path), args.question)
         else:
             result = agent.run_final_financial_extraction_agent(str(pdf_path))
         
         # MOSTRAR RESULTADOS
-        print("🎯 ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
-        print(f"Estado: {'✅ EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
+        print(" ==== RESUMEN DE EJECUCIÓN AUTÓNOMO ====")
+        print(f"Estado: {' EXITOSO' if result.get('status') == 'task_completed' else '❌ ERROR'}")
         print(f"Pasos completados: {result.get('steps_taken', 0)}")
         print(f"Archivos generados: {result.get('files_generated', 0)}")
         
         if result.get('status') == 'task_completed':
-            print("📋 ==== RESPUESTA ESPECÍFICA ====")
+            print(" ==== RESPUESTA ESPECÍFICA ====")
             print(result.get("specific_answer", "No hay respuesta específica disponible"))
         else:
-            print(f"❌ Error: {result.get('error_details', 'Error desconocido')}")
+            print(f" Error: {result.get('error_details', 'Error desconocido')}")
         
-        print("🎉 Análisis de cambios en patrimonio completado!")
-        print("🤖 Clase EquityREACTAgent AUTÓNOMA disponible para sistema multi-agente")
-        print("🆕 Versión autónoma con patrón REACT exitoso, análisis inteligente con LLM")
+        print(" Análisis de cambios en patrimonio completado!")
+        print(" Clase EquityREACTAgent AUTÓNOMA disponible para sistema multi-agente")
+        print(" Versión autónoma con patrón REACT exitoso, análisis inteligente con LLM")
         
     except Exception as e:
-        print(f"❌ Error durante la ejecución: {e}")
+        print(f" Error durante la ejecución: {e}")
         raise
 
 if __name__ == "__main__":
