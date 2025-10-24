@@ -33,6 +33,17 @@ app = Flask(__name__)
 CORS(app)
 app.config['DEBUG'] = True
 
+# ===== INSTANCIA GLOBAL DEL SISTEMA =====
+system = None
+if SYSTEM_AVAILABLE:
+    try:
+        system = FinancialExtractionSystem()
+        logger.info(" Sistema multi-agente inicializado globalmente")
+    except Exception as e:
+        logger.error(f" Error inicializando sistema: {e}")
+        SYSTEM_AVAILABLE = False
+
+
 @app.route('/ask-question', methods=['POST'])
 def ask_question():
     try:
@@ -256,105 +267,194 @@ def load_json_or_fail(filepath):
     with open(filepath, encoding="utf-8") as f:
         return json.load(f)
 
+def extract_agent_result(pipeline_result, agent_name):
+    """
+    Extrae el resultado de un agente específico del pipeline completo.
+    VERSIÓN CORREGIDA: Soporta múltiples formatos de respuesta de agentes.
+    """
+    try:
+        # Extraer resultados de agentes especializados
+        financial_analysis = pipeline_result.get('financial_analysis', {})
+        agents_results = financial_analysis.get('agents_results', {})
+        agent_data = agents_results.get(agent_name, {})
+        
+        # Extraer información de extracción PDF
+        pdf_extraction = pipeline_result.get('pdf_extraction', {})
+        
+        # ✅ CORRECCIÓN: Soportar múltiples campos de respuesta
+        # Intentar diferentes nombres de campo que usan los agentes
+        answer = (
+            agent_data.get('final_answer') or           # Nombre genérico
+            agent_data.get('specificanswer') or         # Balance agent usa esto
+            agent_data.get('specific_answer') or        # Variación snake_case
+            agent_data.get('answer') or                 # Nombre simple
+            agent_data.get('finalresponse') or          # Otra variación
+            agent_data.get('final_response') or         # Snake case
+            'No se encontró análisis.'                  # Fallback
+        )
+        
+        # Formato de respuesta estandarizado
+        response = {
+            "status": "success",
+            "agent": agent_name.capitalize(),
+            "financial_analysis": {
+                "answer": answer,
+                "confidence": agent_data.get('confidence', 0.75),
+                "files_generated": agent_data.get('files_generated', agent_data.get('filesgenerated', 0)),
+                "steps_taken": agent_data.get('total_steps', agent_data.get('steps_taken', agent_data.get('stepstaken', 0)))
+            },
+            "pdf_extraction": {
+                "pages_extracted": pdf_extraction.get('pages_extracted', pdf_extraction.get('pagesextracted', [])),
+                "total_pages_extracted": len(pdf_extraction.get('pages_extracted', pdf_extraction.get('pagesextracted', [])))
+            },
+            "cached": False,  # Datos generados en tiempo real
+            "timestamp": pipeline_result.get('timestamp'),
+            "raw_agent_data": agent_data  # ✅ AGREGADO: Para debugging
+        }
+        
+        logger.info(f"✅ Respuesta extraída para {agent_name}: {answer[:100]}...")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Error extrayendo resultado de {agent_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "message": f"Error procesando agente {agent_name}: {str(e)}",
+            "agent": agent_name
+        }
+
+
+
 @app.route('/api/agents/balance-analysis', methods=['POST', 'OPTIONS'])
 def balance_analysis():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'})
-    file_path = OUTPUT_DIR / "bbva_2023_div_balance_summary.json"
-    data = load_json_or_fail(file_path)
-    if data is None:
-        return jsonify({'status': 'error', 'message': 'Archivo balance no encontrado'}), 404
-    text = data.get("extraction", {}).get("text", "")
-    return jsonify({
-        "status": "success",
-        "agent": "Balance General",
-        "financial_analysis": {
-            "answer": text[:4000] or "No se encontró análisis de balance en el archivo.",
-            "confidence": data.get("confidence", 0.85),
-            "files_generated": data.get("files_generated", 3),
-            "steps_taken": data.get("steps_taken", 5)
-        },
-        "pdf_extraction": {
-            "pages_extracted": data.get("extraction", {}).get("pages_used", []),
-            "total_pages_extracted": len(data.get("extraction", {}).get("pages_used", []))
-        },
-        "cached": True
-    })
+    
+    try:
+        logger.info(" Ejecutando análisis de Balance General...")
+        
+        if not SYSTEM_AVAILABLE or system is None:
+            return jsonify({'status': 'error', 'message': 'Sistema no disponible'}), 503
+        
+        data = request.get_json() or {}
+        question = data.get('question', 'Analiza el balance general y estructura de activos')
+        
+        # Ejecutar pipeline dinámicamente
+        result = asyncio.run(
+            system.run_complete_pipeline_with_hybrid_predictor(
+                question=question,
+                generate_new_predictions=False
+            )
+        )
+        
+        # Extraer resultado del agente de balance
+        response = extract_agent_result(result, 'balance')
+        
+        logger.info(" Balance analysis completado")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f" Error en balance-analysis: {e}")
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/agents/income-analysis', methods=['POST', 'OPTIONS'])
 def income_analysis():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'})
-    file_path = OUTPUT_DIR / "bbva_2023_div_income_summary.json"
-    data = load_json_or_fail(file_path)
-    if data is None:
-        return jsonify({'status': 'error', 'message': 'Archivo income no encontrado'}), 404
-    text = data.get("extraction", {}).get("text", "")
-    return jsonify({
-        "status": "success",
-        "agent": "Estado de Resultados",
-        "financial_analysis": {
-            "answer": text[:4000] or "No se encontró análisis de resultados en el archivo.",
-            "confidence": data.get("confidence", 0.82),
-            "files_generated": data.get("files_generated", 3),
-            "steps_taken": data.get("steps_taken", 5)
-        },
-        "pdf_extraction": {
-            "pages_extracted": data.get("extraction", {}).get("pages_used", []),
-            "total_pages_extracted": len(data.get("extraction", {}).get("pages_used", []))
-        },
-        "cached": True
-    })
+    
+    try:
+        logger.info(" Ejecutando análisis de Estado de Resultados...")
+        
+        if not SYSTEM_AVAILABLE or system is None:
+            return jsonify({'status': 'error', 'message': 'Sistema no disponible'}), 503
+        
+        data = request.get_json() or {}
+        question = data.get('question', 'Analiza el estado de resultados y rentabilidad')
+        
+        result = asyncio.run(
+            system.run_complete_pipeline_with_hybrid_predictor(
+                question=question,
+                generate_new_predictions=False
+            )
+        )
+        
+        response = extract_agent_result(result, 'income')
+        
+        logger.info(" Income analysis completado")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f" Error en income-analysis: {e}")
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route('/api/agents/cashflow-analysis', methods=['POST', 'OPTIONS'])
 def cashflow_analysis():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'})
-    file_path = OUTPUT_DIR / "bbva_2023_div_cashflow_summary.json"
-    data = load_json_or_fail(file_path)
-    if data is None:
-        return jsonify({'status': 'error', 'message': 'Archivo cashflow no encontrado'}), 404
-    text = data.get("extraction", {}).get("text", "")
-    return jsonify({
-        "status": "success",
-        "agent": "Flujos de Efectivo",
-        "financial_analysis": {
-            "answer": text[:4000] or "No se encontró análisis cashflow en el archivo.",
-            "confidence": data.get("confidence", 0.80),
-            "files_generated": data.get("files_generated", 3),
-            "steps_taken": data.get("steps_taken", 5)
-        },
-        "pdf_extraction": {
-            "pages_extracted": data.get("extraction", {}).get("pages_used", []),
-            "total_pages_extracted": len(data.get("extraction", {}).get("pages_used", []))
-        },
-        "cached": True
-    })
+    
+    try:
+        logger.info(" Ejecutando análisis de Flujos de Efectivo...")
+        
+        if not SYSTEM_AVAILABLE or system is None:
+            return jsonify({'status': 'error', 'message': 'Sistema no disponible'}), 503
+        
+        data = request.get_json() or {}
+        question = data.get('question', 'Analiza los flujos de efectivo operativos y de inversión')
+        
+        result = asyncio.run(
+            system.run_complete_pipeline_with_hybrid_predictor(
+                question=question,
+                generate_new_predictions=False
+            )
+        )
+        
+        response = extract_agent_result(result, 'cashflows')
+        
+        logger.info(" Cashflow analysis completado")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f" Error en cashflow-analysis: {e}")
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route('/api/agents/equity-analysis', methods=['POST', 'OPTIONS'])
 def equity_analysis():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'})
-    file_path = OUTPUT_DIR / "bbva_2023_div_equity_summary.json"
-    data = load_json_or_fail(file_path)
-    if data is None:
-        return jsonify({'status': 'error', 'message': 'Archivo equity no encontrado'}), 404
-    text = data.get("extraction", {}).get("text", "")
-    return jsonify({
-        "status": "success",
-        "agent": "Estado de Patrimonio",
-        "financial_analysis": {
-            "answer": text[:4000] or "No se encontró análisis de equity en el archivo.",
-            "confidence": data.get("confidence", 0.78),
-            "files_generated": data.get("files_generated", 3),
-            "steps_taken": data.get("steps_taken", 5)
-        },
-        "pdf_extraction": {
-            "pages_extracted": data.get("extraction", {}).get("pages_used", []),
-            "total_pages_extracted": len(data.get("extraction", {}).get("pages_used", []))
-        },
-        "cached": True
-    })
+    
+    try:
+        logger.info(" Ejecutando análisis de Estado de Patrimonio...")
+        
+        if not SYSTEM_AVAILABLE or system is None:
+            return jsonify({'status': 'error', 'message': 'Sistema no disponible'}), 503
+        
+        data = request.get_json() or {}
+        question = data.get('question', 'Analiza el estado de patrimonio y cambios en el capital')
+        
+        result = asyncio.run(
+            system.run_complete_pipeline_with_hybrid_predictor(
+                question=question,
+                generate_new_predictions=False
+            )
+        )
+        
+        response = extract_agent_result(result, 'equity')
+        
+        logger.info(" Equity analysis completado")
+        return jsonify(response)
+        
+    except Exception as e:
+        logger.error(f" Error en equity-analysis: {e}")
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)

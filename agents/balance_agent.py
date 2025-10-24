@@ -1126,10 +1126,15 @@ RESPUESTA PROFESIONAL:"""
             ]
             
             # Usar cliente Azure OpenAI existente
-            response = self.chat_client.chat(messages, max_tokens=1000)
-            
-            return response.strip()
-            
+            response_message = self.chat_client.chat(messages, max_tokens=1000)
+
+            # Acceder al atributo 'content' del mensaje
+            if hasattr(response_message, 'content') and response_message.content:
+                return response_message.content.strip()
+            else:
+                # Fallback si no hay contenido
+                return "No se pudo generar una respuesta específica del balance."
+
         except Exception as e:
             print(f" Error en LLM: {str(e)}")
             # Fallback a respuesta basada en reglas
