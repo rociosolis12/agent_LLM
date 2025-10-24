@@ -12,7 +12,6 @@
     ],
     "financial_data": {
       "years_found": [
-        "2022",
         "2023",
         "2022",
         "2023",
@@ -24,10 +23,11 @@
         "2023",
         "2022",
         "2023",
+        "2022",
         "2021",
-        "2023",
-        "2020",
         "2022",
+        "2020",
+        "2023",
         "2019"
       ],
       "net_interest_income": [],
@@ -55,14 +55,14 @@
     "confidence": 1.0,
     "score": 58,
     "details": [
-      "✅ Ingresos por comisiones encontrados",
-      "✅ Gastos operativos encontrados",
-      "✅ Beneficio neto encontrado",
-      "✅ Datos financieros específicos: 4 categorías"
+      " Ingresos por comisiones encontrados",
+      " Gastos operativos encontrados",
+      " Beneficio neto encontrado",
+      " Datos financieros específicos: 4 categorías"
     ],
     "financial_categories_found": 4
   },
-  "processing_timestamp": "2025-10-20 10:56:31",
+  "processing_timestamp": "2025-10-24 20:51:57",
   "quality_metrics": {
     "data_categories_found": 4,
     "quality_score": 58,
