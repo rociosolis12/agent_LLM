@@ -41,6 +41,8 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_EMBEDDING_MODEL = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
+
 
 # ----- Groq Configuration -----
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -92,50 +94,39 @@ class AzureChatClient:
             raise RuntimeError(f"Azure OpenAI API error: {str(e)}")
 
 
-class GroqEmbeddingClient:
+class AzureEmbeddingClient:
     def __init__(self):
-        self.client = groq.Groq(api_key=GROQ_API_KEY)
-        self.model = GROQ_MODEL
-
+        self.client = AzureOpenAI(
+            api_key=os.getenv("AZURE_OPENAI_KEY"),
+            api_version="2024-10-21",
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+        )
+        self.model = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
+        
     def get_text_embedding(self, text: str, max_length: int = 8000) -> Optional[np.ndarray]:
+        """Genera embeddings usando Azure OpenAI"""
         try:
+            # Truncar texto si es necesario
             text = text[:max_length] if len(text) > max_length else text
-            response = self.client.chat.completions.create(
+            
+            # Generar embedding con Azure
+            response = self.client.embeddings.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": "Generate a semantic summary of this financial text focusing on balance sheet elements."},
-                    {"role": "user", "content": f"Text: {text[:1000]}"}
-                ],
-                max_tokens=75,
-                temperature=0.1
+                input=text
             )
-            content = response.choices[0].message.content
-            embedding = np.array([
-                hash(content + str(i) + text[:100]) % 1000 / 1000.0
-                for i in range(384)
-            ])
+            
+            # Extraer el vector de embedding
+            embedding = np.array(response.data[0].embedding)
+            
+            # Normalizar el embedding
             return embedding / np.linalg.norm(embedding)
+            
         except Exception as e:
-            raise RuntimeError(f"Error generating embedding with Groq: {e}")
-
-    def find_similar_sections(self, query_text: str, text_chunks: List[str], top_k: int = 3) -> List[Tuple[int, float, str]]:
-        query_embedding = self.get_text_embedding(query_text)
-        if query_embedding is None:
-            return []
-        
-        similarities = []
-        for i, chunk in enumerate(text_chunks):
-            chunk_embedding = self.get_text_embedding(chunk)
-            if chunk_embedding is not None:
-                similarity = cosine_similarity([query_embedding], [chunk_embedding])[0][0]
-                similarities.append((i, float(similarity), chunk))
-        
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return similarities[:top_k]
+            raise RuntimeError(f"Error generating embedding with Azure OpenAI: {e}")
 
 # Inicialización de clientes
 chat_client = AzureChatClient()
-embedding_client = GroqEmbeddingClient()
+embedding_client = AzureEmbeddingClient()
 
 # =============================
 # Diccionarios específicos para bbva_2023_div.pdf
@@ -366,11 +357,11 @@ class ExtractBalanceStatement(Tool):
                         {"chunk_idx": idx, "similarity": float(score), "text": text[:400]}
                         for idx, score, text in matches
                     ]
-                    print(f"🔍 Query {i}: {len(matches)} coincidencias semánticas")
+                    print(f" Query {i}: {len(matches)} coincidencias semánticas")
                     
             except Exception as e:
                 semantic_analysis = {"error": f"Semantic analysis failed: {str(e)}"}
-                print(f"❌ Error en análisis semántico: {e}")
+                print(f"Error en análisis semántico: {e}")
         
         # Cálculo de confianza mejorado para el nuevo PDF
         conf = 0.0
@@ -388,7 +379,7 @@ class ExtractBalanceStatement(Tool):
             conf += 0.1
         
         conf = max(0.0, min(conf, 1.0))
-        print(f"📈 Confianza calculada: {conf:.3f}")
+        print(f"Confianza calculada: {conf:.3f}")
         
         return {
             "success": True,
@@ -463,7 +454,7 @@ class ValidateBalanceQuality(Tool):
         if not (assets_found and liabs_found and equity_found):
             recommendations.append("Revisar extracción de componentes del balance.")
         
-        print(f"✅ Validación completada: {status} (confianza: {final_confidence:.3f})")
+        print(f"Validación completada: {status} (confianza: {final_confidence:.3f})")
         
         return {
             "success": True,
