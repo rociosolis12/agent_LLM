@@ -37,6 +37,8 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_EMBEDDING_MODEL = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
+
 
 print(" ----- Azure OpenAI Configuration -----")
 print(f" Endpoint: {AZURE_OPENAI_ENDPOINT}")
@@ -90,8 +92,119 @@ class ChatClient:
         except Exception as e:
             raise RuntimeError(f"Chat API error: {str(e)}")
 
+# ===== CLIENTE EMBEDDINGS AZURE OPTIMIZADO =====
+class AzureEmbeddingClient:
+    """Cliente optimizado para generar embeddings usando Azure OpenAI con batch processing"""
+    
+    def __init__(self):
+        self.client = AzureOpenAI(
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_API_KEY,
+            api_version=AZURE_OPENAI_API_VERSION
+        )
+        self.model = AZURE_EMBEDDING_MODEL
+        
+    def get_text_embedding(self, text: str, max_length: int = 8000) -> Optional[np.ndarray]:
+        """Genera embedding individual (para queries)"""
+        try:
+            text = text[:max_length] if len(text) > max_length else text
+            
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=text
+            )
+            
+            embedding = np.array(response.data[0].embedding)
+            norm = np.linalg.norm(embedding)
+            
+            return embedding / norm if norm > 0 else embedding
+            
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            return None
+    
+    def get_batch_embeddings(self, texts: List[str], max_length: int = 8000) -> Optional[List[np.ndarray]]:
+        """
+        OPTIMIZADO: Genera embeddings para múltiples textos en una sola llamada API
+        
+        Args:
+            texts: Lista de textos
+            max_length: Longitud máxima por texto
+            
+        Returns:
+            Lista de vectores de embedding o None si hay error
+        """
+        try:
+            # Truncar cada texto
+            truncated_texts = [text[:max_length] for text in texts if text]
+            
+            if not truncated_texts:
+                return None
+            
+            # Generar todos los embeddings en UNA sola llamada
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=truncated_texts
+            )
+            
+            # Extraer y normalizar embeddings
+            embeddings = []
+            for item in response.data:
+                embedding = np.array(item.embedding)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+                embeddings.append(embedding)
+            
+            return embeddings
+            
+        except Exception as e:
+            print(f"Error generating batch embeddings: {e}")
+            return None
+    
+    def find_similar_sections_optimized(
+        self, 
+        query_text: str, 
+        text_chunks: List[str],
+        chunk_embeddings_cache: Optional[List[np.ndarray]] = None,
+        top_k: int = 5
+    ) -> Tuple[List[tuple], List[np.ndarray]]:
+        """
+        ⚡ VERSIÓN OPTIMIZADA con caché de embeddings
+        
+        Returns:
+            (resultados, chunk_embeddings) para reutilizar embeddings
+        """
+        # 1. Embedding de query
+        query_embedding = self.get_text_embedding(query_text)
+        if query_embedding is None:
+            return [], []
+        
+        # 2. Reutilizar embeddings de chunks si existen
+        if chunk_embeddings_cache is None:
+            print(f"  Generando {len(text_chunks)} embeddings en batch...")
+            chunk_embeddings = self.get_batch_embeddings(text_chunks)
+            if chunk_embeddings is None:
+                return [], []
+        else:
+            chunk_embeddings = chunk_embeddings_cache
+        
+        # 3. Calcular similaridades (operación local, muy rápida)
+        similarities = []
+        for i, chunk_embedding in enumerate(chunk_embeddings):
+            similarity = cosine_similarity(
+                [query_embedding], 
+                [chunk_embedding]
+            )[0][0]
+            similarities.append((i, float(similarity), text_chunks[i]))
+        
+        # 4. Ordenar y devolver top_k
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        return similarities[:top_k], chunk_embeddings
+
 # ===== INICIALIZACIÓN =====
 chat_client = ChatClient()
+embedding_client = AzureEmbeddingClient()  
 
 # ===== HERRAMIENTAS ESPECÍFICAS PARA CASHFLOWS CON EXTRACCIÓN MEJORADA =====
 
@@ -147,18 +260,20 @@ class AnalyzeCashflowStructureTool:
             return {"success": False, "error": str(e)}
 
 @dataclass
+@dataclass
 class ExtractCashflowStatementTool:
     name: str = "extractcashflowstatement"
-    description: str = "Extrae el contenido del estado de flujos de efectivo con análisis avanzado"
+    description: str = "Extrae el contenido del estado de flujos de efectivo con análisis avanzado y búsqueda semántica"
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
             pages_to_process = analysis_json.get("pages_selected", [6, 7, 8, 9, 10]) if analysis_json else [6, 7, 8, 9, 10]
-            print(f" Extrayendo páginas con análisis avanzado: {pages_to_process}")
+            print(f"📄 Extrayendo páginas con análisis avanzado: {pages_to_process}")
             
             extracted_text = ""
             total_chars = 0
             financial_data = {}
+            all_text_chunks = []  # ⚡ NUEVO: Para embeddings
             
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
@@ -176,7 +291,15 @@ class ExtractCashflowStatementTool:
                         if any(keyword in text_lower for keyword in cashflow_keywords):
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
-                            print(f" Página {page_num}: {len(text)} caracteres extraídos")
+                            
+                            # ⚡ NUEVO: Dividir en chunks para embeddings
+                            page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                            all_text_chunks.extend([
+                                {'page': page_num, 'chunk': chunk}
+                                for chunk in page_chunks
+                            ])
+                            
+                            print(f"✅ Página {page_num}: {len(text)} caracteres extraídos")
                             
                             # NUEVO: Extracción avanzada de datos financieros
                             page_data = self._extract_financial_numbers(text)
@@ -187,19 +310,98 @@ class ExtractCashflowStatementTool:
             
             if not extracted_text:
                 # Fallback: extraer todas las páginas en el rango
+                print("⚠️ Fallback: extrayendo páginas 1-20")
                 with pdfplumber.open(pdf_path) as pdf:
                     for page_num in range(1, min(20, len(pdf.pages) + 1)):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                         total_chars += len(text)
+                        
+                        # También añadir chunks en fallback
+                        page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                        all_text_chunks.extend([
+                            {'page': page_num, 'chunk': chunk}
+                            for chunk in page_chunks
+                        ])
             
-            # Crear chunks semánticos mejorados
+            # ===== ⚡ NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA OPTIMIZADA CON EMBEDDINGS =====
+            semantic_results = {}
+            if all_text_chunks and extract_semantic_chunks:
+                print(f"🔍 Aplicando búsqueda semántica optimizada ({len(all_text_chunks)} chunks)...")
+                
+                chunk_texts = [item['chunk'] for item in all_text_chunks]
+                
+                # ⚡ OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
+                print(f"  📦 Generando embeddings en batch...")
+                chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
+                
+                if chunk_embeddings is None:
+                    print("  ⚠️ Error generando embeddings, saltando búsqueda semántica")
+                else:
+                    print(f"  ✅ {len(chunk_embeddings)} embeddings generados en batch")
+                    
+                    # Queries semánticas específicas para flujos de efectivo
+                    semantic_queries = {
+                        'operating_activities': "flujos de efectivo de actividades operativas net cash operating activities",
+                        'investing_activities': "flujos de efectivo de actividades de inversión cash from investing",
+                        'financing_activities': "flujos de efectivo de actividades de financiación cash from financing",
+                        'net_cash_change': "variación neta en efectivo y equivalentes net change in cash",
+                        'cash_beginning': "efectivo al inicio del período cash at beginning of period",
+                        'cash_ending': "efectivo al final del período cash at end of period"
+                    }
+                    
+                    for category, query in semantic_queries.items():
+                        try:
+                            # ⚡ OPTIMIZADO: Pasar embeddings cacheados para reutilizarlos
+                            similar_sections, _ = embedding_client.find_similar_sections_optimized(
+                                query, 
+                                chunk_texts,
+                                chunk_embeddings_cache=chunk_embeddings,  # Reutilizar embeddings
+                                top_k=3
+                            )
+                            
+                            relevant_chunks = []
+                            for idx, score, chunk_text in similar_sections:
+                                if score > 0.65:  # Umbral de similaridad
+                                    chunk_info = all_text_chunks[idx]
+                                    relevant_chunks.append({
+                                        'score': score,
+                                        'text': chunk_text,
+                                        'page': chunk_info['page']
+                                    })
+                                    print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']})")
+                            
+                            if relevant_chunks:
+                                semantic_results[category] = relevant_chunks
+                        
+                        except Exception as e:
+                            print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
+                    
+                    # Enriquecer texto con resultados semánticos
+                    if semantic_results:
+                        print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
+                        enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
+                        
+                        for category, chunks in semantic_results.items():
+                            enriched_text += f"\n--- {category.upper().replace('_', ' ')} ---\n"
+                            for chunk_data in chunks[:2]:  # Top 2 por categoría
+                                enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
+                                enriched_text += chunk_data['text'][:500] + "...\n\n"
+                        
+                        # Prefijar al texto original
+                        extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
+            
+            # Crear chunks básicos (compatibilidad con código existente)
             chunks = []
-            if extract_semantic_chunks and extracted_text:
+            if extracted_text:
                 chunks = self._create_semantic_chunks(extracted_text)
             
             confidence = 1.0 if total_chars > 2000 else 0.8 if total_chars > 1000 else 0.6
+            
+            # ⚡ NUEVO: Ajustar confianza con embeddings
+            if semantic_results:
+                confidence = min(1.0, confidence + 0.1)  # Bonus por búsqueda semántica exitosa
             
             return {
                 "success": True,
@@ -208,14 +410,18 @@ class ExtractCashflowStatementTool:
                 "chunks": chunks,
                 "confidence": confidence,
                 "pages_processed": pages_to_process,
-                "financial_data": financial_data  # NUEVO: Datos financieros específicos
+                "financial_data": financial_data,
+                "semantic_results": semantic_results,  # ⚡ NUEVO
+                "semantic_categories_found": len(semantic_results),  # ⚡ NUEVO
+                "total_chunks_analyzed": len(all_text_chunks)  # ⚡ NUEVO
             }
             
         except Exception as e:
+            print(f"❌ Error en ExtractCashflowStatementTool: {e}")
             return {"success": False, "error": str(e)}
     
     def _extract_financial_numbers(self, text: str) -> Dict[str, List[float]]:
-        """NUEVA FUNCIÓN: Extrae números financieros específicos del texto"""
+        """Extrae números financieros específicos del texto"""
         patterns = {
             'operating_cash': [
                 r'operating.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
@@ -261,8 +467,36 @@ class ExtractCashflowStatementTool:
         
         return extracted_data
     
+    def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
+        """⚡ NUEVO: Divide texto en chunks para procesamiento con embeddings"""
+        if not text:
+            return []
+        
+        words = text.split()
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for word in words:
+            word_length = len(word) + 1  # +1 por el espacio
+            
+            # Si agregar la palabra excede el límite y ya hay contenido, crear nuevo chunk
+            if current_length + word_length > chunk_size and current_chunk:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_length = 0
+            
+            current_chunk.append(word)
+            current_length += word_length
+        
+        # Agregar el último chunk si existe
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+        
+        return chunks
+    
     def _create_semantic_chunks(self, text: str) -> List[str]:
-        """NUEVA FUNCIÓN: Crear chunks semánticos más inteligentes"""
+        """Crear chunks semánticos más inteligentes (método original mejorado)"""
         lines = text.split('\n')
         chunks = []
         current_chunk = ""
@@ -293,6 +527,7 @@ class ExtractCashflowStatementTool:
             chunks.append(current_chunk.strip())
         
         return chunks
+
 
 @dataclass
 class ValidateCashflowQualityTool:

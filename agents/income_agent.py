@@ -17,6 +17,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 import groq
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ===== CONFIGURACIÓN DEL PROYECTO =====
 project_root = Path(__file__).parent.parent
@@ -34,6 +36,8 @@ AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_EMBEDDING_MODEL = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
+
 
 print(" ----- Azure OpenAI Configuration -----")
 print(f" Endpoint: {AZURE_OPENAI_ENDPOINT}")
@@ -88,8 +92,94 @@ class ChatClient:
         except Exception as e:
             raise RuntimeError(f"Chat API error: {str(e)}")
 
+# ===== CLIENTE EMBEDDINGS =====
+class AzureEmbeddingClient:
+    """Cliente para generar embeddings usando Azure OpenAI"""
+    
+    def __init__(self):
+        self.client = AzureOpenAI(
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_API_KEY,
+            api_version=AZURE_OPENAI_API_VERSION
+        )
+        self.model = AZURE_EMBEDDING_MODEL
+        
+    def get_text_embedding(self, text: str, max_length: int = 8000) -> Optional[np.ndarray]:
+        """
+        Genera embeddings usando Azure OpenAI
+        
+        Args:
+            text: Texto para generar embedding
+            max_length: Longitud máxima del texto
+            
+        Returns:
+            Vector de embedding normalizado o None si hay error
+        """
+        try:
+            # Truncar texto si excede el límite
+            text = text[:max_length] if len(text) > max_length else text
+            
+            # Generar embedding con Azure OpenAI
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=text
+            )
+            
+            # Extraer el vector de embedding
+            embedding = np.array(response.data[0].embedding)
+            
+            # Normalizar el embedding para cosine similarity
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+            
+            return embedding
+            
+        except Exception as e:
+            print(f"Error generating Azure embedding: {e}")
+            return None
+    
+    def find_similar_sections(
+        self, 
+        query_text: str, 
+        text_chunks: List[str], 
+        top_k: int = 5
+    ) -> List[tuple]:
+        """
+        Encuentra secciones más relevantes usando embeddings
+        
+        Args:
+            query_text: Texto de consulta
+            text_chunks: Lista de chunks de texto
+            top_k: Número de resultados a devolver
+            
+        Returns:
+            Lista de tuplas (índice, similaridad, texto)
+        """
+        from sklearn.metrics.pairwise import cosine_similarity
+        
+        query_embedding = self.get_text_embedding(query_text)
+        if query_embedding is None:
+            return []
+        
+        similarities = []
+        for i, chunk in enumerate(text_chunks):
+            chunk_embedding = self.get_text_embedding(chunk)
+            if chunk_embedding is not None:
+                similarity = cosine_similarity(
+                    [query_embedding], 
+                    [chunk_embedding]
+                )[0][0]
+                similarities.append((i, float(similarity), chunk))
+        
+        # Ordenar por similaridad descendente
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        return similarities[:top_k]
+
+
 # Inicialización del cliente
 chat_client = ChatClient()
+embedding_client = AzureEmbeddingClient()
 
 # ===== DICCIONARIOS ESPECÍFICOS PARA CUENTA DE RESULTADOS =====
 INCOME_TITLES_EN = [
@@ -481,9 +571,9 @@ class IncomeREACTAgent:
             }
 
     def extract_income_data_enhanced(self, pdf_file: Path) -> Dict[str, Any]:
-        """NUEVA FUNCIÓN: Extracción mejorada de datos de cuenta de resultados"""
+        """NUEVA FUNCIÓN: Extracción mejorada de datos de cuenta de resultados con búsqueda semántica"""
         try:
-            print(f"Extrayendo cuenta de resultados de: {pdf_file}")
+            print(f"📊 Extrayendo cuenta de resultados de: {pdf_file}")
             
             # Páginas más probables para cuenta de resultados en documentos bancarios
             target_pages = [1, 2, 3, 4, 5, 6, 7, 8]  # Ampliar búsqueda
@@ -492,6 +582,7 @@ class IncomeREACTAgent:
             total_chars = 0
             financial_data = {}
             relevant_pages = []
+            all_text_chunks = []  # NUEVO: Para búsqueda semántica
             
             with fitz.open(pdf_file) as pdf:
                 for page_num in range(min(len(pdf), 15)):  # Buscar en primeras 15 páginas
@@ -528,6 +619,14 @@ class IncomeREACTAgent:
                         extracted_text += f"\n=== PÁGINA {page_num + 1} (Score: {relevance_score}) ===\n{text}"
                         total_chars += len(text)
                         relevant_pages.append(page_num + 1)
+                        
+                        # NUEVO: Almacenar chunks para búsqueda semántica posterior
+                        page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                        all_text_chunks.extend([
+                            {'page': page_num + 1, 'chunk': chunk, 'score': relevance_score}
+                            for chunk in page_chunks
+                        ])
+                        
                         print(f"✅ Página {page_num + 1}: {len(text)} caracteres extraídos (relevance: {relevance_score})")
                         
                         # NUEVA: Extracción de datos financieros específicos
@@ -539,35 +638,147 @@ class IncomeREACTAgent:
             
             # Si no se encontró contenido relevante, extraer páginas por defecto
             if total_chars < 1000:
-                print(" Poco contenido relevante encontrado, extrayendo páginas por defecto...")
+                print("⚠️ Poco contenido relevante encontrado, extrayendo páginas por defecto...")
                 with fitz.open(pdf_file) as pdf:
                     for page_num in range(min(10, len(pdf))):
                         page = pdf[page_num]
                         text = page.get_text()
                         extracted_text += f"\n=== PÁGINA {page_num + 1} (DEFAULT) ===\n{text}"
                         total_chars += len(text)
+                        
+                        # NUEVO: También añadir estos chunks
+                        page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                        all_text_chunks.extend([
+                            {'page': page_num + 1, 'chunk': chunk, 'score': 0}
+                            for chunk in page_chunks
+                        ])
             
-            print(f" Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+            print(f"📄 Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+            
+            # ===== NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
+            semantic_results = {}
+            if all_text_chunks:
+                print(f"🔍 Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
+                
+                # Preparar solo el texto de los chunks
+                chunk_texts = [item['chunk'] for item in all_text_chunks]
+                
+                # Queries semánticas para encontrar secciones relevantes de cuenta de resultados
+                semantic_queries = {
+                    'interest_income': "margen de intereses e ingresos financieros netos del banco",
+                    'commissions': "ingresos por comisiones y servicios bancarios prestados",
+                    'operating_expenses': "gastos operativos de personal y administración",
+                    'provisions': "provisiones para riesgos crediticios y deterioro de activos",
+                    'net_profit': "beneficio neto resultado del ejercicio después de impuestos",
+                    'margins': "rentabilidad márgenes de intermediación y eficiencia operativa"
+                }
+                
+                for category, query in semantic_queries.items():
+                    try:
+                        similar_sections = embedding_client.find_similar_sections(
+                            query, 
+                            chunk_texts, 
+                            top_k=3
+                        )
+                        
+                        relevant_chunks = []
+                        for idx, score, chunk_text in similar_sections:
+                            if score > 0.65:  # Umbral de similaridad
+                                chunk_info = all_text_chunks[idx]
+                                relevant_chunks.append({
+                                    'score': score,
+                                    'text': chunk_text,
+                                    'page': chunk_info['page'],
+                                    'relevance_score': chunk_info['score']
+                                })
+                                print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']}): {chunk_text[:60]}...")
+                        
+                        if relevant_chunks:
+                            semantic_results[category] = relevant_chunks
+                    
+                    except Exception as e:
+                        print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
+                
+                # Enriquecer texto extraído con chunks semánticamente relevantes
+                if semantic_results:
+                    print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
+                    enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
+                    
+                    for category, chunks in semantic_results.items():
+                        enriched_text += f"\n--- {category.upper()} ---\n"
+                        for chunk_data in chunks[:2]:  # Top 2 por categoría
+                            enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
+                            enriched_text += chunk_data['text'][:500] + "...\n\n"
+                    
+                    # Prefijar el texto enriquecido al texto original
+                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
             
             # NUEVA: Extracción total mejorada
+            total_extracted = 0
             if financial_data:
                 total_extracted = sum(len(values) for values in financial_data.values() if values)
-                print(f" Total extraído: {total_extracted} entradas financieras")
+                print(f"💰 Total extraído: {total_extracted} entradas financieras")
             
             confidence = 1.0 if total_chars > 3000 else 0.8 if total_chars > 1500 else 0.6
+            
+            # NUEVO: Ajustar confianza si se encontraron resultados semánticos
+            if semantic_results:
+                confidence = min(1.0, confidence + 0.1)  # Bonus por búsqueda semántica exitosa
             
             return {
                 "success": True,
                 "text": extracted_text,
                 "total_characters": total_chars,
                 "pages_processed": relevant_pages,
-                "financial_data": financial_data,  # NUEVO
+                "financial_data": financial_data,
                 "confidence": confidence,
-                "language": detect_language(extracted_text)
+                "language": detect_language(extracted_text),
+                "semantic_results": semantic_results,  # NUEVO
+                "semantic_categories_found": len(semantic_results),  # NUEVO
+                "total_chunks_analyzed": len(all_text_chunks)  # NUEVO
             }
             
         except Exception as e:
+            print(f"❌ Error en extract_income_data_enhanced: {e}")
             return {"success": False, "error": str(e)}
+
+    def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
+        """
+        Divide texto en chunks para procesamiento con embeddings
+        
+        Args:
+            text: Texto a dividir
+            chunk_size: Tamaño aproximado de cada chunk en caracteres
+            
+        Returns:
+            Lista de chunks de texto
+        """
+        if not text:
+            return []
+        
+        words = text.split()
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for word in words:
+            word_length = len(word) + 1  # +1 por el espacio
+            
+            # Si agregar la palabra excede el límite y ya hay contenido, crear nuevo chunk
+            if current_length + word_length > chunk_size and current_chunk:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_length = 0
+            
+            current_chunk.append(word)
+            current_length += word_length
+        
+        # Agregar el último chunk si existe
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+        
+        return chunks
+
 
     def validate_income_data_enhanced(self, extraction: Dict[str, Any]) -> Dict[str, Any]:
         """NUEVA FUNCIÓN: Validación mejorada de datos de cuenta de resultados"""

@@ -28,70 +28,160 @@ load_dotenv(env_path)
 os.chdir(project_root)
 
 if not env_path.exists():
-    print(f"⚠️ Warning: Archivo .env no encontrado en {env_path}")
+    print(f" Warning: Archivo .env no encontrado en {env_path}")
 
-print("🔧 Cargar .env desde el directorio raíz del proyecto...")
+print(" Cargar .env desde el directorio raíz del proyecto...")
 
 # ===== CONFIGURACIÓN AZURE OPENAI =====
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
 AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_EMBEDDING_MODEL = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
 
-print("🔧 ----- Azure OpenAI Configuration -----")
-print(f"🔗 Endpoint: {AZURE_OPENAI_ENDPOINT}")
-print(f"🔑 API Key: {'✓' if AZURE_OPENAI_API_KEY else '✗'}")
-print(f"📋 Deployment: {AZURE_OPENAI_DEPLOYMENT}")
+
+print(" ----- Azure OpenAI Configuration -----")
+print(f" Endpoint: {AZURE_OPENAI_ENDPOINT}")
+print(f" API Key: {'✓' if AZURE_OPENAI_API_KEY else '✗'}")
+print(f" Deployment: {AZURE_OPENAI_DEPLOYMENT}")
 
 if not AZURE_OPENAI_ENDPOINT or not AZURE_OPENAI_API_KEY:
     raise ValueError("Azure OpenAI credentials required")
 
 # ===== CONFIGURACIÓN GROQ =====
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+#GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+#GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-print("🔧 ----- Groq Configuration -----")
-print(f"🔑 API Key: {'✓' if GROQ_API_KEY else '✗'}")
-print(f"🤖 Model: {GROQ_MODEL}")
 
 # ===== CLIENTE CHAT =====
 class ChatClient:
+    """Cliente de chat usando Azure OpenAI """
+    
     def __init__(self):
-        self.azure_client = AzureOpenAI(
+        # Usar Azure OpenAI en lugar de Groq
+        self.client = AzureOpenAI(
             azure_endpoint=AZURE_OPENAI_ENDPOINT,
             api_key=AZURE_OPENAI_API_KEY,
             api_version=AZURE_OPENAI_API_VERSION
-        ) if AZURE_OPENAI_API_KEY else None
+        )
+        self.model = AZURE_OPENAI_DEPLOYMENT  # gpt-4o
         
-        self.groq_client = groq.Groq(
-            api_key=GROQ_API_KEY
-        ) if GROQ_API_KEY else None
-
-    def chat(self, history: List[Dict[str, str]], max_tokens: int = 1500) -> str:
-        try:
-            if self.groq_client:
-                response = self.groq_client.chat.completions.create(
-                    model=GROQ_MODEL,
-                    messages=history,
-                    max_tokens=max_tokens,
-                    temperature=0.1
-                )
-                return response.choices[0].message.content
+    def chat(self, messages: List[Dict], **kwargs) -> str:
+        """
+        Genera respuesta de chat usando Azure OpenAI
+        
+        Args:
+            messages: Lista de mensajes [{"role": "system/user/assistant", "content": "..."}]
+            **kwargs: Parámetros adicionales (temperature, max_tokens, etc.)
             
-            elif self.azure_client:
-                response = self.azure_client.chat.completions.create(
-                    model=AZURE_OPENAI_DEPLOYMENT,
-                    messages=history,
-                    max_tokens=max_tokens,
-                    temperature=0.1
-                )
-                return response.choices[0].message.content
-                
+        Returns:
+            Contenido de la respuesta del asistente
+        """
+        try:
+            # Extraer parámetros con valores por defecto
+            temperature = kwargs.get('temperature', 0.0)
+            max_tokens = kwargs.get('max_tokens', 2000)
+            
+            # Llamar a Azure OpenAI
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            
+            # Extraer contenido de la respuesta
+            return response.choices[0].message.content
+            
         except Exception as e:
-            raise RuntimeError(f"Chat API error: {str(e)}")
+            raise RuntimeError(f"Chat API error: {e}")
+
+
+# ===== CLIENTE EMBEDDINGS AZURE =====
+class AzureEmbeddingClient:
+    """Cliente para generar embeddings usando Azure OpenAI"""
+    
+    def __init__(self):
+        self.client = AzureOpenAI(
+            azure_endpoint=AZURE_OPENAI_ENDPOINT,
+            api_key=AZURE_OPENAI_API_KEY,
+            api_version=AZURE_OPENAI_API_VERSION
+        )
+        self.model = AZURE_EMBEDDING_MODEL
+        
+    def get_text_embedding(self, text: str, max_length: int = 8000) -> Optional[np.ndarray]:
+        """
+        Genera embeddings usando Azure OpenAI
+        
+        Args:
+            text: Texto para generar embedding
+            max_length: Longitud máxima del texto
+            
+        Returns:
+            Vector de embedding normalizado o None si hay error
+        """
+        try:
+            # Truncar texto si excede el límite
+            text = text[:max_length] if len(text) > max_length else text
+            
+            # Generar embedding con Azure OpenAI
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=text
+            )
+            
+            # Extraer el vector de embedding
+            embedding = np.array(response.data[0].embedding)
+            
+            # Normalizar el embedding para cosine similarity
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+            
+            return embedding
+            
+        except Exception as e:
+            print(f"❌ Error generating Azure embedding: {e}")
+            return None
+    
+    def find_similar_sections(
+        self, 
+        query_text: str, 
+        text_chunks: List[str], 
+        top_k: int = 5
+    ) -> List[tuple]:
+        """
+        Encuentra secciones más relevantes usando embeddings
+        
+        Args:
+            query_text: Texto de consulta
+            text_chunks: Lista de chunks de texto
+            top_k: Número de resultados a devolver
+            
+        Returns:
+            Lista de tuplas (índice, similaridad, texto)
+        """
+        query_embedding = self.get_text_embedding(query_text)
+        if query_embedding is None:
+            return []
+        
+        similarities = []
+        for i, chunk in enumerate(text_chunks):
+            chunk_embedding = self.get_text_embedding(chunk)
+            if chunk_embedding is not None:
+                similarity = cosine_similarity(
+                    [query_embedding], 
+                    [chunk_embedding]
+                )[0][0]
+                similarities.append((i, float(similarity), chunk))
+        
+        # Ordenar por similaridad descendente
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        return similarities[:top_k]
 
 # ===== INICIALIZACIÓN =====
 chat_client = ChatClient()
+embedding_client = AzureEmbeddingClient() 
 
 # ===== HERRAMIENTAS ESPECÍFICAS PARA EQUITY =====
 
@@ -102,7 +192,7 @@ class AnalyzeEquityStructureTool:
     
     def run(self, pdf_path: str, anchor_page: int = 8, max_pages: int = 25, extend: int = 2, **kwargs) -> Dict[str, Any]:
         try:
-            print(f"🔍 Analizando estructura de cambios en patrimonio - página ancla: {anchor_page}")
+            print(f" Analizando estructura de cambios en patrimonio - página ancla: {anchor_page}")
             
             # Páginas objetivo más probables para cambios en patrimonio
             target_pages = list(range(max(1, anchor_page - extend), min(max_pages, anchor_page + extend + 1)))
@@ -123,7 +213,7 @@ class AnalyzeEquityStructureTool:
                         ]
                         
                         if any(indicator in text_lower for indicator in equity_indicators):
-                            print(f"✅ Cambios en patrimonio encontrados en página {page_num}")
+                            print(f" Cambios en patrimonio encontrados en página {page_num}")
                             found_equity = True
                             break
             
@@ -138,9 +228,10 @@ class AnalyzeEquityStructureTool:
             return {"success": False, "error": str(e)}
 
 @dataclass
+@dataclass
 class ExtractEquityStatementTool:
     name: str = "extractequitystatement"
-    description: str = "Extrae el contenido del estado de cambios en patrimonio"
+    description: str = "Extrae el contenido del estado de cambios en patrimonio con búsqueda semántica"
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
@@ -149,6 +240,7 @@ class ExtractEquityStatementTool:
             
             extracted_text = ""
             total_chars = 0
+            all_text_chunks = []  # NUEVO: Para búsqueda semántica
             
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
@@ -159,7 +251,7 @@ class ExtractEquityStatementTool:
                         # Buscar contenido relevante de cambios en patrimonio
                         text_lower = text.lower()
                         equity_keywords = [
-                            "share capital", "retained earnings", "reserves", "equity", 
+                            "share capital", "retained earnings", "reserves", "equity",
                             "capital social", "reservas", "patrimonio", "dividends",
                             "comprehensive income", "other equity", "total equity"
                         ]
@@ -167,34 +259,98 @@ class ExtractEquityStatementTool:
                         if any(keyword in text_lower for keyword in equity_keywords):
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
+                            
+                            # NUEVO: Dividir en chunks para embeddings
+                            page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                            all_text_chunks.extend([
+                                {'page': page_num, 'chunk': chunk}
+                                for chunk in page_chunks
+                            ])
+                            
                             print(f"✅ Página {page_num}: {len(text)} caracteres extraídos")
             
             if not extracted_text:
                 # Fallback: extraer todas las páginas en el rango
+                print("⚠️ Aplicando fallback: extrayendo páginas 1-15")
                 with pdfplumber.open(pdf_path) as pdf:
                     for page_num in range(1, min(15, len(pdf.pages) + 1)):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                         total_chars += len(text)
+                        
+                        page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
+                        all_text_chunks.extend([
+                            {'page': page_num, 'chunk': chunk}
+                            for chunk in page_chunks
+                        ])
             
-            # Crear chunks semánticos
+            # ===== NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
+            semantic_results = {}
+            if all_text_chunks and extract_semantic_chunks:
+                print(f"🔍 Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
+                
+                chunk_texts = [item['chunk'] for item in all_text_chunks]
+                
+                # Queries semánticas específicas para cambios en patrimonio
+                semantic_queries = {
+                    'share_capital': "capital social acciones ordinarias y movimientos de capital",
+                    'retained_earnings': "resultados acumulados beneficios retenidos y reservas",
+                    'dividends': "dividendos pagados distribución de beneficios a accionistas",
+                    'reserves': "reservas legales reservas estatutarias y otras reservas",
+                    'comprehensive_income': "resultado global resultado integral otro resultado integral",
+                    'total_equity': "patrimonio total patrimonio neto consolidado equity total"
+                }
+                
+                for category, query in semantic_queries.items():
+                    try:
+                        similar_sections = embedding_client.find_similar_sections(
+                            query, 
+                            chunk_texts, 
+                            top_k=3
+                        )
+                        
+                        relevant_chunks = []
+                        for idx, score, chunk_text in similar_sections:
+                            if score > 0.65:  # Umbral de similaridad
+                                chunk_info = all_text_chunks[idx]
+                                relevant_chunks.append({
+                                    'score': score,
+                                    'text': chunk_text,
+                                    'page': chunk_info['page']
+                                })
+                                print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']}): {chunk_text[:60]}...")
+                        
+                        if relevant_chunks:
+                            semantic_results[category] = relevant_chunks
+                    
+                    except Exception as e:
+                        print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
+                
+                # Enriquecer texto con resultados semánticos
+                if semantic_results:
+                    print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
+                    enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
+                    
+                    for category, chunks in semantic_results.items():
+                        enriched_text += f"\n--- {category.upper()} ---\n"
+                        for chunk_data in chunks[:2]:  # Top 2 por categoría
+                            enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
+                            enriched_text += chunk_data['text'][:500] + "...\n\n"
+                    
+                    # Prefijar al texto original
+                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
+            
+            # Crear chunks básicos (compatibilidad)
             chunks = []
-            if extract_semantic_chunks and extracted_text:
-                lines = extracted_text.split('\n')
-                current_chunk = ""
-                
-                for line in lines:
-                    if len(current_chunk) > 800:
-                        chunks.append(current_chunk.strip())
-                        current_chunk = line
-                    else:
-                        current_chunk += "\n" + line
-                
-                if current_chunk.strip():
-                    chunks.append(current_chunk.strip())
+            if extracted_text:
+                chunks = self._split_text_into_chunks(extracted_text, chunk_size=800)
             
             confidence = 1.0 if total_chars > 1000 else 0.8
+            
+            # NUEVO: Ajustar confianza con embeddings
+            if semantic_results:
+                confidence = min(1.0, confidence + 0.1)
             
             return {
                 "success": True,
@@ -202,11 +358,39 @@ class ExtractEquityStatementTool:
                 "total_characters": total_chars,
                 "chunks": chunks,
                 "confidence": confidence,
-                "pages_processed": pages_to_process
+                "pages_processed": pages_to_process,
+                "semantic_results": semantic_results,  # NUEVO
+                "semantic_categories_found": len(semantic_results),  # NUEVO
+                "total_chunks_analyzed": len(all_text_chunks)  # NUEVO
             }
             
         except Exception as e:
             return {"success": False, "error": str(e)}
+    
+    def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
+        """Divide texto en chunks para procesamiento con embeddings"""
+        if not text:
+            return []
+        
+        words = text.split()
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for word in words:
+            word_length = len(word) + 1
+            if current_length + word_length > chunk_size and current_chunk:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = []
+                current_length = 0
+            current_chunk.append(word)
+            current_length += word_length
+        
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+        
+        return chunks
+
 
 @dataclass
 class ValidateEquityQualityTool:
@@ -227,19 +411,19 @@ class ValidateEquityQualityTool:
             # Verificar componentes principales
             if "share capital" in text_lower or "capital social" in text_lower:
                 quality_score += 25
-                validation_details.append("✅ Capital social encontrado")
+                validation_details.append(" Capital social encontrado")
             
             if "retained earnings" in text_lower or "resultados acumulados" in text_lower:
                 quality_score += 25
-                validation_details.append("✅ Resultados acumulados encontrados")
+                validation_details.append(" Resultados acumulados encontrados")
             
             if "reserves" in text_lower or "reservas" in text_lower:
                 quality_score += 25
-                validation_details.append("✅ Reservas encontradas")
+                validation_details.append(" Reservas encontradas")
             
             if "total equity" in text_lower or "patrimonio total" in text_lower:
                 quality_score += 25
-                validation_details.append("✅ Patrimonio total encontrado")
+                validation_details.append(" Patrimonio total encontrado")
             
             # Determinar calidad
             if quality_score >= 75:
@@ -253,7 +437,7 @@ class ValidateEquityQualityTool:
             
             final_confidence = min(confidence + (quality_score / 100), 1.0)
             
-            print(f"✅ Validación completada: {quality} (confianza: {final_confidence:.3f})")
+            print(f" Validación completada: {quality} (confianza: {final_confidence:.3f})")
             
             return {
                 "success": True,
@@ -329,7 +513,7 @@ EXTRACCIÓN:
                 f.write(quality_report)
             files_created += 1
             
-            print(f"💾 Archivos guardados en: {output_path}")
+            print(f" Archivos guardados en: {output_path}")
             print(f" - JSON: {base_name}_equity_summary.json")
             print(f" - Chunks: {base_name}_semantic_chunks.json")  
             print(f" - Reporte: {base_name}_equity_quality.txt")
@@ -385,7 +569,7 @@ class EquityREACTAgent:
     def run_final_financial_extraction_agent(self, pdf_path: str, question: str = None) -> Dict[str, Any]:
         """Ejecuta la extracción de cambios en patrimonio con patrón REACT"""
         try:
-            print(f"🚀 EquityREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
+            print(f" EquityREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
             
             pdf_file = Path(pdf_path)
             output_dir = Path("data/salida")
@@ -405,23 +589,23 @@ class EquityREACTAgent:
             finished = False
             steps = 0
             
-            print(f"🚀 Iniciando Equity Agent MEJORADO para {pdf_file.name}")
-            print(f"📄 PDF: {pdf_file}")
-            print(f"📁 Output: {output_dir}")
-            print(f"🎯 Anchor page: {tools_ctx['anchorpage']}")
+            print(f" Iniciando Equity Agent MEJORADO para {pdf_file.name}")
+            print(f" PDF: {pdf_file}")
+            print(f" Output: {output_dir}")
+            print(f" Anchor page: {tools_ctx['anchorpage']}")
             
             while not finished and steps < self.max_steps:
                 steps += 1
-                print(f"📍 Paso ReAct {steps}/{self.max_steps}")
+                print(f" Paso ReAct {steps}/{self.max_steps}")
                 
                 history, finished = self.execute_react_step(history, tools_ctx)
                 
                 if finished:
-                    print(f"🎉 TAREA COMPLETADA - Finalizando flujo ReAct")
+                    print(f" TAREA COMPLETADA - Finalizando flujo ReAct")
                     break
             
             if steps >= self.max_steps:
-                print(f"⚠️ Alcanzado límite máximo de pasos ({self.max_steps})")
+                print(f" Alcanzado límite máximo de pasos ({self.max_steps})")
                 return {
                     "status": "error",
                     "steps_taken": steps,
@@ -435,8 +619,8 @@ class EquityREACTAgent:
             # Generar respuesta específica
             specific_answer = self.generate_specific_response(question, tools_ctx)
             
-            print("✅ Análisis completado exitosamente")
-            print("✅ Equity extraction completed successfully (AUTÓNOMO)")
+            print(" Análisis completado exitosamente")
+            print(" Equity extraction completed successfully (AUTÓNOMO)")
             
             return {
                 "status": "task_completed",
@@ -449,7 +633,7 @@ class EquityREACTAgent:
             }
             
         except Exception as e:
-            print(f"❌ Error en EquityREACTAgent: {str(e)}")
+            print(f" Error en EquityREACTAgent: {str(e)}")
             return {
                 "status": "error",
                 "steps_taken": 0,
@@ -466,12 +650,12 @@ class EquityREACTAgent:
             assistant_text = self.chat_client.chat(history, max_tokens=100)
             history.append({"role": "assistant", "content": assistant_text})
             
-            print(f"🤖 Respuesta: {assistant_text.strip()}")
+            print(f" Respuesta: {assistant_text.strip()}")
             
             # FINALIZACIÓN: Solo si es respuesta específica y corta
             if (len(assistant_text.strip()) < 50 and 
                 "equityextractioncompleted" in assistant_text.lower()):
-                print(f"🎉 FINALIZACIÓN CORRECTA DETECTADA")
+                print(f" FINALIZACIÓN CORRECTA DETECTADA")
                 return history, True
             
             # TOOL DETECTION: Buscar herramienta específica
@@ -495,7 +679,7 @@ class EquityREACTAgent:
                 return history, False
             
             # EJECUTAR HERRAMIENTA
-            print(f"🚀 EJECUTANDO: {tool_name}")
+            print(f" EJECUTANDO: {tool_name}")
             
             # Preparar parámetros según herramienta
             if tool_name == "analyzeequitystructure":
@@ -527,29 +711,29 @@ class EquityREACTAgent:
             result = tool_obj.run(**params)
             
             if result.get("success"):
-                print(f"✅ {tool_name} exitoso")
+                print(f" {tool_name} exitoso")
                 
                 # Actualizar contexto
                 if tool_name == "analyzeequitystructure":
                     tools_ctx["lastanalysis"] = result
-                    feedback = f"✅ Estructura analizada. Siguiente herramienta: extractequitystatement"
+                    feedback = f" Estructura analizada. Siguiente herramienta: extractequitystatement"
                 elif tool_name == "extractequitystatement":
                     tools_ctx["lastextraction"] = result
-                    feedback = f"✅ Datos extraídos. Siguiente herramienta: validateequityquality"
+                    feedback = f" Datos extraídos. Siguiente herramienta: validateequityquality"
                 elif tool_name == "validateequityquality":
                     tools_ctx["lastvalidation"] = result
-                    feedback = f"✅ Validación completa. Siguiente herramienta: saveequityresults"
+                    feedback = f" Validación completa. Siguiente herramienta: saveequityresults"
                 elif tool_name == "saveequityresults":
                     tools_ctx["files_created"] = result.get("files_created", 3)
-                    feedback = f"✅ Archivos guardados. Responde con: EQUITYEXTRACTIONCOMPLETED"
+                    feedback = f" Archivos guardados. Responde con: EQUITYEXTRACTIONCOMPLETED"
             else:
-                feedback = f"❌ Error en {tool_name}: {result.get('error')}"
+                feedback = f" Error en {tool_name}: {result.get('error')}"
             
             history.append({"role": "user", "content": feedback})
             return history, False
             
         except Exception as e:
-            print(f"❌ Error: {str(e)}")
+            print(f" Error: {str(e)}")
             return history, False
     
     def generate_specific_response(self, question: str, tools_ctx: Dict[str, Any]) -> str:
@@ -605,7 +789,7 @@ No inventes cifras que no aparezcan en el texto. Si una sección no tiene datos 
                 
                 # Combinar el análisis del LLM con información técnica
                 response_parts = [
-                    "📊 **ANÁLISIS DETALLADO DE CAMBIOS EN PATRIMONIO - GarantiBank International N.V.**",
+                    " **ANÁLISIS DETALLADO DE CAMBIOS EN PATRIMONIO - GarantiBank International N.V.**",
                     "=" * 80,
                     "",
                     analysis_response,
@@ -618,7 +802,7 @@ No inventes cifras que no aparezcan en el texto. Si una sección no tiene datos 
                     "• **Fuente**: Estado de cambios en patrimonio consolidado de GarantiBank International N.V.",
                     "",
                     "=" * 80,
-                    "📊 *Análisis generado por sistema de IA especializada en análisis patrimonial*"
+                    " *Análisis generado por sistema de IA especializada en análisis patrimonial*"
                 ]
                 
                 return "\n".join(response_parts)
@@ -635,7 +819,7 @@ No inventes cifras que no aparezcan en el texto. Si una sección no tiene datos 
         """Análisis de respaldo basado en extracción de datos específicos del texto"""
         
         response_parts = []
-        response_parts.append("📊 **ANÁLISIS DE CAMBIOS EN PATRIMONIO - GarantiBank International N.V.**")
+        response_parts.append(" **ANÁLISIS DE CAMBIOS EN PATRIMONIO - GarantiBank International N.V.**")
         response_parts.append("=" * 70)
         
         text_lower = text.lower()
@@ -672,7 +856,7 @@ No inventes cifras que no aparezcan en el texto. Si una sección no tiene datos 
         else:
             response_parts.append("• Las reservas y resultados acumulados requieren análisis detallado")
         
-        response_parts.append("\n### 📊 **PATRIMONIO TOTAL**")
+        response_parts.append("\n###  **PATRIMONIO TOTAL**")
         if "total equity" in text_lower or "patrimonio total" in text_lower:
             response_parts.append("• Evolución del patrimonio total consolidado identificada")
             if found_amounts:
@@ -680,7 +864,7 @@ No inventes cifras que no aparezcan en el texto. Si una sección no tiene datos 
         else:
             response_parts.append("• El patrimonio total requiere análisis cuantitativo específico")
         
-        response_parts.append("\n### 🎯 **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
+        response_parts.append("\n###  **CONCLUSIONES BASADAS EN DATOS EXTRAÍDOS**")
         response_parts.append(f"• **Calidad del análisis**: {quality.title()} con {confidence:.1%} de confianza")
         response_parts.append(f"• **Contenido procesado**: {len(text)} caracteres de estado patrimonial")
         
