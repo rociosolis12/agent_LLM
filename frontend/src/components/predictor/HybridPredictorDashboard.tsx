@@ -27,14 +27,40 @@ export const HybridPredictorDashboard: React.FC<HybridPredictorDashboardProps> =
 
   const [activeTab, setActiveTab] = useState<'overview' | 'predictions' | 'validation' | 'recommendations'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState<string>('');
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
+    setAnalysisProgress('🔄 Iniciando análisis predictor híbrido...');
+
     try {
+      // Simular progreso (opcional - puedes implementar SSE para progreso real)
+      const progressInterval = setInterval(() => {
+        const progressMessages = [
+          '📄 Extrayendo datos financieros del PDF...',
+          '🧮 Generando predicciones con Prophet y XGBoost...',
+          '✅ Ejecutando validación walk-forward...',
+          '🤖 Analizando con LLM híbrido...',
+          '📊 Aplicando configuración regulatoria...',
+        ];
+        const randomMessage = progressMessages[Math.floor(Math.random() * progressMessages.length)];
+        setAnalysisProgress(randomMessage);
+      }, 3000);
+
       await runAnalysis(bankSymbol);
-      alert('✅ Análisis híbrido completado exitosamente');
+      
+      clearInterval(progressInterval);
+      setAnalysisProgress('✅ Análisis completado exitosamente');
+      
+      // Mostrar notificación de éxito
+      setTimeout(() => {
+        setAnalysisProgress('');
+      }, 3000);
+
     } catch (err) {
-      alert('❌ Error ejecutando análisis: ' + (err as Error).message);
+      console.error('Error en handleRunAnalysis:', err);
+      setAnalysisProgress('');
+      // El error ya está manejado en el hook y se muestra en la UI
     } finally {
       setIsAnalyzing(false);
     }
@@ -44,35 +70,52 @@ export const HybridPredictorDashboard: React.FC<HybridPredictorDashboardProps> =
     <div className="hybrid-predictor-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <div className="header-content">
-          <h1>🚀 Predictor Híbrido - {bankSymbol}</h1>
-          <div className="header-actions">
-            <button
-              onClick={loadData}
-              disabled={loading}
-              className="btn-secondary"
-            >
-              🔄 {loading ? 'Actualizando...' : 'Actualizar'}
-            </button>
-            <button
-              onClick={handleRunAnalysis}
-              disabled={loading || isAnalyzing}
-              className="btn-primary"
-            >
-              {isAnalyzing ? '⏳ Ejecutando...' : '▶️ Ejecutar Análisis'}
-            </button>
-          </div>
+        <h1>🚀 Predictor Híbrido - {bankSymbol}</h1>
+        <div className="header-actions">
+          <button 
+            onClick={loadData} 
+            disabled={loading || isAnalyzing}
+            className="btn-secondary"
+          >
+            🔄 {loading ? 'Actualizando...' : 'Actualizar'}
+          </button>
+          <button 
+            onClick={handleRunAnalysis} 
+            disabled={loading || isAnalyzing}
+            className="btn-primary"
+          >
+            {isAnalyzing ? '⏳ Ejecutando...' : '▶️ Ejecutar Análisis'}
+          </button>
         </div>
-
-        {/* Pipeline Status */}
-        {pipelineStatus && <PipelineStatus status={pipelineStatus} />}
       </div>
+
+      {/* Progress Indicator */}
+      {isAnalyzing && analysisProgress && (
+        <div className="progress-banner">
+          <div className="progress-spinner"></div>
+          <span>{analysisProgress}</span>
+          <span className="progress-time">⏱️ Esto puede tardar 3-5 minutos...</span>
+        </div>
+      )}
+
+      {/* Pipeline Status */}
+      {pipelineStatus && <PipelineStatus status={pipelineStatus} />}
 
       {/* Error Display */}
       {error && (
         <div className="error-banner">
-          <span>⚠️ {error}</span>
-          <button onClick={() => window.location.reload()}>Recargar</button>
+          <div className="error-content">
+            <span className="error-icon">⚠️</span>
+            <span className="error-message">{error}</span>
+          </div>
+          <div className="error-actions">
+            <button onClick={loadData} className="btn-retry">
+              🔄 Reintentar
+            </button>
+            <button onClick={() => window.location.reload()} className="btn-reload">
+              ↻ Recargar Página
+            </button>
+          </div>
         </div>
       )}
 
@@ -106,41 +149,42 @@ export const HybridPredictorDashboard: React.FC<HybridPredictorDashboardProps> =
 
       {/* Content */}
       <div className="dashboard-content">
-        {loading && (
-          <div className="loading-spinner">
-            ⏳ Cargando datos...
+        {loading && !isAnalyzing && (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>⏳ Cargando datos...</p>
           </div>
         )}
 
         {!loading && (
           <>
             {activeTab === 'overview' && (
-              <div className="overview-content">
-                <div className="metrics-grid">
-                  <div className="metric-card">
-                    <h3>Nivel de Confianza</h3>
-                    <div className={`metric-value confidence-${predictions?.confidence_level?.toLowerCase()}`}>
-                      {predictions?.confidence_level || 'N/A'}
-                    </div>
+              <div className="overview-grid">
+                <div className="metric-card">
+                  <h3>Nivel de Confianza</h3>
+                  <div className="metric-value">
+                    {predictions?.confidence_level 
+                      ? `${(predictions.confidence_level * 100).toFixed(1)}%` 
+                      : 'N/A'}
                   </div>
-                  <div className="metric-card">
-                    <h3>Predicciones ML</h3>
-                    <div className="metric-value">
-                      {predictions?.ml_predictions?.length || 0}
-                    </div>
+                </div>
+                <div className="metric-card">
+                  <h3>Predicciones ML</h3>
+                  <div className="metric-value">
+                    {predictions?.ml_predictions?.length || 0}
                   </div>
-                  <div className="metric-card">
-                    <h3>Métricas Validadas</h3>
-                    <div className="metric-value">
-                      {Object.keys(predictions?.validation_results || {}).length}
-                    </div>
+                </div>
+                <div className="metric-card">
+                  <h3>Métricas Validadas</h3>
+                  <div className="metric-value">
+                    {Object.keys(predictions?.validation_results || {}).length}
                   </div>
-                  <div className="metric-card">
-                    <h3>Recomendaciones</h3>
-                    <div className="metric-value">
-                      {(recommendations?.strategic?.length || 0) +
-                        (recommendations?.tactical?.length || 0)}
-                    </div>
+                </div>
+                <div className="metric-card">
+                  <h3>Recomendaciones</h3>
+                  <div className="metric-value">
+                    {(recommendations?.strategic?.length || 0) +
+                      (recommendations?.tactical?.length || 0)}
                   </div>
                 </div>
 
@@ -153,11 +197,23 @@ export const HybridPredictorDashboard: React.FC<HybridPredictorDashboardProps> =
             )}
 
             {activeTab === 'validation' && predictions?.validation_results && (
-              <ValidationMetrics data={predictions.validation_results} />
+              <ValidationMetrics metrics={predictions.validation_results} />
             )}
 
             {activeTab === 'recommendations' && recommendations && (
-              <RecommendationsList data={recommendations} />
+              <RecommendationsList recommendations={recommendations} />
+            )}
+
+            {/* Empty state */}
+            {!predictions && !loading && !isAnalyzing && (
+              <div className="empty-state">
+                <div className="empty-icon">📊</div>
+                <h3>No hay datos disponibles</h3>
+                <p>Haz clic en "Ejecutar Análisis" para generar predicciones</p>
+                <button onClick={handleRunAnalysis} className="btn-primary">
+                  ▶️ Ejecutar Análisis Ahora
+                </button>
+              </div>
             )}
           </>
         )}
