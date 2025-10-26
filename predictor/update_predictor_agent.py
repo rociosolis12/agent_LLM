@@ -8,6 +8,27 @@ import warnings
 import os
 from datetime import datetime, timedelta
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Cargar .env desde el directorio raíz del proyecto
+project_root = Path(__file__).parent.parent
+env_path = project_root / ".env"
+load_dotenv(env_path)
+os.chdir(project_root)
+
+if not env_path.exists():
+    print(f"Archivo .env no encontrado en {env_path}")
+
+# Cargar las API keys
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-10-21")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+AZURE_EMBEDDING_MODEL = os.getenv("AZURE_EMBEDDING_MODEL", "text-embedding-3-small")
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 warnings.filterwarnings('ignore')
 
@@ -83,7 +104,7 @@ class EvolutionaryPredictorAgent:
 
     def _generate_mock_market_data(self):
         """Genera datos simulados si las APIs fallan"""
-        logger.info("🎭 Generando datos de mercado simulados")
+        logger.info(" Generando datos de mercado simulados")
         periods = 20
         dates = pd.date_range('2020-01-01', periods=periods, freq='Q')
         np.random.seed(42)
@@ -105,20 +126,28 @@ class EvolutionaryPredictorAgent:
             'ds': financial_series.index,
             'y': financial_series.values
         })
-        # Integración de datos externos con reindex y doble rellenado
+        
+        # Asegurar que 'ds' sea datetime timezone-naive
+        df['ds'] = pd.to_datetime(df['ds']).dt.tz_localize(None)
+        
+        # Integración de datos externos con merge inteligente
         if external_data is not None:
             for key, series in external_data.items():
-                aligned = series.reindex(df['ds']).fillna(method='ffill').fillna(method='bfill')
-                df[f'external_{key}'] = aligned
-        # Saneamiento estricto de todas las columnas externas
-        for col in df.columns:
-            if col.startswith("external_"):
-                df[col] = df[col].fillna(method='ffill').fillna(method='bfill').fillna(0)
-                print(f">> NaNs después de limpiar {col}:", df[col].isna().sum())
-                print(f">> Valores (primeros 10) de {col}:\n", df[col].head(10))
-        df = df.fillna(method='ffill').fillna(method='bfill')
+                # Convertir series a DataFrame y eliminar timezone
+                ext_df = pd.DataFrame({
+                    'ds': pd.to_datetime(series.index).tz_localize(None),  # Eliminar timezone
+                    f'external_{key}': series.values
+                })
+                
+                # Hacer merge con df principal usando 'ds' como clave
+                df = pd.merge(df, ext_df, on='ds', how='left')
+                
+                # Rellenar valores faltantes
+                df[f'external_{key}'] = df[f'external_{key}'].ffill().bfill().fillna(0)
+                
+                logger.info(f"✅ {key}: min={df[f'external_{key}'].min():.2f}, max={df[f'external_{key}'].max():.2f}")
+        
         return df
-
 
     def prophet_prediction(self, df, metric_name, periods=4):
         """Predicción con Prophet"""

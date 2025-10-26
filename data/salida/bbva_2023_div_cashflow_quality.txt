@@ -1,8 +1,8 @@
 
 REPORTE DE CALIDAD EXTENDIDO - FLUJOS DE EFECTIVO
 =================================================
-PDF: data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-10-19 21:46:00
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Fecha: 2025-10-26 09:32:15
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: poor
@@ -11,8 +11,8 @@ RESULTADOS DE VALIDACIÓN:
 - Datos financieros encontrados: 4 categorías
 
 DETALLES DE VALIDACIÓN:
-✅ Actividades de financiación encontradas
-✅ Datos financieros específicos: 4 categorías
+ Actividades de financiación encontradas
+ Datos financieros específicos: 4 categorías
 
 EXTRACCIÓN DETALLADA:
 - Caracteres procesados: 2610

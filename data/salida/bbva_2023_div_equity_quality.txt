@@ -1,8 +1,8 @@
 
 REPORTE DE CALIDAD - CAMBIOS EN PATRIMONIO
 ==========================================
-PDF: data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-10-25 18:09:24
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Fecha: 2025-10-26 09:33:18
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: fair

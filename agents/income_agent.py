@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from openai import AzureOpenAI
 import groq
 import numpy as np
+from typing import Tuple
 from sklearn.metrics.pairwise import cosine_similarity
 
 # ===== CONFIGURACIÓN DEL PROYECTO =====
@@ -93,8 +94,9 @@ class ChatClient:
             raise RuntimeError(f"Chat API error: {str(e)}")
 
 # ===== CLIENTE EMBEDDINGS =====
+# ===== CLIENTE EMBEDDINGS OPTIMIZADO =====
 class AzureEmbeddingClient:
-    """Cliente para generar embeddings usando Azure OpenAI"""
+    """Cliente OPTIMIZADO para generar embeddings usando Azure OpenAI con batch processing"""
     
     def __init__(self):
         self.client = AzureOpenAI(
@@ -105,76 +107,81 @@ class AzureEmbeddingClient:
         self.model = AZURE_EMBEDDING_MODEL
         
     def get_text_embedding(self, text: str, max_length: int = 8000) -> Optional[np.ndarray]:
-        """
-        Genera embeddings usando Azure OpenAI
-        
-        Args:
-            text: Texto para generar embedding
-            max_length: Longitud máxima del texto
-            
-        Returns:
-            Vector de embedding normalizado o None si hay error
-        """
+        """Genera embedding individual (para queries)"""
         try:
-            # Truncar texto si excede el límite
             text = text[:max_length] if len(text) > max_length else text
-            
-            # Generar embedding con Azure OpenAI
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=text
-            )
-            
-            # Extraer el vector de embedding
+            response = self.client.embeddings.create(model=self.model, input=text)
             embedding = np.array(response.data[0].embedding)
-            
-            # Normalizar el embedding para cosine similarity
             norm = np.linalg.norm(embedding)
-            if norm > 0:
-                embedding = embedding / norm
-            
-            return embedding
-            
+            return embedding / norm if norm > 0 else embedding
         except Exception as e:
-            print(f"Error generating Azure embedding: {e}")
+            print(f"Error generating embedding: {e}")
             return None
     
-    def find_similar_sections(
-        self, 
-        query_text: str, 
-        text_chunks: List[str], 
-        top_k: int = 5
-    ) -> List[tuple]:
+    def get_batch_embeddings(self, texts: List[str], max_length: int = 8000) -> Optional[List[np.ndarray]]:
         """
-        Encuentra secciones más relevantes usando embeddings
+        OPTIMIZADO: Genera embeddings para múltiples textos en una sola llamada API
         
         Args:
-            query_text: Texto de consulta
-            text_chunks: Lista de chunks de texto
-            top_k: Número de resultados a devolver
+            texts: Lista de textos
+            max_length: Longitud máxima por texto
             
         Returns:
-            Lista de tuplas (índice, similaridad, texto)
+            Lista de vectores de embedding o None si hay error
         """
-        from sklearn.metrics.pairwise import cosine_similarity
+        try:
+            # Truncar cada texto
+            truncated_texts = [text[:max_length] for text in texts if text]
+            if not truncated_texts:
+                return None
+            
+            # Generar todos los embeddings en UNA sola llamada
+            response = self.client.embeddings.create(model=self.model, input=truncated_texts)
+            
+            # Extraer y normalizar embeddings
+            embeddings = []
+            for item in response.data:
+                embedding = np.array(item.embedding)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+                embeddings.append(embedding)
+            
+            return embeddings
+        except Exception as e:
+            print(f"Error generating batch embeddings: {e}")
+            return None
+    
+    def find_similar_sections_optimized(
+        self, 
+        query_text: str, 
+        text_chunks: List[str],
+        chunk_embeddings_cache: Optional[List[np.ndarray]] = None,
+        top_k: int = 5
+    ) -> Tuple[List[tuple], List[np.ndarray]]:
+        """
+        VERSIÓN OPTIMIZADA con caché de embeddings
         
+        Returns:
+            (resultados, chunk_embeddings) para reutilizar embeddings
+        """
+        
+        # 1. Embedding de query
         query_embedding = self.get_text_embedding(query_text)
         if query_embedding is None:
-            return []
+            return [], []
         
+        # 2. Reutilizar embeddings de chunks si existen
+        if chunk_embeddings_cache is None:
+            print(f"  Generando {len(text_chunks)} embeddings en batch...")
+            chunk_embeddings = self.get_batch_embeddings(text_chunks)
+            if chunk_embeddings is None:
+                return [], []
+        else:
+            chunk_embeddings = chunk_embeddings_cache
+        
+        # 3. Calcular similaridades (operación local, muy rápida)
         similarities = []
-        for i, chunk in enumerate(text_chunks):
-            chunk_embedding = self.get_text_embedding(chunk)
-            if chunk_embedding is not None:
-                similarity = cosine_similarity(
-                    [query_embedding], 
-                    [chunk_embedding]
-                )[0][0]
-                similarities.append((i, float(similarity), chunk))
-        
-        # Ordenar por similaridad descendente
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        return similarities[:top_k]
 
 
 # Inicialización del cliente
@@ -655,63 +662,73 @@ class IncomeREACTAgent:
             
             print(f"📄 Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
             
-            # ===== NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
+            # ===== BÚSQUEDA SEMÁNTICA OPTIMIZADA CON BATCH EMBEDDINGS =====
             semantic_results = {}
             if all_text_chunks:
-                print(f"🔍 Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
+                print(f" Aplicando búsqueda semántica optimizada ({len(all_text_chunks)} chunks)...")
                 
-                # Preparar solo el texto de los chunks
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
                 
-                # Queries semánticas para encontrar secciones relevantes de cuenta de resultados
-                semantic_queries = {
-                    'interest_income': "margen de intereses e ingresos financieros netos del banco",
-                    'commissions': "ingresos por comisiones y servicios bancarios prestados",
-                    'operating_expenses': "gastos operativos de personal y administración",
-                    'provisions': "provisiones para riesgos crediticios y deterioro de activos",
-                    'net_profit': "beneficio neto resultado del ejercicio después de impuestos",
-                    'margins': "rentabilidad márgenes de intermediación y eficiencia operativa"
-                }
+                #  OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
+                print(f"   Generando embeddings en batch...")
+                chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
                 
-                for category, query in semantic_queries.items():
-                    try:
-                        similar_sections = embedding_client.find_similar_sections(
-                            query, 
-                            chunk_texts, 
-                            top_k=3
-                        )
+                if chunk_embeddings is None:
+                    print("   Error generando embeddings, saltando búsqueda semántica")
+                else:
+                    print(f"   {len(chunk_embeddings)} embeddings generados en batch")
+                    
+                    # Queries semánticas para encontrar secciones relevantes de cuenta de resultados
+                    semantic_queries = {
+                        'interest_income': "margen de intereses e ingresos financieros netos del banco",
+                        'commissions': "ingresos por comisiones y servicios bancarios prestados",
+                        'operating_expenses': "gastos operativos de personal y administración",
+                        'provisions': "provisiones para riesgos crediticios y deterioro de activos",
+                        'net_profit': "beneficio neto resultado del ejercicio después de impuestos",
+                        'margins': "rentabilidad márgenes de intermediación y eficiencia operativa"
+                    }
+                    
+                    for category, query in semantic_queries.items():
+                        try:
+                            # OPTIMIZADO: Pasar embeddings cacheados para reutilizarlos
+                            similar_sections, _ = embedding_client.find_similar_sections_optimized(
+                                query, 
+                                chunk_texts,
+                                chunk_embeddings_cache=chunk_embeddings,  # Reutilizar embeddings
+                                top_k=3
+                            )
+                            
+                            relevant_chunks = []
+                            for idx, score, chunk_text in similar_sections:
+                                if score > 0.65:  # Umbral de similaridad
+                                    chunk_info = all_text_chunks[idx]
+                                    relevant_chunks.append({
+                                        'score': score,
+                                        'text': chunk_text,
+                                        'page': chunk_info['page'],
+                                        'relevance_score': chunk_info['score']
+                                    })
+                                    print(f"  {category} (score {score:.2f}, page {chunk_info['page']})")
+                            
+                            if relevant_chunks:
+                                semantic_results[category] = relevant_chunks
                         
-                        relevant_chunks = []
-                        for idx, score, chunk_text in similar_sections:
-                            if score > 0.65:  # Umbral de similaridad
-                                chunk_info = all_text_chunks[idx]
-                                relevant_chunks.append({
-                                    'score': score,
-                                    'text': chunk_text,
-                                    'page': chunk_info['page'],
-                                    'relevance_score': chunk_info['score']
-                                })
-                                print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']}): {chunk_text[:60]}...")
+                        except Exception as e:
+                            print(f"  Error en búsqueda semántica para {category}: {e}")
+                    
+                    # Enriquecer texto extraído con chunks semánticamente relevantes
+                    if semantic_results:
+                        print(f"Categorías encontradas con embeddings: {len(semantic_results)}")
+                        enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
                         
-                        if relevant_chunks:
-                            semantic_results[category] = relevant_chunks
-                    
-                    except Exception as e:
-                        print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
-                
-                # Enriquecer texto extraído con chunks semánticamente relevantes
-                if semantic_results:
-                    print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
-                    enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
-                    
-                    for category, chunks in semantic_results.items():
-                        enriched_text += f"\n--- {category.upper()} ---\n"
-                        for chunk_data in chunks[:2]:  # Top 2 por categoría
-                            enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
-                            enriched_text += chunk_data['text'][:500] + "...\n\n"
-                    
-                    # Prefijar el texto enriquecido al texto original
-                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
+                        for category, chunks in semantic_results.items():
+                            enriched_text += f"\n--- {category.upper()} ---\n"
+                            for chunk_data in chunks[:2]:  # Top 2 por categoría
+                                enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
+                                enriched_text += chunk_data['text'][:500] + "...\n\n"
+                        
+                        # Prefijar al texto original
+                        extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
             
             # NUEVA: Extracción total mejorada
             total_extracted = 0

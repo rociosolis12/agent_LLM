@@ -37,12 +37,12 @@
     "confidence": 1.0,
     "score": 33,
     "details": [
-      "✅ Actividades de financiación encontradas",
-      "✅ Datos financieros específicos: 4 categorías"
+      " Actividades de financiación encontradas",
+      " Datos financieros específicos: 4 categorías"
     ],
     "financial_data_found": 4
   },
-  "timestamp": "2025-10-19 21:46:00",
+  "timestamp": "2025-10-26 09:32:15",
   "extraction_quality_metrics": {
     "data_categories_found": 4,
     "quality_score": 33,
