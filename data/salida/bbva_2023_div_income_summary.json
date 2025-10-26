@@ -12,7 +12,6 @@
     ],
     "financial_data": {
       "years_found": [
-        "2022",
         "2023",
         "2022",
         "2023",
@@ -24,11 +23,12 @@
         "2023",
         "2022",
         "2023",
-        "2020",
-        "2023",
+        "2022",
         "2019",
+        "2023",
+        "2021",
         "2022",
-        "2021"
+        "2020"
       ],
       "net_interest_income": [],
       "fee_commission_income": [
@@ -62,7 +62,7 @@
     ],
     "financial_categories_found": 4
   },
-  "processing_timestamp": "2025-10-26 09:33:13",
+  "processing_timestamp": "2025-10-26 11:08:43",
   "quality_metrics": {
     "data_categories_found": 4,
     "quality_score": 58,

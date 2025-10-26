@@ -2,7 +2,7 @@
 REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
 ==================================================
 PDF: bbva_2023_div.pdf
-Fecha: 2025-10-26 09:33:13
+Fecha: 2025-10-26 11:08:43
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: fair
@@ -23,7 +23,6 @@ EXTRACCIÓN DETALLADA:
 - Datos financieros extraídos:
 {
   "years_found": [
-    "2022",
     "2023",
     "2022",
     "2023",
@@ -35,11 +34,12 @@ EXTRACCIÓN DETALLADA:
     "2023",
     "2022",
     "2023",
-    "2020",
-    "2023",
+    "2022",
     "2019",
+    "2023",
+    "2021",
     "2022",
-    "2021"
+    "2020"
   ],
   "net_interest_income": [],
   "fee_commission_income": [

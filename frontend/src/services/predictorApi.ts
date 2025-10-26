@@ -169,15 +169,23 @@ class PredictorApiService {
    * Obtiene las últimas predicciones
    * Nota: Este endpoint puede no existir, maneja el error gracefully
    */
+  /**
+ * Obtiene las últimas predicciones
+ */
   async getLatestPredictions(): Promise<PredictionData | null> {
     try {
-      const response = await this.api.get<PredictionData>(
-        '/api/predictor/predictions/latest'
-      );
-      return response.data;
+      const response = await this.api.get('/api/predictor/predictions/latest');
+      
+      console.log('📊 Raw predictions response:', response.data);
+      
+      // Extraer solo los datos de predicciones, no el wrapper
+      if (response.data.status === 'success') {
+        return response.data.predictions || null;  // ← CORRECCIÓN AQUÍ
+      }
+      
+      return null;
     } catch (error: any) {
-      console.warn(' No se pudieron cargar predicciones previas:', error.message);
-      // No lanzar error, retornar null si no hay datos previos
+      console.warn('⚠️ No se pudieron cargar predicciones previas:', error.message);
       return null;
     }
   }
@@ -187,12 +195,18 @@ class PredictorApiService {
    */
   async getPipelineStatus(): Promise<PipelineStatus | null> {
     try {
-      const response = await this.api.get<PipelineStatus>(
-        '/api/predictor/pipeline/status'
-      );
-      return response.data;
+      const response = await this.api.get('/api/predictor/pipeline/status');
+      
+      console.log('📊 Raw pipeline status response:', response.data);
+      
+      // Extraer solo el estado del pipeline
+      if (response.data.status === 'success') {
+        return response.data.pipeline_status || null;  // ← CORRECCIÓN AQUÍ
+      }
+      
+      return null;
     } catch (error: any) {
-      console.warn(' No se pudo cargar estado del pipeline:', error.message);
+      console.warn('⚠️ No se pudo cargar estado del pipeline:', error.message);
       return null;
     }
   }
@@ -202,15 +216,22 @@ class PredictorApiService {
    */
   async getRecommendations(): Promise<Recommendations | null> {
     try {
-      const response = await this.api.get<Recommendations>(
-        '/api/predictor/recommendations'
-      );
-      return response.data;
+      const response = await this.api.get('/api/predictor/recommendations');
+      
+      console.log('📊 Raw recommendations response:', response.data);
+      
+      // Extraer solo las recomendaciones
+      if (response.data.status === 'success') {
+        return response.data.recommendations || null;  
+      }
+      
+      return null;
     } catch (error: any) {
-      console.warn(' No se pudieron cargar recomendaciones:', error.message);
+      console.warn('⚠️ No se pudieron cargar recomendaciones:', error.message);
       return null;
     }
   }
+
 
   /**
    * Verifica el estado del servidor

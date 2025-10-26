@@ -17,32 +17,37 @@ export const usePredictorData = (autoLoad: boolean = true) => {
     setError(null);
 
     try {
-      // Intentar cargar datos existentes (pueden no existir aún)
+      // Cargar datos en paralelo
       const [predsData, statusData, recsData] = await Promise.all([
-        predictorApi.getLatestPredictions().catch(() => {
-          console.log('ℹ️ No predictions data available yet');
+        predictorApi.getLatestPredictions().catch((err) => {
+          console.log('ℹ️ No predictions data available yet:', err.message);
           return null;
         }),
-        predictorApi.getPipelineStatus().catch(() => {
-          console.log('ℹ️ No pipeline status available yet');
+        predictorApi.getPipelineStatus().catch((err) => {
+          console.log('ℹ️ No pipeline status available yet:', err.message);
           return null;
         }),
-        predictorApi.getRecommendations().catch(() => {
-          console.log('ℹ️ No recommendations available yet');
+        predictorApi.getRecommendations().catch((err) => {
+          console.log('ℹ️ No recommendations available yet:', err.message);
           return null;
         }),
       ]);
+
+      console.log('📊 Data loaded:', {
+        predictions: predsData ? 'loaded' : 'null',
+        pipeline: statusData ? 'loaded' : 'null',
+        recommendations: recsData ? 'loaded' : 'null'
+      });
 
       setPredictions(predsData);
       setPipelineStatus(statusData);
       setRecommendations(recsData);
       
-      console.log('✅ Data loaded successfully');
+      console.log('✅ State updated successfully');
 
     } catch (err: any) {
       console.error('❌ Error loading data:', err);
-      // No establecer error aquí, solo en runAnalysis
-      // porque la carga inicial puede fallar si no hay datos previos
+      // No establecer error aquí para evitar mostrar mensaje en carga inicial
     } finally {
       setLoading(false);
     }
@@ -54,7 +59,7 @@ export const usePredictorData = (autoLoad: boolean = true) => {
     setError(null);
 
     try {
-      // Verificar salud del servidor primero
+      // Verificar salud del servidor
       const serverHealthy = await predictorApi.checkServerHealth();
       
       if (!serverHealthy) {
@@ -62,6 +67,8 @@ export const usePredictorData = (autoLoad: boolean = true) => {
           'El servidor no está disponible. Verifica que el backend esté ejecutándose en http://localhost:8000'
         );
       }
+
+      console.log('✅ Server is healthy, starting analysis...');
 
       // Ejecutar análisis
       const result = await predictorApi.runHybridAnalysis({
@@ -71,16 +78,18 @@ export const usePredictorData = (autoLoad: boolean = true) => {
 
       if (result.status === 'success') {
         console.log('✅ Analysis completed successfully');
+        console.log('📊 Analysis result:', result);
         
-        // Actualizar estado con los resultados del análisis
-        if (result.analysis) {
-          setPredictions(result.analysis.predictions || null);
-          setPipelineStatus(result.analysis.pipeline_status || null);
-          setRecommendations(result.analysis.recommendations || null);
-        } else {
-          // Cargar datos desde archivos
-          await loadData();
-        }
+        // IMPORTANTE: Esperar un momento antes de recargar
+        // para que los archivos JSON se escriban completamente
+        console.log('⏳ Waiting 2 seconds before loading results...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Recargar datos desde los archivos JSON generados
+        console.log('🔄 Loading fresh data from server...');
+        await loadData();
+        
+        console.log('✅ Data refresh completed');
         
         return result;
       } else {
@@ -101,6 +110,7 @@ export const usePredictorData = (autoLoad: boolean = true) => {
   // Cargar datos automáticamente al montar
   useEffect(() => {
     if (autoLoad) {
+      console.log('🎬 Component mounted, loading data...');
       loadData();
     }
   }, [autoLoad, loadData]);

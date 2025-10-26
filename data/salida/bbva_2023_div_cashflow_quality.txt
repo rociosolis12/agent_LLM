@@ -2,7 +2,7 @@
 REPORTE DE CALIDAD EXTENDIDO - FLUJOS DE EFECTIVO
 =================================================
 PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-10-26 09:32:15
+Fecha: 2025-10-26 10:54:07
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: poor

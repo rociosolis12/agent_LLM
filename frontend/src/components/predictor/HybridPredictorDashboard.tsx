@@ -25,6 +25,21 @@ export const HybridPredictorDashboard: React.FC<HybridPredictorDashboardProps> =
     runAnalysis,
   } = usePredictorData(true);
 
+  console.log('🔍 HybridPredictorDashboard render:', {
+  predictions,
+  predictionsType: typeof predictions,
+  predictionsIsNull: predictions === null,
+  predictionsKeys: predictions ? Object.keys(predictions) : 'no keys',
+  mlPredictionsLength: predictions?.ml_predictions?.length,
+  confidenceLevel: predictions?.confidence_level,
+  pipelineStatus,
+  recommendations,
+  recsStrategic: recommendations?.strategic,
+  recsTactical: recommendations?.tactical,
+  loading,
+  error
+});
+
   const [activeTab, setActiveTab] = useState<'overview' | 'predictions' | 'validation' | 'recommendations'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState<string>('');

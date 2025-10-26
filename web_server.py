@@ -11,7 +11,7 @@ import os
 app = Flask(__name__)
 
 # Ajusta BASE_DIR según la ubicación de este archivo
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "data" / "salida"
 
 logging.basicConfig(level=logging.INFO)
@@ -270,36 +270,187 @@ def system_status():
 
 @app.route('/api/predictor/predictions/latest', methods=['GET'])
 def get_latest_predictions():
+    """
+    Retorna las predicciones ML más recientes del archivo consolidado
+    """
     try:
-        return jsonify({"status": "success", "predictions": []})
+        # Buscar el archivo consolidado más reciente
+        # Intentar primero en BASE_DIR/predictor
+        predictor_output_dir = Path(BASE_DIR) / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            # Intentar un nivel arriba si BASE_DIR es el directorio web_server
+            predictor_output_dir = Path(BASE_DIR).parent / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            logger.warning(f"Directorio de predictor no existe: {predictor_output_dir}")
+            return jsonify({"status": "success", "predictions": None}), 200
+        
+        logger.info(f"Buscando predicciones en: {predictor_output_dir}")
+        
+        # Buscar archivos consolidated_results*.json
+        json_files = list(predictor_output_dir.glob("consolidated_results_*.json"))
+        
+        if not json_files:
+            logger.warning("No se encontraron archivos de predicciones")
+            return jsonify({"status": "success", "predictions": None}), 200
+        
+        # Obtener el más reciente
+        latest_file = max(json_files, key=lambda p: p.stat().st_mtime)
+        logger.info(f"✅ Cargando predicciones desde: {latest_file.name}")
+        
+        with open(latest_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Extraer solo las predicciones ML
+        predictions = {
+            "ml_predictions": data.get("ml_predictions", []),
+            "confidence_level": data.get("confidence_level", 0),
+            "validation_results": data.get("validation_results", {}),
+            "timestamp": data.get("timestamp", "")
+        }
+        
+        logger.info(f"✅ Predicciones cargadas: {len(predictions['ml_predictions'])} registros")
+        
+        return jsonify({
+            "status": "success",
+            "predictions": predictions
+        }), 200
+        
     except Exception as e:
-        logger.error(f"Error en predictions/latest: {e}")
+        logger.error(f"❌ Error cargando predicciones: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @app.route('/api/predictor/pipeline/status', methods=['GET'])
 def get_pipeline_status():
+    """
+    Retorna el estado del pipeline predictor
+    """
     try:
-        if SYSTEM_AVAILABLE:
-            return jsonify({
-                "status": "active",
-                "pipeline": "running",
-                "system_available": True,
-                "hybrid_predictor": {"status": "active", "agent_loaded": True},
-                "main_predictor": {"status": "active"},
-                "validation_module": {"status": "active"},
-                "regulatory_config": {"status": "active"},
-                "update_predictor": {"status": "active"}
-            })
-        else:
-            return jsonify({
-                "status": "inactive",
-                "pipeline": "stopped",
-                "system_available": False
-            })
+        predictor_output_dir = Path(BASE_DIR) / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            predictor_output_dir = Path(BASE_DIR).parent / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            return jsonify({"status": "success", "pipeline_status": None}), 200
+        
+        # Buscar archivo consolidado más reciente
+        json_files = list(predictor_output_dir.glob("consolidated_results_*.json"))
+        
+        if not json_files:
+            return jsonify({"status": "success", "pipeline_status": None}), 200
+        
+        latest_file = max(json_files, key=lambda p: p.stat().st_mtime)
+        
+        with open(latest_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Construir estado del pipeline
+        pipeline_status = {
+            "status": "completed",
+            "stages": {
+                "pdf_extraction": {"status": "completed", "pages": 7},
+                "specialized_agents": {"status": "completed", "agents": 4},
+                "ml_predictions": {"status": "completed", "count": len(data.get("ml_predictions", []))},
+                "validation": {"status": "completed", "metrics": len(data.get("validation_results", {}))},
+                "hybrid_analysis": {"status": "completed"}
+            },
+            "timestamp": data.get("timestamp", ""),
+            "execution_time": data.get("execution_time", "")
+        }
+        
+        logger.info(f"✅ Pipeline status cargado: {pipeline_status['status']}")
+        
+        return jsonify({
+            "status": "success",
+            "pipeline_status": pipeline_status
+        }), 200
+        
     except Exception as e:
-        logger.error(f"Error en pipeline/status: {e}")
+        logger.error(f"❌ Error cargando pipeline status: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/predictor/recommendations', methods=['GET'])
+def get_recommendations():
+    """
+    Retorna las recomendaciones del análisis híbrido
+    """
+    try:
+        predictor_output_dir = Path(BASE_DIR) / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            predictor_output_dir = Path(BASE_DIR).parent / "predictor" / "data_outputs"
+        
+        if not predictor_output_dir.exists():
+            logger.warning(f"Directorio de predictor no existe: {predictor_output_dir}")
+            return jsonify({"status": "success", "recommendations": None}), 200
+        
+        # Buscar archivo consolidado más reciente
+        json_files = list(predictor_output_dir.glob("consolidated_results_*.json"))
+        
+        if not json_files:
+            logger.warning("No se encontraron archivos de recomendaciones")
+            return jsonify({"status": "success", "recommendations": None}), 200
+        
+        latest_file = max(json_files, key=lambda p: p.stat().st_mtime)
+        logger.info(f"✅ Cargando recomendaciones desde: {latest_file.name}")
+        
+        with open(latest_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Extraer recomendaciones - MANEJAR TANTO LISTA COMO DICCIONARIO
+        recs_data = data.get("recommendations", [])
+        
+        # Si es una lista, convertir a formato diccionario
+        if isinstance(recs_data, list):
+            logger.info(f"📋 Recomendaciones formato lista: {len(recs_data)} items")
+            recommendations = {
+                "strategic": recs_data[:len(recs_data)//2] if len(recs_data) > 1 else recs_data,
+                "tactical": recs_data[len(recs_data)//2:] if len(recs_data) > 1 else [],
+                "summary": f"{len(recs_data)} recomendaciones generadas"
+            }
+        # Si es un diccionario, usar directamente
+        elif isinstance(recs_data, dict):
+            logger.info(f"📋 Recomendaciones formato diccionario")
+            recommendations = {
+                "strategic": recs_data.get("strategic", []),
+                "tactical": recs_data.get("tactical", []),
+                "summary": recs_data.get("summary", "")
+            }
+        else:
+            # Formato desconocido
+            logger.warning(f"⚠️ Formato de recomendaciones desconocido: {type(recs_data)}")
+            recommendations = {
+                "strategic": [],
+                "tactical": [],
+                "summary": "No hay recomendaciones disponibles"
+            }
+        
+        total_recs = len(recommendations["strategic"]) + len(recommendations["tactical"])
+        logger.info(f"✅ Recomendaciones cargadas: {total_recs} total")
+        
+        return jsonify({
+            "status": "success",
+            "recommendations": recommendations
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"❌ Error cargando recomendaciones: {e}")
+        import traceback
+        traceback.print_exc()
+        # Retornar respuesta vacía en lugar de error 500
+        return jsonify({
+            "status": "success",
+            "recommendations": {
+                "strategic": [],
+                "tactical": [],
+                "summary": "Error cargando recomendaciones"
+            }
+        }), 200
+
 
 @app.route('/api/predictor/run-hybrid-analysis', methods=['POST', 'OPTIONS'])
 def run_hybrid_analysis():
@@ -395,14 +546,24 @@ def run_hybrid_analysis():
         }), 500
 
 
-@app.route('/api/predictor/recommendations', methods=['GET'])
-def get_recommendations():
-    try:
-        return jsonify({"status": "success", "recommendations": []})
-    except Exception as e:
-        logger.error(f"Error en recommendations: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+# ===== SYSTEM STATUS & HEALTH CHECK =====
 
+@app.route('/api/system-status', methods=['GET'])
+@app.route('/system-status', methods=['GET'])
+def get_system_status():
+    """
+    Health check endpoint - responde en ambas rutas:
+    - /api/system-status (para el frontend)
+    - /system-status (para compatibilidad)
+    """
+    return jsonify({
+        'status': 'online' if SYSTEM_AVAILABLE else 'offline',
+        'system_available': SYSTEM_AVAILABLE,
+        'predictor_available': True,
+        'module': 'financial_extraction',
+        'version': '1.0'
+    }), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
+
