@@ -12,7 +12,7 @@
     "anchor_page_used": 8
   },
   "extraction": {
-    "total_characters": 5395,
+    "total_characters": 4720,
     "confidence": 1.0,
     "pages_processed": [
       6,
@@ -29,20 +29,17 @@
   },
   "validation": {
     "success": true,
-    "quality": "fair",
-    "confidence": 0.7285714285714286,
-    "score": 65,
+    "quality": "poor",
+    "confidence": 0.3142857142857143,
+    "score": 15,
     "max_score": 140,
-    "quality_percentage": 46.42857142857143,
+    "quality_percentage": 10.714285714285714,
     "details": [
-      "✅ Reserva legal encontrada",
-      "✅ Software desarrollado internamente encontrado",
-      "⚠️ Cobertura limitada: 2 categorías",
-      " Datos comparativos: 2 categorías multi-año",
-      " Texto completo extraído (5449 caracteres)"
+      "⚠️ Cobertura limitada: 1 categorías",
+      " Texto parcial extraído (4756 caracteres)"
     ],
-    "financial_categories_found": 2,
-    "has_comparative_data": true
+    "financial_categories_found": 1,
+    "has_comparative_data": false
   },
-  "timestamp": "2025-11-03 19:20:55"
+  "timestamp": "2025-11-03 20:17:45"
 }

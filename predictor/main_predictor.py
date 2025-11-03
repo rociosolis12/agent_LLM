@@ -143,26 +143,57 @@ class PredictorOrchestrator:
         
         logger.info(" Orquestador inicializado correctamente")
         logger.info("=" * 80)
-    
-    def run_ml_predictions(self, generate_new: bool = False) -> pd.DataFrame:
-        """Carga predicciones ML existentes"""
+
+    def run_ml_predictions(
+        self, 
+        agent_results: Optional[Dict[str, Any]] = None,  # ← AÑADIR
+        generate_new: bool = False
+    ) -> pd.DataFrame:
+        """
+        Ejecuta predicciones ML usando datos de agentes financieros
+        """
         logger.info(" Ejecutando predicciones ML evolutivas...")
         
-        # Ruta correcta a las predicciones
         csv_path = Path(self.output_dir) / "evolutionary_predictions.csv"
         
-        # Cargar predicciones existentes
-        if csv_path.exists():
+        # MODIFICAR: Regenerar si hay nuevos datos de agentes
+        should_generate = generate_new or (agent_results is not None)
+        
+        if should_generate:
+            logger.info(" Generando NUEVAS predicciones con datos de agentes...")
+            
+            # CLAVE: Pasar agent_results al predictor
+            results = self.evo_predictor.predict_financial_metrics(
+                agent_results=agent_results,  # ← AÑADIR ESTA LÍNEA
+                bank_symbol="GARAN.IS",
+                periods=4
+            )
+            
+            # Convertir resultados a DataFrame
+            predictions_list = []
+            for metric, res in results.items():
+                for i, val in enumerate(res['ensemble']['predictions']):
+                    predictions_list.append({
+                        'metric': metric,
+                        'periodo': i + 1,
+                        'prediction': val,
+                        'lower_bound': res['ensemble']['lower_bound'][i],
+                        'upper_bound': res['ensemble']['upper_bound'][i]
+                    })
+            
+            ml_predictions = pd.DataFrame(predictions_list)
+            ml_predictions.to_csv(csv_path, index=False)
+            logger.info(f" Predicciones guardadas en: {csv_path}")
+            
+        elif csv_path.exists():
             logger.info(" Cargando predicciones ML existentes...")
             ml_predictions = pd.read_csv(csv_path)
-            logger.info(f" Predicciones ML cargadas: {len(ml_predictions)} registros")
         else:
-            raise FileNotFoundError(f"No se encontró: {csv_path}")
+            raise FileNotFoundError(f" No hay predicciones en {csv_path}")
         
-        # Guardar en resultados consolidados
         self.consolidated_results['ml_predictions'] = ml_predictions.to_dict('records')
-        
         return ml_predictions
+
 
     def run_validation(
         self,
@@ -371,32 +402,27 @@ class PredictorOrchestrator:
     
     async def run_complete_pipeline(
         self,
-        agent_results: Optional[Dict[str, Any]] = None,
-        generate_new_predictions: bool = False,
+        agent_results: Optional[Dict[str, Any]] = None,  # ← AÑADIR
+        generate_new_predictions: bool = True,
         run_advanced_validation: bool = True
     ) -> Dict[str, Any]:
         """
-        Ejecuta el pipeline completo del sistema predictor
-        
-        Args:
-            agent_results: Resultados de agentes financieros
-            generate_new_predictions: Si generar nuevas predicciones
-            run_advanced_validation: Si ejecutar validación avanzada
-            
-        Returns:
-            Diccionario con todos los resultados consolidados
+        Ejecuta el pipeline completo con datos de agentes
         """
         logger.info(" INICIANDO PIPELINE COMPLETO DEL SISTEMA PREDICTOR")
-        logger.info("=" * 80)
         
         try:
-            # 1. Predicciones ML
+            # 1. Predicciones ML con datos de agentes
             ml_predictions = self.run_ml_predictions(
+                agent_results=agent_results,  # ← AÑADIR ESTA LÍNEA
                 generate_new=generate_new_predictions
             )
             
-            # 2. Validación Walk-Forward
-            validation_results = self.run_validation(ml_predictions)
+            # 2. Validación Walk-Forward (ajustada para datos limitados)
+            validation_results = self.run_validation(
+                ml_predictions,
+                n_splits=3  # ← Reducir de 8 a 3
+            )
             
             # 3. Análisis Híbrido
             hybrid_results = await self.run_hybrid_analysis(agent_results)
@@ -408,6 +434,7 @@ class PredictorOrchestrator:
             # 5. Consolidar y exportar
             output_path = self.consolidate_and_export(export_format='json')
             
+            logger.info(" Pipeline completado exitosamente")
             return self.consolidated_results
             
         except Exception as e:

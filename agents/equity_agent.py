@@ -324,7 +324,7 @@ class AnalyzeEquityStructureTool:
     name: str = "analyzeequitystructure"
     description: str = "Analiza estructura del PDF para localizar el estado de cambios en patrimonio"
     
-    def run(self, pdf_path: str, anchor_page: int = 8, max_pages: int = 25, extend: int = 2, **kwargs) -> Dict[str, Any]:
+    def run(self, pdf_path: str, anchor_page: int = 3, max_pages: int = 10, extend: int = 2, **kwargs) -> Dict[str, Any]:
         try:
             print(f" Analizando estructura de cambios en patrimonio - página ancla: {anchor_page}")
             
@@ -374,7 +374,7 @@ class ExtractEquityStatementTool:
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
-            pages_to_process = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            pages_to_process = [3,5, 6, 7]
             print(f"📄 Extrayendo páginas: {pages_to_process}")
             
             extracted_text = ""
@@ -468,7 +468,7 @@ class ExtractEquityStatementTool:
                         
                         relevant_chunks = []
                         for idx, score, chunk_text in similar_sections:
-                            if score > 0.50:  # Umbral reducido
+                            if score > 0.60:  # Umbral reducido
                                 chunk_info = all_text_chunks[idx]
                                 relevant_chunks.append({
                                     'score': score,

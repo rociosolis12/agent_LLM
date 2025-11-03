@@ -7,6 +7,7 @@ from update_predictor_agent import EvolutionaryPredictorAgent
 from validation_module import WalkForwardValidator
 from regulatory_config_agent import RegulatoryConfigAgent
 from predictor_agent import PredictorAgent
+from typing import Dict, Any, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -151,6 +152,122 @@ class HybridPredictorAgent:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
         logger.info(f"Resultados exportados a {self.output_dir}")
         return analysis
+
+    async def _process_agent_insights(
+        self, 
+        agent_results: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Procesa insights cualitativos de los agentes financieros
+        """
+        logger.info("🧠 Procesando insights cualitativos...")
+        
+        insights = {
+            'balance_insights': {},
+            'income_insights': {},
+            'cashflow_insights': {},
+            'equity_insights': {}
+        }
+        
+        # Extraer insights de cada agente
+        if 'balance' in agent_results:
+            insights['balance_insights'] = {
+                'cet1_ratio': agent_results['balance'].get('cet1_ratio', 'N/A'),
+                'findings': agent_results['balance'].get('analysis', {}).get('findings', [])
+            }
+        
+        if 'income' in agent_results:
+            insights['income_insights'] = {
+                'roa': agent_results['income'].get('roa', 'N/A'),
+                'findings': agent_results['income'].get('analysis', {}).get('findings', [])
+            }
+        
+        if 'cashflows' in agent_results:
+            insights['cashflow_insights'] = {
+                'liquidity': agent_results['cashflows'].get('liquidity_status', 'N/A'),
+                'findings': agent_results['cashflows'].get('analysis', {}).get('findings', [])
+            }
+        
+        if 'equity' in agent_results:
+            insights['equity_insights'] = {
+                'dividend_policy': agent_results['equity'].get('dividend_policy', 'N/A'),
+                'findings': agent_results['equity'].get('analysis', {}).get('findings', [])
+            }
+        
+        logger.info(f"✅ Insights procesados: {len(insights)} categorías")
+        return insights
+    def _generate_integrated_recommendations(
+        self,
+        llm_qualitative: Dict,
+        ml_predictions: pd.DataFrame,
+        validation_results: Dict
+    ) -> Dict[str, list]:
+        """
+        Genera recomendaciones integradas desde múltiples fuentes
+        """
+        logger.info("💡 Generando recomendaciones integradas...")
+        
+        recommendations = {
+            'strategic': [],
+            'tactical': [],
+            'risk_mitigation': []
+        }
+        
+        # 1. Recomendaciones desde Balance Agent
+        if 'balance_insights' in llm_qualitative:
+            balance = llm_qualitative['balance_insights']
+            for finding in balance.get('key_findings', []):
+                recommendations['strategic'].append({
+                    'source': 'Balance Agent',
+                    'insight': finding,
+                    'priority': 'high'
+                })
+        
+        # 2. Recomendaciones desde Income Agent
+        if 'income_insights' in llm_qualitative:
+            income = llm_qualitative['income_insights']
+            for finding in income.get('key_findings', []):
+                recommendations['tactical'].append({
+                    'source': 'Income Agent',
+                    'insight': finding,
+                    'priority': 'medium'
+                })
+        
+        # 3. Recomendaciones desde CashFlows Agent
+        if 'cashflow_insights' in llm_qualitative:
+            cashflows = llm_qualitative['cashflow_insights']
+            for finding in cashflows.get('key_findings', []):
+                recommendations['risk_mitigation'].append({
+                    'source': 'CashFlows Agent',
+                    'insight': finding,
+                    'priority': 'medium'
+                })
+        
+        # 4. Recomendaciones desde Equity Agent
+        if 'equity_insights' in llm_qualitative:
+            equity = llm_qualitative['equity_insights']
+            for finding in equity.get('key_findings', []):
+                recommendations['strategic'].append({
+                    'source': 'Equity Agent',
+                    'insight': finding,
+                    'priority': 'low'
+                })
+        
+        # 5. Recomendaciones regulatorias (mantener las existentes)
+        if self.regulatory_config:
+            recommendations['strategic'].append({
+                'source': 'Regulatory',
+                'insight': f"CET1 mínimo: {self.regulatory_config['capital_ratios']['cet1_minimum']}%",
+                'priority': 'critical'
+            })
+        
+        total_recs = sum(len(v) for v in recommendations.values())
+        logger.info(f" Recomendaciones generadas: {total_recs} total")
+        logger.info(f"   - Strategic: {len(recommendations['strategic'])}")
+        logger.info(f"   - Tactical: {len(recommendations['tactical'])}")
+        logger.info(f"   - Risk Mitigation: {len(recommendations['risk_mitigation'])}")
+        
+        return recommendations
 
 if __name__ == "__main__":
     import asyncio

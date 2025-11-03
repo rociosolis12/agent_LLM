@@ -7,47 +7,37 @@
     "2023",
     "2022",
     "2023",
-    "2022",
     "2023",
     "2022",
     "2023",
     "2022",
-    "2022",
-    "2021",
     "2023",
-    "2019",
-    "2020",
-    "2023",
-    "2022"
+    "2024"
   ],
-  "net_interest_income": [],
+  "net_interest_income": [
+    170475.0
+  ],
   "interest_income": [
-    4157.0,
-    754.0,
-    135.0
+    170475.0
   ],
-  "interest_expense": [
-    504.0
-  ],
+  "interest_expense": [],
   "fee_commission_income": [
-    622.0,
-    122.0,
-    69.0
+    17006.0
   ],
   "commission_income": [
-    622.0,
-    122.0,
-    69.0
+    17006.0
   ],
   "commission_expense": [],
   "operating_expenses": [],
   "staff_costs": [],
-  "provisions": [
-    65.0
+  "provisions": [],
+  "net_profit": [
+    100692.0,
+    40793.0,
+    100692.0
   ],
-  "net_profit": [],
-  "total_income": [],
-  "net_trading_income": [
-    101.0
-  ]
+  "total_income": [
+    187921.0
+  ],
+  "net_trading_income": []
 }

@@ -47,17 +47,18 @@ class WalkForwardValidator:
         """
         logger.info(f" Iniciando validación walk-forward para {metric_name}")
         
-        # NUEVO: Configuración adaptativa según longitud de datos
+
+        # Configuración adaptativa según longitud de datos
         data_length = len(data)
         
-        if data_length < 5:
-            logger.error(f" Datos insuficientes: {data_length} < 5 años mínimo")
+        if data_length < 3:  # ← CAMBIO 3: Reducir de 5 a 3
+            logger.error(f" Datos insuficientes: {data_length} < 3 años mínimo")
             return self._create_dummy_validation(), {}
         
         # Ajustar parámetros según datos disponibles
         if n_splits is None:
-            # Para 5 años: máximo 3 splits (entrenar 2→validar 1, entrenar 3→validar 1, entrenar 4→validar 1)
-            n_splits = min(3, data_length - 2)
+            # Para 3-5 años: máximo 3 splits
+            n_splits = min(3, data_length - 1)  # ← CAMBIO 4: Ajustar fórmula
         
         if min_train_size is None:
             # Mínimo 2 años para entrenar con datos anuales

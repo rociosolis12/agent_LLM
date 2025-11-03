@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
+from typing import Dict, Any, Optional  
+
 
 # Cargar .env desde el directorio raíz del proyecto
 project_root = Path(__file__).parent.parent
@@ -254,28 +256,246 @@ class EvolutionaryPredictorAgent:
         logger.info(f" Predicciones exportadas correctamente en {path}")
         return path
 
-    def predict_financial_metrics(self, financial_data, bank_symbol="GARAN.IS", metrics=None):
+    def predict_financial_metrics(
+        self, 
+        financial_data: Optional[pd.DataFrame] = None,
+        agent_results: Optional[Dict[str, Any]] = None,
+        bank_symbol: str = "GARAN.IS", 
+        metrics: list = None,
+        periods: int = 4
+    ):
+        """
+        Genera predicciones financieras desde DataFrame o directamente desde agentes
+        
+        Args:
+            financial_data: DataFrame con datos históricos (opcional)
+            agent_results: Diccionario con resultados de agentes (opcional)
+            bank_symbol: Símbolo del banco para datos externos
+            metrics: Lista de métricas a predecir
+            periods: Períodos futuros a predecir
+            
+        Returns:
+            Diccionario con predicciones por métrica
+        """
+        logger.info(f"🔮 Generando predicciones para {periods} períodos...")
+        
+        # PRIORIDAD 1: Usar datos de agentes si están disponibles
+        if agent_results is not None:
+            logger.info("✅ Usando datos de agentes financieros")
+            financial_data = self.extract_financial_data_from_agents(agent_results)
+            
+        # PRIORIDAD 2: Usar DataFrame proporcionado
+        elif financial_data is not None and not financial_data.empty:
+            logger.info("✅ Usando DataFrame proporcionado")
+            financial_data = financial_data.copy()
+            
+        # PRIORIDAD 3: Generar datos mock (fallback)
+        else:
+            logger.warning("⚠️ No hay datos disponibles, generando datos mock")
+            dates = pd.date_range('2019-01-01', periods=5, freq='Y')
+            financial_data = pd.DataFrame({
+                'ROA': 1.2 + 0.1 * np.sin(np.arange(5)) + np.random.normal(0, 0.05, 5),
+                'ratio_solvencia': 12.5 + 0.5 * np.sin(np.arange(5)) + np.random.normal(0, 0.2, 5)
+            }, index=dates)
+        
+        # Validar que hay datos
+        if financial_data.empty:
+            logger.error("❌ No se pudieron obtener datos financieros")
+            return {}
+        
+        # Determinar métricas a predecir
         if metrics is None:
-            metrics = ['ROA', 'ratio_solvencia', 'liquidez', 'beneficio_neto']
-
+            metrics = [col for col in financial_data.columns if col not in ['periodo', 'date', 'ds']]
+            logger.info(f"📊 Métricas detectadas automáticamente: {metrics}")
+        
+        # Obtener datos externos de mercado
         external_data = self.fetch_external_data(bank_symbol)
+        
+        # Generar predicciones para cada métrica
         results = {}
         for metric in metrics:
             if metric not in financial_data.columns:
+                logger.warning(f"⚠️ Métrica {metric} no encontrada en datos")
                 continue
+            
             series = financial_data[metric].dropna()
-            if len(series) < 8:
+            
+            # Validar mínimo de datos
+            if len(series) < 3:
+                logger.warning(f"⚠️ Datos insuficientes para {metric}: {len(series)} < 3")
                 continue
-            df = self.prepare_data_for_prophet(series, external_data, metric)
-            prop = self.prophet_prediction(df, metric)
-            xgb = self.xgboost_prediction(df, metric)
+            
+            logger.info(f"  ➤ Prediciendo: {metric} ({len(series)} datos históricos)")
+            
+            # Preparar datos para Prophet
+            df = self.prepare_data_for_prophet(series, external_data, metric, frequency='Y')
+            
+            # Predicción Prophet
+            prop = self.prophet_prediction(df, metric, periods=periods, frequency='Y')
+            
+            # Predicción XGBoost
+            xgb = self.xgboost_prediction(df, metric, periods=periods)
+            
+            # Ensemble (promedio ponderado)
             ens = self.ensemble_prediction(prop, xgb)
-            results[metric] = {'prophet': prop, 'xgboost': xgb, 'ensemble': ens}
-
+            
+            results[metric] = {
+                'prophet': prop, 
+                'xgboost': xgb, 
+                'ensemble': ens
+            }
+        
+        # Exportar predicciones si hay resultados
         if results:
             self.export_predictions_to_csv(results)
-
+            logger.info(f" Predicciones generadas para {len(results)} métricas")
+        else:
+            logger.warning(" No se generaron predicciones")
+        
         return results
+
+    def extract_financial_data_from_agents(self, agent_results: Dict[str, Any]) -> pd.DataFrame:
+        """
+        Extrae series temporales desde los agentes financieros mejorados
+        
+        Args:
+            agent_results: Diccionario con resultados de balance, income, cashflows, equity
+            
+        Returns:
+            DataFrame con series temporales por año
+        """
+        logger.info(" Extrayendo datos financieros de agentes...")
+        
+        financial_data = {}
+        
+        # 1. Balance Agent - Ratios de solvencia y liquidez
+        if 'balance' in agent_results:
+            balance = agent_results['balance']
+            financial_data.update(self._extract_balance_metrics(balance))
+            
+        # 2. Income Agent - ROA, ROE, márgenes
+        if 'income' in agent_results:
+            income = agent_results['income']
+            financial_data.update(self._extract_income_metrics(income))
+            
+        # 3. CashFlows Agent - Liquidez operativa
+        if 'cashflows' in agent_results:
+            cashflows = agent_results['cashflows']
+            financial_data.update(self._extract_cashflow_metrics(cashflows))
+            
+        # 4. Equity Agent - Capitalización y dividendos
+        if 'equity' in agent_results:
+            equity = agent_results['equity']
+            financial_data.update(self._extract_equity_metrics(equity))
+        
+        # Convertir a DataFrame
+        if not financial_data:
+            logger.warning(" No se extrajeron datos de los agentes")
+            return pd.DataFrame()
+            
+        df = pd.DataFrame(financial_data)
+        
+        # Asegurar columna de periodo si no existe
+        if 'periodo' not in df.columns and len(df) > 0:
+            current_year = datetime.now().year
+            df['periodo'] = range(current_year - len(df) + 1, current_year + 1)
+            
+        logger.info(f" Datos extraídos: {len(df)} periodos, {len(df.columns)} métricas")
+        return df
+    
+    def _extract_balance_metrics(self, balance_data: Dict) -> Dict:
+        """Extrae métricas del Balance Agent"""
+        metrics = {}
+        
+        # Buscar ratios de solvencia históricos (prueba diferentes keys)
+        if 'solvency_ratios' in balance_data:
+            metrics['ratio_solvencia'] = balance_data['solvency_ratios']
+        elif 'capital_ratio' in balance_data:
+            metrics['ratio_solvencia'] = balance_data['capital_ratio']
+        elif 'solvency_ratio' in balance_data:
+            metrics['ratio_solvencia'] = balance_data['solvency_ratio']
+            
+        # Liquidez
+        if 'liquidity_ratio' in balance_data:
+            metrics['liquidez'] = balance_data['liquidity_ratio']
+        elif 'lcr' in balance_data:
+            metrics['liquidez'] = balance_data['lcr']
+        elif 'liquidity' in balance_data:
+            metrics['liquidez'] = balance_data['liquidity']
+            
+        # CET1 (capital tier 1)
+        if 'cet1_ratio' in balance_data:
+            metrics['cet1'] = balance_data['cet1_ratio']
+        elif 'cet1' in balance_data:
+            metrics['cet1'] = balance_data['cet1']
+            
+        logger.info(f"  ✓ Balance: {len(metrics)} métricas extraídas")
+        return metrics
+    
+    def _extract_income_metrics(self, income_data: Dict) -> Dict:
+        """Extrae métricas del Income Agent"""
+        metrics = {}
+        
+        # ROA
+        if 'roa' in income_data:
+            metrics['ROA'] = income_data['roa']
+        elif 'return_on_assets' in income_data:
+            metrics['ROA'] = income_data['return_on_assets']
+            
+        # ROE
+        if 'roe' in income_data:
+            metrics['ROE'] = income_data['roe']
+        elif 'return_on_equity' in income_data:
+            metrics['ROE'] = income_data['return_on_equity']
+            
+        # Margen de interés neto
+        if 'nim' in income_data:
+            metrics['margen_interes'] = income_data['nim']
+        elif 'net_interest_margin' in income_data:
+            metrics['margen_interes'] = income_data['net_interest_margin']
+        elif 'interest_margin' in income_data:
+            metrics['margen_interes'] = income_data['interest_margin']
+            
+        logger.info(f"  ✓ Income: {len(metrics)} métricas extraídas")
+        return metrics
+    
+    def _extract_cashflow_metrics(self, cashflow_data: Dict) -> Dict:
+        """Extrae métricas del CashFlows Agent"""
+        metrics = {}
+        
+        # Flujo de caja operativo
+        if 'operating_cashflow' in cashflow_data:
+            metrics['flujo_operativo'] = cashflow_data['operating_cashflow']
+        elif 'operating_cash_flow' in cashflow_data:
+            metrics['flujo_operativo'] = cashflow_data['operating_cash_flow']
+            
+        # Ratio de conversión de efectivo
+        if 'cash_conversion_ratio' in cashflow_data:
+            metrics['conversion_efectivo'] = cashflow_data['cash_conversion_ratio']
+        elif 'cash_conversion' in cashflow_data:
+            metrics['conversion_efectivo'] = cashflow_data['cash_conversion']
+            
+        logger.info(f"  ✓ CashFlows: {len(metrics)} métricas extraídas")
+        return metrics
+    
+    def _extract_equity_metrics(self, equity_data: Dict) -> Dict:
+        """Extrae métricas del Equity Agent"""
+        metrics = {}
+        
+        # Ratio de pago de dividendos
+        if 'dividend_payout_ratio' in equity_data:
+            metrics['payout_ratio'] = equity_data['dividend_payout_ratio']
+        elif 'payout_ratio' in equity_data:
+            metrics['payout_ratio'] = equity_data['payout_ratio']
+            
+        # Book value per share
+        if 'book_value_per_share' in equity_data:
+            metrics['valor_libro_accion'] = equity_data['book_value_per_share']
+        elif 'book_value' in equity_data:
+            metrics['valor_libro_accion'] = equity_data['book_value']
+            
+        logger.info(f"  ✓ Equity: {len(metrics)} métricas extraídas")
+        return metrics
 
 # Test rápido
 def test_evolutionary_predictor():

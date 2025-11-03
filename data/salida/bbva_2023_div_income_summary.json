@@ -1,6 +1,6 @@
 {
   "extraction": {
-    "total_characters": 20028,
+    "total_characters": 11075,
     "pages_processed": [
       1,
       2,
@@ -8,8 +8,7 @@
       4,
       5,
       6,
-      7,
-      8
+      7
     ],
     "financial_data": {
       "years_found": [
@@ -20,49 +19,39 @@
         "2023",
         "2022",
         "2023",
-        "2022",
         "2023",
         "2022",
         "2023",
         "2022",
-        "2022",
-        "2021",
         "2023",
-        "2019",
-        "2020",
-        "2023",
-        "2022"
+        "2024"
       ],
-      "net_interest_income": [],
+      "net_interest_income": [
+        170475.0
+      ],
       "interest_income": [
-        4157.0,
-        754.0,
-        135.0
+        170475.0
       ],
-      "interest_expense": [
-        504.0
-      ],
+      "interest_expense": [],
       "fee_commission_income": [
-        622.0,
-        122.0,
-        69.0
+        17006.0
       ],
       "commission_income": [
-        622.0,
-        122.0,
-        69.0
+        17006.0
       ],
       "commission_expense": [],
       "operating_expenses": [],
       "staff_costs": [],
-      "provisions": [
-        65.0
+      "provisions": [],
+      "net_profit": [
+        100692.0,
+        40793.0,
+        100692.0
       ],
-      "net_profit": [],
-      "total_income": [],
-      "net_trading_income": [
-        101.0
-      ]
+      "total_income": [
+        187921.0
+      ],
+      "net_trading_income": []
     },
     "confidence": 0.8,
     "language": "en",
@@ -71,40 +60,44 @@
   "validation": {
     "success": true,
     "quality": "excellent",
-    "confidence": 0.9076923076923077,
-    "score": 110,
+    "confidence": 0.8200000000000001,
+    "score": 120,
     "max_score": 130,
-    "quality_percentage": 84.61538461538461,
+    "quality_percentage": 92.3076923076923,
     "details": [
+      " Ingresos por intereses encontrados",
       " Gastos por intereses encontrados",
       " Ingresos por comisiones encontrados",
       " Gastos operativos encontrados",
+      " Gastos de personal encontrados",
+      " Provisiones encontradas",
       " Beneficio neto encontrado",
       " Excelente cobertura de datos: 7 categorías",
-      "Datos comparativos multi-año: 4 categorías con múltiples períodos",
-      "Información de partes relacionadas detectada"
+      "Datos parciales multi-año: 2 categorías",
+      "Margen de beneficio sospechosamente alto (>50%)",
+      "🔻 Penalización por ratios anómalos: -10 puntos"
     ],
     "financial_categories_found": 7,
-    "data_completeness": 0.8461538461538461,
+    "data_completeness": 1.0,
     "has_comparative_data": true,
-    "has_related_party_info": true,
-    "has_ratio_warnings": false,
+    "has_related_party_info": false,
+    "has_ratio_warnings": true,
     "confidence_breakdown": {
       "base": 0.8,
-      "completeness": 0.8461538461538461,
-      "bonuses": 0.08,
-      "penalties": 0.0,
-      "final": 0.9076923076923077
+      "completeness": 1.0,
+      "bonuses": 0.05,
+      "penalties": 0.15,
+      "final": 0.8200000000000001
     },
-    "multi_year_categories": 4,
-    "ratios_penalty_applied": 0
+    "multi_year_categories": 2,
+    "ratios_penalty_applied": 10
   },
   "cross_validation": null,
-  "processing_timestamp": "2025-11-03 17:27:38",
+  "processing_timestamp": "2025-11-03 20:07:13",
   "quality_metrics": {
     "data_categories_found": 7,
-    "quality_score": 110,
-    "final_confidence": 0.9076923076923077,
-    "has_ratio_warnings": false
+    "quality_score": 120,
+    "final_confidence": 0.8200000000000001,
+    "has_ratio_warnings": true
   }
 }

@@ -238,21 +238,24 @@ class FinancialExtractionSystem:
                     
                     # Preparar resultados de agentes para el predictor
                     agent_results = {
-                        "agents_results": coordinator_result.get("agents_results", {}),
+                        "balance": coordinator_result.get("agents_results", {}).get("balance"),
+                        "income": coordinator_result.get("agents_results", {}).get("income"),
+                        "cashflows": coordinator_result.get("agents_results", {}).get("cashflows"),
+                        "equity": coordinator_result.get("agents_results", {}).get("equity"),
                         "structured_data": coordinator_result.get("structured_for_predictor", {}),
                         "pdf_extraction": extraction_result,
                         "question": question,
                         "timestamp": datetime.now().isoformat()
                     }
-                    
+
                     # Ejecutar pipeline completo del predictor híbrido
                     # SIEMPRE con generate_new_predictions=True
                     hybrid_predictor_results = await self.hybrid_predictor.run_complete_pipeline(
-                        agent_results=agent_results,
-                        generate_new_predictions=True,  
+                        agent_results=agent_results,  
+                        generate_new_predictions=True,
                         run_advanced_validation=True
                     )
-                    
+                                        
                     pipeline_result["pipeline_steps"].append({
                         "step": "hybrid_predictor",
                         "step_number": 3,

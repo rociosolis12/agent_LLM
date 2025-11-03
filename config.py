@@ -40,36 +40,30 @@ for dir_path in [DATA_INPUT_DIR, DATA_OUTPUT_DIR, SESSIONS_DIR]:
 # =============================
 # CONFIGURACIÓN EXTRACTOR PDF 
 # =============================
-
 PDF_EXTRACTOR_CONFIG = {
-    # Rutas específicas del sistema de Rocío
-    'input_path': r"C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\input",
-    'output_path': r"C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output",
-    
-    # Archivos
+    'input_path': r'C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\input',
+    'output_path': r'C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output',
     'input_filename': "bbva_2023.pdf",  # Memoria anual completa
     'output_filename': "bbva_2023_div.pdf",  # Estados financieros únicamente
+
     
-    # Páginas a extraer (Estados Financieros BBVA 2023)
-    'pages_to_extract': list(range(53, 61)),  # Páginas 54-60 (0-indexed)
+    # PÁGINAS CORRECTAS IDENTIFICADAS Y VERIFICADAS
+    'pages_to_extract': list(range(29, 36)),  # Páginas 30-36 del documento
     
-    # Mapeo de contenido por página
+    # MAPEO DE CONTENIDO (para documentación)
     'page_content_mapping': {
-        53: "Statement of Financial Position",
-        54: "Statement of Financial Position (continued)", 
-        55: "Statement of Comprehensive Income",
-        56: "Statement of Comprehensive Income (cont.)",
-        57: "Statement of Changes in Equity",
-        58: "Statement of Changes in Equity (cont.)",
-        59: "Statement of Cash Flows"
+        29: 'Statement of Financial Position',              # Página 30
+        30: 'Statement of Comprehensive Income',            # Página 31
+        31: 'Statement of Comprehensive Income (cont.)',    # Página 32
+        32: 'Statement of Changes in Equity',               # Página 33
+        33: 'Statement of Changes in Equity (cont.)',       # Página 34
+        34: 'Statement of Cash Flows',                      # Página 35
+        35: 'Statement of Cash Flows (cont.)'               # Página 36
     },
     
-    # Configuración del agente
-    'agent_enabled': True,
-    'auto_execute': True,
     'validate_extraction': True,
-    'backup_original': False,
-    'overwrite_existing': True
+    'agent_enabled': True,
+    'auto_execute': True
 }
 
 # =============================

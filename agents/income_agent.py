@@ -804,7 +804,7 @@ class IncomeREACTAgent:
             print(f"Extrayendo cuenta de resultados de: {pdf_file}")
             
             # Páginas más probables para cuenta de resultados en documentos bancarios
-            target_pages = [1, 2, 3, 4, 5, 6, 7, 8]  # Ampliar búsqueda
+            target_pages = list(range(1, min(8, len_pdf)))  # Ampliar búsqueda
             
             extracted_text = ""
             total_chars = 0

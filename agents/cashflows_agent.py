@@ -17,6 +17,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pdfplumber
 import pandas as pd
+import time
 from dotenv import load_dotenv
 from openai import AzureOpenAI
 import groq
@@ -246,7 +247,7 @@ class AnalyzeCashflowStructureTool:
                 
                 # Si no se especifica max_pages, usar total de páginas del PDF
                 if max_pages is None:
-                    max_pages = total_pages
+                    max_pages = min(total_pages, 10)
                     
                 # Si no se especifica extend, buscar en TODO el PDF reducido
                 if extend is None:
@@ -398,10 +399,21 @@ class ExtractCashflowStatementTool:
                 print(f" Aplicando búsqueda semántica optimizada ({len(all_text_chunks)} chunks)...")
                 
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
-                
-                # OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
-                print(f"   Generando embeddings en batch...")
-                chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
+
+                max_retries = 3
+                retry_delay = 65  # Segundos
+
+                chunk_embeddings = None
+                for attempt in range(max_retries):
+                    try:
+                        chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
+                        break  # Éxito, salir del loop
+                    except Exception as e:
+                        if '429' in str(e) and attempt < max_retries - 1:
+                            print(f' Rate limit reached. Retrying in {retry_delay}s...')
+                            time.sleep(retry_delay)
+                        else:
+                            raise 
                 
                 if chunk_embeddings is None:
                     print("   Error generando embeddings, saltando búsqueda semántica")
@@ -430,7 +442,7 @@ class ExtractCashflowStatementTool:
                             
                             relevant_chunks = []
                             for idx, score, chunk_text in similar_sections:
-                                if score > 0.50:  # Umbral de similaridad
+                                if score >= 0.60:  # Umbral de similaridad
                                     chunk_info = all_text_chunks[idx]
                                     relevant_chunks.append({
                                         'score': score,

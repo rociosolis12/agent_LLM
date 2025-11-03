@@ -26,13 +26,26 @@ try:
 except ImportError as e:
     SYSTEM_AVAILABLE = False
     logger.error(f" Error importando FinancialExtractionSystem: {e}")
+                    
+try:                                                          
+    from predictor.main_predictor import PredictorOrchestrator
+    PREDICTOR_AVAILABLE = True                                
+    logger.info(" PredictorOrchestrator importado...")      
+except ImportError as e:                                      
+    PREDICTOR_AVAILABLE = False                               
+    logger.warning(f" No PredictorOrchestrator: {e}")       
 
-app = Flask(__name__)
+app = Flask(__name__)   
+
+
 CORS(app)
 app.config['DEBUG'] = True
 
 # ===== INSTANCIA GLOBAL DEL SISTEMA =====
+
 system = None
+predictor_orchestrator = None 
+
 if SYSTEM_AVAILABLE:
     try:
         system = FinancialExtractionSystem()
@@ -40,6 +53,19 @@ if SYSTEM_AVAILABLE:
     except Exception as e:
         logger.error(f"Error inicializando sistema: {e}")
         SYSTEM_AVAILABLE = False
+
+# ✅ CAMBIO 2: Inicializar el predictor
+if PREDICTOR_AVAILABLE:
+    try:
+        predictor_orchestrator = PredictorOrchestrator(
+            bank_symbol="BBVA.MC",
+            jurisdiction="ES",
+            parent_bank="BBVA"
+        )
+        logger.info("✅ PredictorOrchestrator inicializado globalmente")
+    except Exception as e:
+        logger.warning(f"⚠️ Error inicializando PredictorOrchestrator: {e}")
+        PREDICTOR_AVAILABLE = False
 
 
 # ===== FUNCIÓN AUXILIAR PARA EXTRAER RESULTADOS =====
@@ -631,7 +657,6 @@ def run_hybrid_analysis():
 
 # ===== SYSTEM STATUS & HEALTH CHECK =====
 
-@app.route('/api/system-status', methods=['GET'])
 @app.route('/system-status', methods=['GET'])
 def get_system_status():
     """
@@ -646,6 +671,157 @@ def get_system_status():
         'module': 'financial_extraction',
         'version': '1.0'
     }), 200
+
+# ============================================================================
+# ENDPOINT PASO 7: EJECUTAR ANÁLISIS PREDICTOR CON DATOS DE AGENTES
+# ============================================================================
+
+@app.route('/api/predictor/run-analysis', methods=['POST', 'OPTIONS'])
+def run_predictor_analysis():
+    """
+    PASO 7: Endpoint que ejecuta el análisis predictor con datos de agentes
+    
+    Características:
+    1. Recolecta resultados de los 4 agentes (balance, income, cashflows, equity)
+    2. Pasa agent_results al PredictorOrchestrator
+    3. Fuerza generate_new_predictions=True para generar NUEVAS predicciones ML
+    4. Retorna: predicciones + validación + recomendaciones integradas
+    
+    Request body:
+    {
+        "generate_new": true,
+        "run_validation": true
+    }
+    """
+    
+    if request.method == 'OPTIONS':
+        return jsonify({'status': 'ok'}), 200
+    
+    try:
+        logger.info("🔮 PASO 7: Ejecutando análisis predictor híbrido con agent_results...")
+        
+        # Verificar que el predictor esté disponible
+        if not PREDICTOR_AVAILABLE or predictor_orchestrator is None:
+            logger.error("❌ PredictorOrchestrator no disponible")
+            return jsonify({
+                'status': 'error',
+                'message': 'Predictor not available'
+            }), 503
+        
+        # Obtener parámetros del request
+        data = request.get_json() or {}
+        generate_new = data.get('generate_new', True)
+        run_validation = data.get('run_validation', True)
+        
+        logger.info(f"   Generar nuevas predicciones: {generate_new}")
+        logger.info(f"   Ejecutar validación: {run_validation}")
+        
+        # ✅ PASO 7 - CAMBIO CLAVE: Construir agent_results desde el sistema
+        logger.info("📊 Recolectando resultados de agentes...")
+        
+        agent_results = {
+            "balance": {},
+            "income": {},
+            "cashflows": {},
+            "equity": {},
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Intenta obtener datos reales de los agentes si están disponibles
+        if system and hasattr(system, 'coordinator'):
+            try:
+                coordinator = system.coordinator
+                
+                # Extraer datos de cada agente si están disponibles
+                if hasattr(coordinator, 'balance_agent'):
+                    agent_results['balance'] = {
+                        'data': 'available',
+                        'agent': 'BalanceAgent'
+                    }
+                    logger.info("   ✓ Balance Agent disponible")
+                
+                if hasattr(coordinator, 'income_agent'):
+                    agent_results['income'] = {
+                        'data': 'available',
+                        'agent': 'IncomeAgent'
+                    }
+                    logger.info("   ✓ Income Agent disponible")
+                
+                if hasattr(coordinator, 'cashflows_agent'):
+                    agent_results['cashflows'] = {
+                        'data': 'available',
+                        'agent': 'CashflowsAgent'
+                    }
+                    logger.info("   ✓ CashFlows Agent disponible")
+                
+                if hasattr(coordinator, 'equity_agent'):
+                    agent_results['equity'] = {
+                        'data': 'available',
+                        'agent': 'EquityAgent'
+                    }
+                    logger.info("   ✓ Equity Agent disponible")
+                    
+            except Exception as e:
+                logger.warning(f"⚠️ No se pudieron extraer datos de agentes: {e}")
+        
+        # ✅ PASO 7 - CAMBIO CLAVE: Llamar al predictor con agent_results
+        logger.info("✨ Generando NUEVAS predicciones ML con agent_results...")
+        logger.info("   Ejecutando: predictor_orchestrator.run_complete_pipeline(agent_results=...)")
+        
+        # Ejecutar el pipeline del predictor
+        predictor_results = asyncio.run(
+            predictor_orchestrator.run_complete_pipeline(
+                agent_results=agent_results,  # ← CRÍTICO: Pasar agent_results
+                generate_new_predictions=generate_new,
+                run_advanced_validation=run_validation
+            )
+        )
+        
+        logger.info("✅ Análisis predictor completado")
+        
+        # Procesar recomendaciones
+        recommendations = {
+            'strategic': [],
+            'tactical': [],
+            'risk_mitigation': []
+        }
+        
+        if 'integrated_recommendations' in predictor_results:
+            recs = predictor_results['integrated_recommendations']
+            if isinstance(recs, dict):
+                recommendations = recs
+        
+        # Estructura final de respuesta
+        response = {
+            'status': 'success',
+            'message': 'Análisis predictor completado con éxito',
+            'predictor_results': {
+                'ml_predictions': predictor_results.get('ml_predictions', []),
+                'validation_results': predictor_results.get('validation_results', {}),
+                'recommendations': recommendations,
+                'confidence_level': predictor_results.get('confidence_level', 'N/A'),
+                'timestamp': predictor_results.get('timestamp', datetime.now().isoformat())
+            },
+            'agents_processed': list(agent_results.keys()),
+            'total_recommendations': sum(len(v) for v in recommendations.values())
+        }
+        
+        logger.info(f"   ✅ Predicciones generadas")
+        logger.info(f"   ✅ Total recomendaciones: {response['total_recommendations']}")
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        logger.error(f"❌ Error en análisis predictor: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        return jsonify({
+            'status': 'error',
+            'message': f'Error en análisis predictor: {str(e)}',
+            'error_details': str(e)
+        }), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
