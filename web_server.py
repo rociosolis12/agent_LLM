@@ -54,7 +54,7 @@ if SYSTEM_AVAILABLE:
         logger.error(f"Error inicializando sistema: {e}")
         SYSTEM_AVAILABLE = False
 
-# ✅ CAMBIO 2: Inicializar el predictor
+# CAMBIO 2: Inicializar el predictor
 if PREDICTOR_AVAILABLE:
     try:
         predictor_orchestrator = PredictorOrchestrator(
@@ -62,9 +62,9 @@ if PREDICTOR_AVAILABLE:
             jurisdiction="ES",
             parent_bank="BBVA"
         )
-        logger.info("✅ PredictorOrchestrator inicializado globalmente")
+        logger.info(" PredictorOrchestrator inicializado globalmente")
     except Exception as e:
-        logger.warning(f"⚠️ Error inicializando PredictorOrchestrator: {e}")
+        logger.warning(f" Error inicializando PredictorOrchestrator: {e}")
         PREDICTOR_AVAILABLE = False
 
 

@@ -804,8 +804,11 @@ class IncomeREACTAgent:
             print(f"Extrayendo cuenta de resultados de: {pdf_file}")
             
             # Páginas más probables para cuenta de resultados en documentos bancarios
-            target_pages = list(range(1, min(8, len_pdf)))  # Ampliar búsqueda
-            
+            with fitz.open(pdf_file) as pdf:
+                total_pdf_pages = len(pdf)
+
+            target_pages = list(range(1, min(10, total_pdf_pages))) 
+                        
             extracted_text = ""
             total_chars = 0
             financial_data = {}
@@ -896,12 +899,34 @@ class IncomeREACTAgent:
                 
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
                 
-                #  OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
-                print(f"   Generando embeddings en batch...")
-                chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
-                
+                # OPTIMIZADO: Generar embeddings de chunks en BATCH CON RETRY LOGIC
+                print(f" Generando embeddings en batch...")
+
+                max_retries = 3
+                retry_delay = 65  # Segundos
+                chunk_embeddings = None
+
+                for attempt in range(max_retries):
+                    try:
+                        chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
+                        print(f" ✓ {len(chunk_embeddings)} embeddings generados en batch")
+                        break  # Éxito, salir
+                        
+                    except Exception as e:
+                        error_str = str(e)
+                        
+                        if '429' in error_str and attempt < max_retries - 1:
+                            print(f" ⚠️ Rate limit reached (Error 429)")
+                            print(f" ⏳ Esperando {retry_delay}s antes del reintento {attempt + 2}/{max_retries}...")
+                            import time
+                            time.sleep(retry_delay)
+                        else:
+                            print(f" ❌ Error en batch embeddings: {error_str}")
+                            break
+
                 if chunk_embeddings is None:
-                    print("   Error generando embeddings, saltando búsqueda semántica")
+                    print(" Error generando embeddings, saltando búsqueda semántica")
+
                 else:
                     print(f"   {len(chunk_embeddings)} embeddings generados en batch")
                     
@@ -927,7 +952,7 @@ class IncomeREACTAgent:
                             
                             relevant_chunks = []
                             for idx, score, chunk_text in similar_sections:
-                                if score > 0.65:  # Umbral de similaridad
+                                if score >= 0.65:  # Umbral de similaridad
                                     chunk_info = all_text_chunks[idx]
                                     relevant_chunks.append({
                                         'score': score,
