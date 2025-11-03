@@ -185,6 +185,140 @@ embedding_client = AzureEmbeddingClient()
 
 # ===== HERRAMIENTAS ESPECÍFICAS PARA EQUITY =====
 
+def extract_comprehensive_equity_data(text: str) -> Dict[str, List[float]]:
+        """
+        Extrae componentes de patrimonio neto del texto.
+        Similar a extract_comprehensive_income_data() pero para equity.
+        
+        Componentes a extraer:
+        - Revaluation surplus / Reservas de revaluación
+        - Legal reserves / Reservas legales
+        - OCI / Otro resultado integral
+        - Total equity / Patrimonio total
+        - Revaluation of buildings / Revaluación de edificios
+        - Internally developed software / Software desarrollado internamente
+        """
+        
+        extracted_data = {
+            'years_found': [],
+            'revaluation_surplus': [],
+            'legal_reserve': [],
+            'oci_current_year': [],
+            'total_equity': [],
+            'revaluation_buildings': [],
+            'internally_developed_software': [],
+            'share_capital': [],
+            'retained_earnings': [],
+        }
+        
+        # Buscar años
+        years = re.findall(r'\b(20\d{2})\b', text)
+        extracted_data['years_found'] = list(set(years))
+        
+        print(f"🔍 DEBUG: Años encontrados: {sorted(extracted_data['years_found'])}")
+        
+        # Función auxiliar para convertir strings a float
+        def convert_string_to_float(s):
+            if not s:
+                return None
+            try:
+                # Eliminar espacios y reemplazar comas
+                cleaned = s.replace(',', '').replace(' ', '').strip()
+                return float(cleaned)
+            except:
+                return None
+    
+        # Patrones específicos para patrimonio
+        patterns = {
+            'revaluation_surplus': [
+                r'revaluation\s+surplus[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'revaluation\s+reserve[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'closing\s+balance[:\s]+(\d{1,3}(?:[.,]\d{3})*)',
+            ],
+            'oci_current_year': [
+                r'current\s+year\s+charge\s+in\s+oci[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'other\s+comprehensive\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'charge\s+in\s+oci[:\s]+(\d{1,3}(?:[.,]\d{3})*)',
+            ],
+            'legal_reserve': [
+                r'legal\s+reserve[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'legal\s+reserves[:\s]+(\d{1,3}(?:[.,]\d{3})*)',
+            ],
+            'dividends': [ 
+                r'dividend[s]?\s+(?:paid|declared)[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?)',
+                r'distribución[:\s]*(\d{1,3}(?:[.,\s]\d{3})*)',
+            ],
+            'internally_developed_software': [
+                r'internally\s+(?:generated|developed)\s+software[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+                r'software[:\s]+(\d{1,3}(?:[.,]\d{3})*)',
+            ],
+            'revaluation_buildings': [
+                r'revaluation\s+(?:of\s+)?(?:land\s+and\s+)?building[s]?[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            ],
+            'total_equity': [
+                r'total\s+equity[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            ],
+            'dividends': [
+                r'dividends?\s+(?:paid|declared)[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?)',
+                r'distribución[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+                r'dividend\s+payment[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+            ],
+            
+            'share_capital': [  
+                r'share\s+capital[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?)',
+                r'capital\s+social[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+            ],
+            
+            'retained_earnings': [  
+                r'retained\s+earnings[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*(?:[.,]\d{1,2})?)',
+                r'resultados?\s+acumulados?[:\s]*[€$]?\s*(\d{1,3}(?:[.,\s]\d{3})*)',
+            ],
+        }
+
+        
+        # Extraer con validación (similar a Income Agent)
+        for category, pattern_list in patterns.items():
+            values = []
+            raw_matches = []
+            
+            for pattern in pattern_list:
+                matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+                
+                if matches:
+                    raw_matches.extend(matches[:3])
+                    
+                    for match in matches:
+                        clean_number = convert_string_to_float(match)
+                        if clean_number and clean_number >= 50:  # Filtrar valores pequeños
+                            values.append(clean_number)
+                    
+                    if values:
+                        break  # Patrón encontrado, no seguir
+            
+            # Eliminar duplicados
+            extracted_data[category] = list(set(values))
+            
+            if raw_matches:
+                print(f" DEBUG {category}:")
+                print(f"   Raw matches: {raw_matches[:3]}")
+                print(f"   Converted: {extracted_data[category][:3]}")
+        
+        # Resumen
+        categories_with_data = sum(1 for v in extracted_data.values() 
+                                if v and isinstance(v, list) and len(v) > 0)
+        print(f"\n{'='*60}")
+        print(f" RESUMEN EXTRACCIÓN EQUITY")
+        print(f"{'='*60}")
+        print(f"Categorías con datos: {categories_with_data}/8")
+        
+        for cat, vals in extracted_data.items():
+            if vals and cat != 'years_found':
+                print(f"   {cat}: {len(vals)} valores - {vals[:2]}")
+        print(f"{'='*60}\n")
+        
+        return extracted_data
+
+
 @dataclass
 class AnalyzeEquityStructureTool:
     name: str = "analyzeequitystructure"
@@ -205,13 +339,16 @@ class AnalyzeEquityStructureTool:
                         text = page.extract_text() or ""
                         text_lower = text.lower()
                         
-                        # Buscar indicadores de cambios en patrimonio
+                        # Buscar indicadores de cambios en patrimonio                        
                         equity_indicators = [
-                            "statement of changes in equity", "changes in equity", "equity statement",
+                            "statement of changes in equity", "changes in equity", "equity movements",
                             "consolidated statement of changes in equity", "shareholders' equity changes",
-                            "share capital", "retained earnings", "reserves", "patrimonio", "capital social"
+                            "share capital", "retained earnings", "reserves", "revaluation surplus",
+                            "other comprehensive income", "oci", "legal reserve",
+                            "patrimonio", "capital social", "reservas", "resultado integral",
+                            "property and equipment", "revaluation", "intangible assets"  
                         ]
-                        
+
                         if any(indicator in text_lower for indicator in equity_indicators):
                             print(f" Cambios en patrimonio encontrados en página {page_num}")
                             found_equity = True
@@ -228,71 +365,102 @@ class AnalyzeEquityStructureTool:
             return {"success": False, "error": str(e)}
 
 @dataclass
-@dataclass
 class ExtractEquityStatementTool:
-    name: str = "extractequitystatement"
-    description: str = "Extrae el contenido del estado de cambios en patrimonio con búsqueda semántica"
+    """
+    Herramienta para extraer texto del estado de cambios en patrimonio.
+    Versión mejorada con keywords ampliadas y umbral reducido.
+    """
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
             pages_to_process = analysis_json.get("pages_selected", [6, 7, 8, 9, 10]) if analysis_json else [6, 7, 8, 9, 10]
-            print(f"📄 Extrayendo páginas: {pages_to_process}")
+            print(f" Extrayendo páginas: {pages_to_process}")
             
             extracted_text = ""
             total_chars = 0
-            all_text_chunks = []  # NUEVO: Para búsqueda semántica
+            all_text_chunks = []
+            financial_data = {}
             
+            # ===== EXTRACCIÓN PRINCIPAL =====
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
                     if page_num <= len(pdf.pages):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         
-                        # Buscar contenido relevante de cambios en patrimonio
+                        # KEYWORDS AMPLIADAS 
                         text_lower = text.lower()
                         equity_keywords = [
-                            "share capital", "retained earnings", "reserves", "equity",
-                            "capital social", "reservas", "patrimonio", "dividends",
-                            "comprehensive income", "other equity", "total equity"
+                            "share", "capital", "reserves", "equity", "patrimonio",
+                            "dividends", "dividend", "retained", "earnings", "resultado",
+                            "comprehensive", "revaluation", "oci", "legal", "statutory",
+                            "accumulated", "profit", "loss", "surplus", "distribution",
+                            "shareholders", "accionistas", "total", "balance"
                         ]
                         
+                        # EXTRAE SI CONTIENE ALGUNA KEYWORD
                         if any(keyword in text_lower for keyword in equity_keywords):
+                            print(f"   ✓ Página {page_num}: {len(text)} caracteres")
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
                             
-                            # NUEVO: Dividir en chunks para embeddings
+                            # Chunks para embeddings
                             page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
                             all_text_chunks.extend([
                                 {'page': page_num, 'chunk': chunk}
                                 for chunk in page_chunks
                             ])
                             
-                            print(f"✅ Página {page_num}: {len(text)} caracteres extraídos")
+                            # Extracción financiera
+                            page_financial_data = extract_comprehensive_equity_data(text)
+                            
+                            for key, values in page_financial_data.items():
+                                if key not in financial_data:
+                                    financial_data[key] = []
+                                existing_set = set(financial_data[key])
+                                new_values = [v for v in values if v not in existing_set]
+                                financial_data[key].extend(new_values)
             
-            if not extracted_text:
-                # Fallback: extraer todas las páginas en el rango
-                print("⚠️ Aplicando fallback: extrayendo páginas 1-15")
+            # ===== FALLBACK EXTENDIDO =====
+            # Se activa SOLO si la extracción inicial fue insuficiente
+            if not extracted_text or total_chars < 500:
+                print(f" Extracción insuficiente ({total_chars} caracteres). Aplicando fallback extendido...")
+                print(f"    Páginas originales procesadas: {pages_to_process}")
+                
                 with pdfplumber.open(pdf_path) as pdf:
-                    for page_num in range(1, min(15, len(pdf.pages) + 1)):
+                    # Determinar rango de fallback (máximo 50 páginas o total del documento)
+                    max_fallback_pages = min(50, len(pdf.pages))
+                    print(f"    Escaneando páginas 1-{max_fallback_pages}...")
+                    
+                    for page_num in range(1, max_fallback_pages + 1):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
-                        extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
-                        total_chars += len(text)
                         
-                        page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
-                        all_text_chunks.extend([
-                            {'page': page_num, 'chunk': chunk}
-                            for chunk in page_chunks
-                        ])
-            
-            # ===== NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
+                        #  En fallback, extraer TODO (sin filtro de keywords)
+                        if text.strip():  # Solo verificar que no esté vacío
+                            extracted_text += f"\n=== PÁGINA {page_num} (FALLBACK) ===\n{text}"
+                            total_chars += len(text)
+                            
+                            # Extraer datos financieros también en fallback
+                            page_financial_data = extract_comprehensive_equity_data(text)
+                            for key, values in page_financial_data.items():
+                                if key not in financial_data:
+                                    financial_data[key] = []
+                                existing_set = set(financial_data[key])
+                                new_values = [v for v in values if v not in existing_set]
+                                financial_data[key].extend(new_values)
+                    
+                    # Información final del fallback
+                    fallback_entries = sum(len(v) for v in financial_data.values() if isinstance(v, list))
+                    print(f"    Fallback completado: {total_chars} caracteres, {fallback_entries} entradas")
+
+            # ===== BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
             semantic_results = {}
             if all_text_chunks and extract_semantic_chunks:
-                print(f"🔍 Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
+                print(f" Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
                 
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
                 
-                # Queries semánticas específicas para cambios en patrimonio
                 semantic_queries = {
                     'share_capital': "capital social acciones ordinarias y movimientos de capital",
                     'retained_earnings': "resultados acumulados beneficios retenidos y reservas",
@@ -312,24 +480,25 @@ class ExtractEquityStatementTool:
                         
                         relevant_chunks = []
                         for idx, score, chunk_text in similar_sections:
-                            if score > 0.65:  # Umbral de similaridad
+                            # UMBRAL REDUCIDO de 0.65 → 0.50
+                            if score > 0.50:
                                 chunk_info = all_text_chunks[idx]
                                 relevant_chunks.append({
                                     'score': score,
                                     'text': chunk_text,
                                     'page': chunk_info['page']
                                 })
-                                print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']}): {chunk_text[:60]}...")
+                                print(f"  ✓ {category} (score {score:.2f}, page {chunk_info['page']}): {chunk_text[:60]}...")
                         
                         if relevant_chunks:
                             semantic_results[category] = relevant_chunks
                     
                     except Exception as e:
-                        print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
+                        print(f"    Error en búsqueda semántica para {category}: {e}")
                 
                 # Enriquecer texto con resultados semánticos
                 if semantic_results:
-                    print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
+                    print(f" Categorías encontradas con embeddings: {len(semantic_results)}")
                     enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
                     
                     for category, chunks in semantic_results.items():
@@ -338,19 +507,22 @@ class ExtractEquityStatementTool:
                             enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
                             enriched_text += chunk_data['text'][:500] + "...\n\n"
                     
-                    # Prefijar al texto original
-                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
+                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRADO ===\n" + extracted_text[:5000]
             
-            # Crear chunks básicos (compatibilidad)
+            # ===== RESULTADOS FINALES =====
             chunks = []
             if extracted_text:
                 chunks = self._split_text_into_chunks(extracted_text, chunk_size=800)
             
-            confidence = 1.0 if total_chars > 1000 else 0.8
+            # Confianza basada en volumen
+            confidence = 1.0 if total_chars > 3000 else (0.8 if total_chars > 1000 else 0.5)
             
-            # NUEVO: Ajustar confianza con embeddings
+            # Bonus por embeddings
             if semantic_results:
                 confidence = min(1.0, confidence + 0.1)
+            
+            total_entries = sum(len(v) for v in financial_data.values() if isinstance(v, list))
+            print(f" Total extraído: {total_entries} entradas financieras")
             
             return {
                 "success": True,
@@ -359,32 +531,30 @@ class ExtractEquityStatementTool:
                 "chunks": chunks,
                 "confidence": confidence,
                 "pages_processed": pages_to_process,
-                "semantic_results": semantic_results,  # NUEVO
-                "semantic_categories_found": len(semantic_results),  # NUEVO
-                "total_chunks_analyzed": len(all_text_chunks)  # NUEVO
+                "semantic_results": semantic_results,
+                "semantic_categories_found": len(semantic_results),
+                "total_chunks_analyzed": len(all_text_chunks),
+                "financial_data": financial_data
             }
             
         except Exception as e:
             return {"success": False, "error": str(e)}
     
-    def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
-        """Divide texto en chunks para procesamiento con embeddings"""
-        if not text:
-            return []
-        
+    def _split_text_into_chunks(self, text: str, chunk_size: int = 800) -> List[str]:
+        """Divide texto en chunks de tamaño específico."""
         words = text.split()
         chunks = []
         current_chunk = []
         current_length = 0
         
         for word in words:
-            word_length = len(word) + 1
-            if current_length + word_length > chunk_size and current_chunk:
+            current_chunk.append(word)
+            current_length += len(word) + 1
+            
+            if current_length >= chunk_size:
                 chunks.append(" ".join(current_chunk))
                 current_chunk = []
                 current_length = 0
-            current_chunk.append(word)
-            current_length += word_length
         
         if current_chunk:
             chunks.append(" ".join(current_chunk))
@@ -394,57 +564,139 @@ class ExtractEquityStatementTool:
 
 @dataclass
 class ValidateEquityQualityTool:
-    name: str = "validateequityquality"
-    description: str = "Valida la calidad de los datos extraídos de cambios en patrimonio"
-    
     def run(self, extraction: Dict, **kwargs) -> Dict[str, Any]:
+        """Validación mejorada con scoring granular (130 puntos)"""
         try:
-            text = extraction.get("text", "")
-            confidence = extraction.get("confidence", 0.0)
-            
-            # Criterios de validación para cambios en patrimonio
             quality_score = 0
+            max_possible_score = 140
             validation_details = []
             
+            text = extraction.get("text", "")
             text_lower = text.lower()
+            financial_data = extraction.get("financial_data", {})
             
-            # Verificar componentes principales
-            if "share capital" in text_lower or "capital social" in text_lower:
-                quality_score += 25
-                validation_details.append(" Capital social encontrado")
+            # 1. Revaluation surplus (20 puntos)
+            if any(term in text_lower for term in ["revaluation surplus", "revaluation reserve"]):
+                quality_score += 20
+                validation_details.append("✅ Reserva de revaluación encontrada")
             
-            if "retained earnings" in text_lower or "resultados acumulados" in text_lower:
-                quality_score += 25
-                validation_details.append(" Resultados acumulados encontrados")
+            # 2. Legal reserves (15 puntos)
+            if any(term in text_lower for term in ["legal reserve", "legal reserves"]):
+                quality_score += 15
+                validation_details.append("✅ Reserva legal encontrada")
             
-            if "reserves" in text_lower or "reservas" in text_lower:
-                quality_score += 25
-                validation_details.append(" Reservas encontradas")
+            # 3. OCI / Other Comprehensive Income (20 puntos)
+            if any(term in text_lower for term in ["other comprehensive income", "oci", "charge in oci"]):
+                quality_score += 20
+                validation_details.append("✅ Otro resultado integral (OCI) encontrado")
             
-            if "total equity" in text_lower or "patrimonio total" in text_lower:
-                quality_score += 25
-                validation_details.append(" Patrimonio total encontrado")
+            # 4. Changes in equity (15 puntos)
+            if any(term in text_lower for term in ["changes in equity", "equity movements"]):
+                quality_score += 15
+                validation_details.append("✅ Movimientos de patrimonio encontrados")
+            
+            # 5. Revaluation of buildings (10 puntos)
+            if any(term in text_lower for term in ["revaluation of land and building", "property revaluation"]):
+                quality_score += 10
+                validation_details.append("✅ Revaluación de edificios encontrada")
+            
+            # 6. Internally developed software (10 puntos)
+            if any(term in text_lower for term in ["internally generated software", "internally developed"]):
+                quality_score += 10
+                validation_details.append("✅ Software desarrollado internamente encontrado")
+            
+            # 7. Datos financieros extraídos (20 puntos)
+            categories_with_data = 0
+            if financial_data:
+                categories_with_data = sum(1 for values in financial_data.values() if values)
+                
+                if categories_with_data >= 5:
+                    data_bonus = 20
+                    validation_details.append(f"✅ Excelente cobertura: {categories_with_data} categorías")
+                elif categories_with_data >= 3:
+                    data_bonus = 15
+                    validation_details.append(f"✅ Buena cobertura: {categories_with_data} categorías")
+                else:
+                    data_bonus = 10
+                    validation_details.append(f"⚠️ Cobertura limitada: {categories_with_data} categorías")
+                
+                quality_score += data_bonus
+            
+            # 8. Datos multi-año (20 puntos)
+            has_multi_year = False
+            multi_year_categories = 0
+            
+            if financial_data:
+                for category, values in financial_data.items():
+                    if isinstance(values, list) and len(values) >= 2:
+                        multi_year_categories += 1
+                
+                if multi_year_categories >= 2:
+                    quality_score += 20
+                    has_multi_year = True
+                    validation_details.append(f" Datos comparativos: {multi_year_categories} categorías multi-año")
+            
+            # 9. Bonus por volumen de texto extraído (10 puntos)
+            text_chars = len(text)
+            if text_chars > 5000:
+                quality_score += 10
+                validation_details.append(f" Texto completo extraído ({text_chars} caracteres)")
+            elif text_chars > 2000:
+                quality_score += 5
+                validation_details.append(f" Texto parcial extraído ({text_chars} caracteres)")
+            elif text_chars < 500:
+                validation_details.append(f" Texto insuficiente ({text_chars} caracteres)")
+
+            # Calcular porcentaje
+            quality_percentage = (quality_score / max_possible_score) * 100
             
             # Determinar calidad
-            if quality_score >= 75:
+            if quality_percentage >= 70:
                 quality = "excellent"
-            elif quality_score >= 50:
+            elif quality_percentage >= 55:
                 quality = "good"
-            elif quality_score >= 25:
+            elif quality_percentage >= 35:
                 quality = "fair"
             else:
                 quality = "poor"
             
-            final_confidence = min(confidence + (quality_score / 100), 1.0)
+            # 🆕 CONFIANZA MEJORADA (40% base + 60% completitud)
+            base_confidence = extraction.get("confidence", 0.8)
+            completeness_factor = quality_score / max_possible_score
             
-            print(f" Validación completada: {quality} (confianza: {final_confidence:.3f})")
+            combined_confidence = (base_confidence * 0.4) + (completeness_factor * 0.6)
+            
+            # Bonificaciones
+            confidence_bonuses = 0.0
+            if has_multi_year:
+                confidence_bonuses += 0.05
+            
+            # Penalizaciones
+            confidence_penalties = 0.0
+            if categories_with_data < 2:
+                confidence_penalties += 0.15
+            
+            final_confidence = max(0.0, min(1.0, combined_confidence + confidence_bonuses - confidence_penalties))
+            
+            print(f"\n{'='*60}")
+            print(f"📊 VALIDACIÓN DE DATOS - EQUITY")
+            print(f"{'='*60}")
+            print(f"Calidad: {quality.upper()} ({quality_percentage:.1f}% de completitud)")
+            print(f"Puntuación: {quality_score}/{max_possible_score} puntos")
+            print(f"Confianza final: {final_confidence:.3f}")
+            print(f"Categorías con datos: {categories_with_data}")
+            print(f"{'='*60}\n")
             
             return {
                 "success": True,
                 "quality": quality,
                 "confidence": final_confidence,
                 "score": quality_score,
-                "details": validation_details
+                "max_score": max_possible_score,
+                "quality_percentage": quality_percentage,
+                "details": validation_details,
+                "financial_categories_found": categories_with_data,
+                "has_comparative_data": has_multi_year,
             }
             
         except Exception as e:

@@ -12,24 +12,20 @@
     "anchor_page_used": 8
   },
   "extraction": {
-    "total_characters": 1274,
-    "confidence": 1.0,
-    "pages_processed": [
-      6,
-      7,
-      8,
-      9,
-      10
-    ]
+    "total_characters": 0,
+    "confidence": 0,
+    "pages_processed": []
   },
   "validation": {
     "success": true,
-    "quality": "fair",
-    "confidence": 1.0,
-    "score": 25,
-    "details": [
-      " Reservas encontradas"
-    ]
+    "quality": "poor",
+    "confidence": 0.17000000000000007,
+    "score": 0,
+    "max_score": 130,
+    "quality_percentage": 0.0,
+    "details": [],
+    "financial_categories_found": 0,
+    "has_comparative_data": false
   },
-  "timestamp": "2025-11-03 14:05:10"
+  "timestamp": "2025-11-03 17:59:04"
 }
