@@ -2,23 +2,28 @@
 REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
 ==================================================
 PDF: bbva_2023_div.pdf
-Fecha: 2025-10-26 11:08:43
+Fecha: 2025-11-03 16:52:30
 
 RESULTADOS DE VALIDACIÓN:
-- Calidad: fair
-- Puntuación: 58/100
-- Confianza final: 1.000
-- Categorías financieras: 4
+- Calidad: excellent
+- Puntuación: 95/100
+- Confianza final: 0.838
+- Categorías financieras: 9
 
 DETALLES DE VALIDACIÓN:
+ Gastos por intereses encontrados
  Ingresos por comisiones encontrados
  Gastos operativos encontrados
  Beneficio neto encontrado
- Datos financieros específicos: 4 categorías
+ Excelente cobertura de datos: 9 categorías
+Datos comparativos multi-año: 7 categorías con múltiples períodos
+Información de partes relacionadas detectada
+Cost-income ratio anormalmente alto (>75%)
+🔻 Penalización por ratios anómalos: -15 puntos
 
 EXTRACCIÓN DETALLADA:
-- Caracteres procesados: 18148
-- Páginas procesadas: [1, 2, 3, 4, 5, 6, 7]
+- Caracteres procesados: 20028
+- Páginas procesadas: [1, 2, 3, 4, 5, 6, 7, 8]
 - Idioma detectado: en
 - Datos financieros extraídos:
 {
@@ -35,13 +40,18 @@ EXTRACCIÓN DETALLADA:
     "2022",
     "2023",
     "2022",
-    "2019",
     "2023",
-    "2021",
+    "2019",
     "2022",
-    "2020"
+    "2020",
+    "2021",
+    "2023",
+    "2022"
   ],
-  "net_interest_income": [],
+  "net_interest_income": [
+    2.0,
+    8.0
+  ],
   "fee_commission_income": [
     2.0,
     8.0
@@ -51,14 +61,36 @@ EXTRACCIÓN DETALLADA:
   ],
   "staff_costs": [],
   "provisions": [],
-  "net_profit": [],
+  "net_profit": [
+    3.0
+  ],
   "total_income": [
     2.0,
-    8.0
-  ]
+    8.0,
+    3.0
+  ],
+  "interest_expense": [
+    2.0,
+    8.0,
+    504.0
+  ],
+  "interest_income": [
+    4157.0,
+    754.0,
+    135.0
+  ],
+  "commission_income": [
+    622.0,
+    622.0,
+    69.0,
+    122.0,
+    69.0,
+    122.0
+  ],
+  "commission_expense": []
 }
 
 MÉTRICAS DE CALIDAD:
-- Cobertura de secciones: Parcial
-- Precisión de extracción: 100.0%
-- Recomendación: Requiere revisión manual
+- Cobertura de secciones: Completa
+- Precisión de extracción: 83.8%
+- Recomendación: Análisis confiable

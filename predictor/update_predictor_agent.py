@@ -121,51 +121,58 @@ class EvolutionaryPredictorAgent:
             'rsi': pd.Series(np.random.uniform(30, 70, periods), index=dates)
         }
 
-    def prepare_data_for_prophet(self, financial_series, external_data=None, metric_name="metric"):
+    def prepare_data_for_prophet(self, financial_series, external_data=None, metric_name="metric", frequency='Y'):
         df = pd.DataFrame({
             'ds': financial_series.index,
             'y': financial_series.values
         })
-        
-        # Asegurar que 'ds' sea datetime timezone-naive
         df['ds'] = pd.to_datetime(df['ds']).dt.tz_localize(None)
         
-        # Integración de datos externos con merge inteligente
+        # NUEVO: Validación para datos anuales
+        if frequency == 'Y' and len(df) < 5:
+            logger.warning(f"⚠️ Solo {len(df)} años de datos para {metric_name}")
+            return df  # Prophet funcionará pero con alta incertidumbre
+        
+        # Integración externa adaptada a frecuencia anual
         if external_data is not None:
             for key, series in external_data.items():
-                # Convertir series a DataFrame y eliminar timezone
                 ext_df = pd.DataFrame({
-                    'ds': pd.to_datetime(series.index).tz_localize(None),  # Eliminar timezone
+                    'ds': pd.to_datetime(series.index).tz_localize(None),
                     f'external_{key}': series.values
                 })
-                
-                # Hacer merge con df principal usando 'ds' como clave
+                # Resample a anual si viene en otra frecuencia
+                ext_df = ext_df.set_index('ds').resample('Y').last().reset_index()
                 df = pd.merge(df, ext_df, on='ds', how='left')
-                
-                # Rellenar valores faltantes
                 df[f'external_{key}'] = df[f'external_{key}'].ffill().bfill().fillna(0)
-                
-                logger.info(f"✅ {key}: min={df[f'external_{key}'].min():.2f}, max={df[f'external_{key}'].max():.2f}")
         
         return df
 
-    def prophet_prediction(self, df, metric_name, periods=4):
-        """Predicción con Prophet"""
+    def prophet_prediction(self, df, metric_name, periods=4, frequency='Y'):
         try:
-            model = Prophet(growth='linear', yearly_seasonality=True,
-                            weekly_seasonality=False, daily_seasonality=False,
-                            interval_width=0.95, changepoint_prior_scale=0.05)
+            # Ajustar configuración Prophet para datos anuales
+            model = Prophet(
+                growth='linear',
+                yearly_seasonality=False,  
+                changepoint_prior_scale=0.1,  
+                interval_width=0.95
+            )
+            
             ext_cols = [c for c in df.columns if c.startswith('external_')]
-            for col in ext_cols: model.add_regressor(col)
+            for col in ext_cols:
+                model.add_regressor(col)
+            
             model.fit(df)
-            future = model.make_future_dataframe(periods=periods, freq='Q')
-            for col in ext_cols: 
-                    # Asume que df[col] existe y su último valor es válido
-                    future[col] = list(df[col]) + [df[col].iloc[-1]] * periods
-                    future[col] = pd.Series(future[col], index=future["ds"])
-                    future[col].fillna(0, inplace=True)
+            
+            # Crear futuro con frecuencia anual
+            future = model.make_future_dataframe(periods=periods, freq='Y')
+            
+            # Propagar regresores externos
+            for col in ext_cols:
+                future[col] = list(df[col]) + [df[col].iloc[-1]] * periods
+            
             forecast = model.predict(future)
             preds = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods)
+            
             return {
                 'model': model,
                 'forecast': forecast,
@@ -174,7 +181,7 @@ class EvolutionaryPredictorAgent:
                 'upper_bound': preds['yhat_upper'].tolist()
             }
         except Exception as e:
-            logger.error(f"❌ Error Prophet: {e}")
+            logger.error(f" Error Prophet con datos anuales: {e}")
             return self._fallback_prediction(df, periods)
 
     def _fallback_prediction(self, df, periods):

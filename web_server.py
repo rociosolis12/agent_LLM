@@ -386,14 +386,28 @@ def get_recommendations():
         
         if not predictor_output_dir.exists():
             logger.warning(f"Directorio de predictor no existe: {predictor_output_dir}")
-            return jsonify({"status": "success", "recommendations": None}), 200
+            return jsonify({
+                "status": "success",
+                "recommendations": {
+                    "strategic": [],
+                    "tactical": [],
+                    "risk_mitigation": []
+                }
+            }), 200
         
         # Buscar archivo consolidado más reciente
         json_files = list(predictor_output_dir.glob("consolidated_results_*.json"))
         
         if not json_files:
             logger.warning("No se encontraron archivos de recomendaciones")
-            return jsonify({"status": "success", "recommendations": None}), 200
+            return jsonify({
+                "status": "success",
+                "recommendations": {
+                    "strategic": [],
+                    "tactical": [],
+                    "risk_mitigation": []
+                }
+            }), 200
         
         latest_file = max(json_files, key=lambda p: p.stat().st_mtime)
         logger.info(f"✅ Cargando recomendaciones desde: {latest_file.name}")
@@ -401,36 +415,107 @@ def get_recommendations():
         with open(latest_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        # Extraer recomendaciones - MANEJAR TANTO LISTA COMO DICCIONARIO
-        recs_data = data.get("recommendations", [])
+        # ===== PROCESAMIENTO COMPLETO DE RECOMENDACIONES =====
+        recommendations = {
+            "strategic": [],
+            "tactical": [],
+            "risk_mitigation": []
+        }
         
-        # Si es una lista, convertir a formato diccionario
-        if isinstance(recs_data, list):
-            logger.info(f"📋 Recomendaciones formato lista: {len(recs_data)} items")
-            recommendations = {
-                "strategic": recs_data[:len(recs_data)//2] if len(recs_data) > 1 else recs_data,
-                "tactical": recs_data[len(recs_data)//2:] if len(recs_data) > 1 else [],
-                "summary": f"{len(recs_data)} recomendaciones generadas"
-            }
-        # Si es un diccionario, usar directamente
-        elif isinstance(recs_data, dict):
-            logger.info(f"📋 Recomendaciones formato diccionario")
-            recommendations = {
-                "strategic": recs_data.get("strategic", []),
-                "tactical": recs_data.get("tactical", []),
-                "summary": recs_data.get("summary", "")
-            }
-        else:
-            # Formato desconocido
-            logger.warning(f"⚠️ Formato de recomendaciones desconocido: {type(recs_data)}")
-            recommendations = {
-                "strategic": [],
-                "tactical": [],
-                "summary": "No hay recomendaciones disponibles"
-            }
+        # Opción 1: hybrid_analysis.integrated_recommendations
+        if "hybrid_analysis" in data and "integrated_recommendations" in data["hybrid_analysis"]:
+            integrated = data["hybrid_analysis"]["integrated_recommendations"]
+            logger.info("✅ Usando hybrid_analysis.integrated_recommendations")
+            
+            # Procesar strategic
+            if "strategic" in integrated and isinstance(integrated["strategic"], list):
+                for item in integrated["strategic"]:
+                    if isinstance(item, dict):
+                        # Normalizar: puede ser 'text' o 'insight'
+                        text_value = item.get("text") or item.get("insight") or str(item)
+                        recommendations["strategic"].append({
+                            "source": item.get("source", "System"),
+                            "insight": text_value
+                        })
+                    elif isinstance(item, str):
+                        recommendations["strategic"].append({
+                            "source": "System",
+                            "insight": item
+                        })
+            
+            # Procesar tactical
+            if "tactical" in integrated and isinstance(integrated["tactical"], list):
+                for item in integrated["tactical"]:
+                    if isinstance(item, dict):
+                        text_value = item.get("text") or item.get("insight") or str(item)
+                        recommendations["tactical"].append({
+                            "source": item.get("source", "System"),
+                            "insight": text_value,
+                            "metric": item.get("metric")
+                        })
+                    elif isinstance(item, str):
+                        recommendations["tactical"].append({
+                            "source": "System",
+                            "insight": item
+                        })
+            
+            # Procesar risk_mitigation
+            if "risk_mitigation" in integrated and isinstance(integrated["risk_mitigation"], list):
+                for item in integrated["risk_mitigation"]:
+                    if isinstance(item, dict):
+                        text_value = item.get("text") or item.get("insight") or str(item)
+                        recommendations["risk_mitigation"].append({
+                            "insight": text_value,
+                            "priority": item.get("priority"),
+                            "risk_factors": item.get("risk_factors", [])
+                        })
+                    elif isinstance(item, str):
+                        recommendations["risk_mitigation"].append({
+                            "insight": item
+                        })
         
-        total_recs = len(recommendations["strategic"]) + len(recommendations["tactical"])
-        logger.info(f"✅ Recomendaciones cargadas: {total_recs} total")
+        # Opción 2: recommendations como array básico
+        elif "recommendations" in data and isinstance(data["recommendations"], list):
+            logger.info("✅ Convirtiendo recommendations array a formato estructurado")
+            
+            for rec in data["recommendations"]:
+                if isinstance(rec, dict):
+                    level = rec.get("level", "INFO")
+                    message = rec.get("message", str(rec))
+                    
+                    item = {
+                        "source": level,
+                        "insight": message
+                    }
+                    
+                    # Clasificar por nivel
+                    if level in ["SUCCESS", "INFO"]:
+                        recommendations["strategic"].append(item)
+                    elif level in ["WARNING"]:
+                        recommendations["tactical"].append(item)
+                    else:
+                        recommendations["risk_mitigation"].append(item)
+                elif isinstance(rec, str):
+                    recommendations["strategic"].append({
+                        "source": "System",
+                        "insight": rec
+                    })
+        
+        # Logging detallado
+        total_strategic = len(recommendations["strategic"])
+        total_tactical = len(recommendations["tactical"])
+        total_risk = len(recommendations["risk_mitigation"])
+        total_recs = total_strategic + total_tactical + total_risk
+        
+        logger.info(f"✅ Recomendaciones procesadas:")
+        logger.info(f"   Strategic: {total_strategic}")
+        logger.info(f"   Tactical: {total_tactical}")
+        logger.info(f"   Risk Mitigation: {total_risk}")
+        logger.info(f"   Total: {total_recs}")
+        
+        # Log del primer item si existe
+        if total_strategic > 0:
+            logger.info(f"   Primera strategic: {recommendations['strategic'][0]}")
         
         return jsonify({
             "status": "success",
@@ -441,16 +526,14 @@ def get_recommendations():
         logger.error(f"❌ Error cargando recomendaciones: {e}")
         import traceback
         traceback.print_exc()
-        # Retornar respuesta vacía en lugar de error 500
         return jsonify({
             "status": "success",
             "recommendations": {
                 "strategic": [],
                 "tactical": [],
-                "summary": "Error cargando recomendaciones"
+                "risk_mitigation": []
             }
         }), 200
-
 
 @app.route('/api/predictor/run-hybrid-analysis', methods=['POST', 'OPTIONS'])
 def run_hybrid_analysis():

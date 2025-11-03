@@ -51,7 +51,7 @@ PDF_EXTRACTOR_CONFIG = {
     'output_filename': "bbva_2023_div.pdf",  # Estados financieros únicamente
     
     # Páginas a extraer (Estados Financieros BBVA 2023)
-    'pages_to_extract': list(range(53, 60)),  # Páginas 54-60 (0-indexed)
+    'pages_to_extract': list(range(53, 61)),  # Páginas 54-60 (0-indexed)
     
     # Mapeo de contenido por página
     'page_content_mapping': {

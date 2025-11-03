@@ -206,60 +206,114 @@ class AzureEmbeddingClient:
 chat_client = ChatClient()
 embedding_client = AzureEmbeddingClient()  
 
-# ===== HERRAMIENTAS ESPECÍFICAS PARA CASHFLOWS CON EXTRACCIÓN MEJORADA =====
+# ===== HERRAMIENTAS ESPECÍFICAS PARA CASHFLOWS CON EXTRACCIÓN  =====
 
 @dataclass
 class AnalyzeCashflowStructureTool:
-    name: str = "analyzecashflowstructure"
+    """
+    Herramienta para analizar la estructura del PDF y localizar el estado de flujos de efectivo.
+    
+    CAMBIO IMPLEMENTADO: Detección automática del tamaño del PDF
+    - No usa valores hardcoded para anchor_page, max_pages o extend
+    - Busca en TODAS las páginas del PDF reducido (1 a N)
+    - Se adapta automáticamente al tamaño del documento
+    """
+    name: str = "analyze_cashflow_structure"
     description: str = "Analiza estructura del PDF para localizar el estado de flujos de efectivo"
     
-    def run(self, pdf_path: str, anchor_page: int = 8, max_pages: int = 25, extend: int = 3, **kwargs) -> Dict[str, Any]:
+    def run(self, pdf_path: str, anchor_page: int = None, max_pages: int = None, 
+            extend: int = None, **kwargs) -> Dict[str, Any]:
+        """
+        Analiza el PDF para encontrar el Statement of Cash Flows.
+        
+        Args:
+            pdf_path: Ruta al archivo PDF
+            anchor_page: Página ancla (None = detección automática)
+            max_pages: Máximo de páginas (None = usar total del PDF)
+            extend: Rango de búsqueda (None = buscar en todas)
+            
+        Returns:
+            Dict con páginas seleccionadas, score y estado de búsqueda
+        """
         try:
-            print(f" Analizando estructura de flujos de efectivo - página ancla: {anchor_page}")
+            # PASO 1: Detectar automáticamente el tamaño del PDF
+            with pdfplumber.open(pdf_path) as pdf:
+                total_pages = len(pdf.pages)
+                
+                # Si no se especifica anchor_page, usar página central
+                if anchor_page is None:
+                    anchor_page = total_pages // 2
+                
+                # Si no se especifica max_pages, usar total de páginas del PDF
+                if max_pages is None:
+                    max_pages = total_pages
+                    
+                # Si no se especifica extend, buscar en TODO el PDF reducido
+                if extend is None:
+                    extend = total_pages
             
-            # Páginas objetivo más probables para flujos de efectivo (ampliado)
-            target_pages = list(range(max(1, anchor_page - extend), min(max_pages, anchor_page + extend + 1)))
+            print(f"  Analizando estructura en PDF de {total_pages} páginas")
+            print(f"   Buscando desde página 1 hasta {total_pages}")
             
+            # PASO 2: Definir páginas objetivo - TODAS las páginas del PDF reducido
+            target_pages = list(range(1, total_pages + 1))
+            
+            # PASO 3: Buscar indicadores de flujos de efectivo en cada página
             with pdfplumber.open(pdf_path) as pdf:
                 found_cashflow = False
                 best_pages = []
-                for page_num in target_pages:
-                    if page_num <= len(pdf.pages):
-                        page = pdf.pages[page_num - 1]
-                        text = page.extract_text() or ""
-                        text_lower = text.lower()
-                        
-                        # Indicadores expandidos de flujos de efectivo
-                        cashflow_indicators = [
-                            "statement of cash flows", "cash flow statement", "flujos de efectivo",
-                            "operating activities", "investing activities", "financing activities",
-                            "net cash provided", "net cash used", "cash and cash equivalents",
-                            "actividades operativas", "actividades de inversión", "actividades de financiación",
-                            "efectivo generado", "efectivo utilizado", "flujo de caja"
-                        ]
-                        
-                        score = sum(1 for indicator in cashflow_indicators if indicator in text_lower)
-                        if score > 0:
-                            best_pages.append((page_num, score))
-                            print(f"✅ Flujos de efectivo encontrados en página {page_num} (score: {score})")
-                            found_cashflow = True
                 
-                # Ordenar páginas por relevancia
+                for page_num in target_pages:
+                    page = pdf.pages[page_num - 1]
+                    text = page.extract_text() or ""
+                    text_lower = text.lower()
+                    
+                    # Indicadores expandidos de flujos de efectivo
+                    cashflow_indicators = [
+                        "statement of cash flows",
+                        "cash flow statement",
+                        "flujos de efectivo",
+                        "operating activities",
+                        "investing activities",
+                        "financing activities",
+                        "net cash provided",
+                        "net cash used",
+                        "cash and cash equivalents",
+                        "actividades operativas",
+                        "actividades de inversión",
+                        "actividades de financiación",
+                        "efectivo generado",
+                        "efectivo utilizado",
+                        "flujo de caja"
+                    ]
+                    
+                    # Calcular score de relevancia
+                    score = sum(1 for indicator in cashflow_indicators if indicator in text_lower)
+                    
+                    if score > 0:
+                        best_pages.append((page_num, score))
+                        print(f"Flujos de efectivo encontrados en página {page_num} (score: {score})")
+                        found_cashflow = True
+                
+                # PASO 4: Ordenar páginas por relevancia y seleccionar las mejores
                 best_pages.sort(key=lambda x: x[1], reverse=True)
-                selected_pages = [page for page, score in best_pages[:6]]  # Top 6 páginas
-            
-            return {
-                "success": True,
-                "pages_selected": selected_pages or target_pages[:6],
-                "cashflow_found": found_cashflow,
-                "anchor_page_used": anchor_page,
-                "relevance_scores": dict(best_pages)
-            }
-            
+                selected_pages = [page for page, score in best_pages[:6]]
+                
+                # PASO 5: Retornar resultados
+                return {
+                    "success": True,
+                    "pages_selected": selected_pages or target_pages[:6],
+                    "cashflow_found": found_cashflow,
+                    "anchor_page_used": anchor_page,
+                    "relevance_scores": dict(best_pages),
+                    "total_pages_searched": len(target_pages)  # Nuevo campo para debugging
+                }
+                
         except Exception as e:
+            print(f"Error en AnalyzeCashflowStructureTool: {str(e)}")
             return {"success": False, "error": str(e)}
 
-@dataclass
+
 @dataclass
 class ExtractCashflowStatementTool:
     name: str = "extractcashflowstatement"
@@ -268,12 +322,12 @@ class ExtractCashflowStatementTool:
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
             pages_to_process = analysis_json.get("pages_selected", [6, 7, 8, 9, 10]) if analysis_json else [6, 7, 8, 9, 10]
-            print(f"📄 Extrayendo páginas con análisis avanzado: {pages_to_process}")
+            print(f" Extrayendo páginas con análisis avanzado: {pages_to_process}")
             
             extracted_text = ""
             total_chars = 0
             financial_data = {}
-            all_text_chunks = []  # ⚡ NUEVO: Para embeddings
+            all_text_chunks = []  
             
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
@@ -292,14 +346,27 @@ class ExtractCashflowStatementTool:
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
                             
-                            # ⚡ NUEVO: Dividir en chunks para embeddings
+                            # Extraer datos tabulares con pdfplumber
+                            print(f"Extrayendo datos tabulares de página {page_num}")
+                            table_data = self._extract_table_data(page)
+                            
+                            # Combinar datos de tabla con los ya extraídos
+                            for key, values in table_data.items():
+                                if key not in financial_data:
+                                    financial_data[key] = []
+                                financial_data[key].extend(values)
+                                
+                                if values:
+                                    print(f"   ✓ {key}: {values[:2]}")
+
+                            # Dividir en chunks para embeddings
                             page_chunks = self._split_text_into_chunks(text, chunk_size=1000)
                             all_text_chunks.extend([
                                 {'page': page_num, 'chunk': chunk}
                                 for chunk in page_chunks
                             ])
                             
-                            print(f"✅ Página {page_num}: {len(text)} caracteres extraídos")
+                            print(f"Página {page_num}: {len(text)} caracteres extraídos")
                             
                             # NUEVO: Extracción avanzada de datos financieros
                             page_data = self._extract_financial_numbers(text)
@@ -310,7 +377,7 @@ class ExtractCashflowStatementTool:
             
             if not extracted_text:
                 # Fallback: extraer todas las páginas en el rango
-                print("⚠️ Fallback: extrayendo páginas 1-20")
+                print(" Fallback: extrayendo páginas 1-20")
                 with pdfplumber.open(pdf_path) as pdf:
                     for page_num in range(1, min(20, len(pdf.pages) + 1)):
                         page = pdf.pages[page_num - 1]
@@ -325,21 +392,21 @@ class ExtractCashflowStatementTool:
                             for chunk in page_chunks
                         ])
             
-            # ===== ⚡ NUEVA SECCIÓN: BÚSQUEDA SEMÁNTICA OPTIMIZADA CON EMBEDDINGS =====
+            # ===== BÚSQUEDA SEMÁNTICA OPTIMIZADA CON EMBEDDINGS =====
             semantic_results = {}
             if all_text_chunks and extract_semantic_chunks:
-                print(f"🔍 Aplicando búsqueda semántica optimizada ({len(all_text_chunks)} chunks)...")
+                print(f" Aplicando búsqueda semántica optimizada ({len(all_text_chunks)} chunks)...")
                 
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
                 
-                # ⚡ OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
-                print(f"  📦 Generando embeddings en batch...")
+                # OPTIMIZADO: Generar embeddings de chunks en BATCH (1 sola llamada)
+                print(f"   Generando embeddings en batch...")
                 chunk_embeddings = embedding_client.get_batch_embeddings(chunk_texts)
                 
                 if chunk_embeddings is None:
-                    print("  ⚠️ Error generando embeddings, saltando búsqueda semántica")
+                    print("   Error generando embeddings, saltando búsqueda semántica")
                 else:
-                    print(f"  ✅ {len(chunk_embeddings)} embeddings generados en batch")
+                    print(f"   {len(chunk_embeddings)} embeddings generados en batch")
                     
                     # Queries semánticas específicas para flujos de efectivo
                     semantic_queries = {
@@ -353,7 +420,7 @@ class ExtractCashflowStatementTool:
                     
                     for category, query in semantic_queries.items():
                         try:
-                            # ⚡ OPTIMIZADO: Pasar embeddings cacheados para reutilizarlos
+                            # OPTIMIZADO: Pasar embeddings cacheados para reutilizarlos
                             similar_sections, _ = embedding_client.find_similar_sections_optimized(
                                 query, 
                                 chunk_texts,
@@ -363,24 +430,24 @@ class ExtractCashflowStatementTool:
                             
                             relevant_chunks = []
                             for idx, score, chunk_text in similar_sections:
-                                if score > 0.65:  # Umbral de similaridad
+                                if score > 0.50:  # Umbral de similaridad
                                     chunk_info = all_text_chunks[idx]
                                     relevant_chunks.append({
                                         'score': score,
                                         'text': chunk_text,
                                         'page': chunk_info['page']
                                     })
-                                    print(f"  ✅ {category} (score {score:.2f}, page {chunk_info['page']})")
+                                    print(f"   {category} (score {score:.2f}, page {chunk_info['page']})")
                             
                             if relevant_chunks:
                                 semantic_results[category] = relevant_chunks
                         
                         except Exception as e:
-                            print(f"  ⚠️ Error en búsqueda semántica para {category}: {e}")
+                            print(f"   Error en búsqueda semántica para {category}: {e}")
                     
                     # Enriquecer texto con resultados semánticos
                     if semantic_results:
-                        print(f"📋 Categorías encontradas con embeddings: {len(semantic_results)}")
+                        print(f" Categorías encontradas con embeddings: {len(semantic_results)}")
                         enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
                         
                         for category, chunks in semantic_results.items():
@@ -399,7 +466,7 @@ class ExtractCashflowStatementTool:
             
             confidence = 1.0 if total_chars > 2000 else 0.8 if total_chars > 1000 else 0.6
             
-            # ⚡ NUEVO: Ajustar confianza con embeddings
+            # Ajustar confianza con embeddings
             if semantic_results:
                 confidence = min(1.0, confidence + 0.1)  # Bonus por búsqueda semántica exitosa
             
@@ -411,9 +478,9 @@ class ExtractCashflowStatementTool:
                 "confidence": confidence,
                 "pages_processed": pages_to_process,
                 "financial_data": financial_data,
-                "semantic_results": semantic_results,  # ⚡ NUEVO
-                "semantic_categories_found": len(semantic_results),  # ⚡ NUEVO
-                "total_chunks_analyzed": len(all_text_chunks)  # ⚡ NUEVO
+                "semantic_results": semantic_results,  
+                "semantic_categories_found": len(semantic_results),  
+                "total_chunks_analyzed": len(all_text_chunks)  
             }
             
         except Exception as e:
@@ -421,54 +488,209 @@ class ExtractCashflowStatementTool:
             return {"success": False, "error": str(e)}
     
     def _extract_financial_numbers(self, text: str) -> Dict[str, List[float]]:
-        """Extrae números financieros específicos del texto"""
+        """
+        Extrae números financieros con PATTERNS MEJORADOS para formato tabular.
+        
+        MEJORAS: Patterns multi-línea, números negativos, filtrado de valores absurdos
+        """
+        
+        # PATTERNS MEJORADOS: [\s\S]{0,100}? captura números en líneas posteriores
         patterns = {
             'operating_cash': [
-                r'operating.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'actividades.*operativas.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'cash.*from.*operations.*€?\s*([0-9.,]+)',
-                r'€\s*([0-9.,]+).*operativ'
+                r'operating.*activities[\s\S]{0,100}?([\d.,]+)',
+                r'actividades.*operativas[\s\S]{0,100}?([\d.,]+)',
+                r'(?:net cash|cash flow).*?(?:from|provided).*?operat\w*[\s\S]{0,200}?([\d.,]+)',
+                r'cash.*from.*operations[\s\S]{0,100}?€?\s*([\d.,]+)',
+                r'operativ[\w]*[\s\S]{0,50}?([\d.,]+)'
             ],
+            
             'investing_cash': [
-                r'investing.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'actividades.*inversión.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'cash.*from.*investing.*€?\s*([0-9.,]+)',
-                r'€\s*([0-9.,]+).*invers'
+                r'investing.*activities[\s\S]{0,100}?([\d.,]+)',
+                r'actividades.*inversión[\s\S]{0,100}?([\d.,]+)',
+                r'(?:net cash|cash flow).*?(?:from|used).*?invest\w*[\s\S]{0,200}?([\d.,]+)',
+                r'cash.*from.*investing[\s\S]{0,100}?€?\s*([\d.,]+)',
+                r'invers[\w]*[\s\S]{0,50}?([\d.,]+)'
             ],
+            
             'financing_cash': [
-                r'financing.*activities.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'actividades.*financiación.*€?\s*([0-9.,]+)\s*(?:thousand|million|miles)',
-                r'cash.*from.*financing.*€?\s*([0-9.,]+)',
-                r'€\s*([0-9.,]+).*financi'
+                r'financing.*activities[\s\S]{0,100}?([\d.,]+)',
+                r'actividades.*financiación[\s\S]{0,100}?([\d.,]+)',
+                r'(?:net cash|cash flow).*?(?:from|used).*?financ\w*[\s\S]{0,200}?([\d.,]+)',
+                r'cash.*from.*financing[\s\S]{0,100}?€?\s*([\d.,]+)',
+                r'financi[\w]*[\s\S]{0,50}?([\d.,]+)'
             ],
+            
             'net_change_cash': [
-                r'net.*increase.*cash.*€?\s*([0-9.,]+)',
-                r'net.*change.*cash.*€?\s*([0-9.,]+)',
-                r'variación.*neta.*efectivo.*€?\s*([0-9.,]+)',
-                r'€\s*([0-9.,]+).*variación.*neta'
+                r'net (?:increase|decrease|change).*?cash[\s\S]{0,100}?([\d.,]+)',
+                r'variación neta.*?efectivo[\s\S]{0,100}?([\d.,]+)',
+                r'net.*?cash[\s\S]{0,50}?([\d.,]+)'
+            ],
+            
+            # NUEVAS CATEGORÍAS para validación de consistencia
+            'cash_beginning': [
+                r'cash.*?(?:beginning|start|inicio).*?(?:of period|period|año|year)[\s\S]{0,100}?([\d.,]+)',
+                r'efectivo al inicio[\s\S]{0,100}?([\d.,]+)',
+                r'(?:beginning|inicio).*?cash[\s\S]{0,100}?([\d.,]+)'
+            ],
+            
+            'cash_ending': [
+                r'cash.*?(?:end|close|final).*?(?:of period|period|año|year)[\s\S]{0,100}?([\d.,]+)',
+                r'efectivo al final[\s\S]{0,100}?([\d.,]+)',
+                r'(?:end|final).*?cash[\s\S]{0,100}?([\d.,]+)'
             ]
         }
         
         extracted_data = {}
+        
         for category, pattern_list in patterns.items():
             values = []
+            
             for pattern in pattern_list:
-                matches = re.findall(pattern, text, re.IGNORECASE)
+                # CAMBIO CRÍTICO: Añadir re.DOTALL flag
+                matches = re.findall(pattern, text, re.IGNORECASE | re.DOTALL)
+                
                 for match in matches:
                     try:
-                        # Limpiar y convertir números
-                        clean_number = re.sub(r'[^\d,.]', '', match)
-                        if clean_number:
-                            number = float(clean_number.replace(',', '.'))
-                            values.append(number)
-                    except ValueError:
+                        # Limpiar número: remover comas, mantener punto decimal
+                        clean_number = match.replace(',', '').replace(' ', '')
+                        
+                        # NUEVO: Manejar paréntesis como números negativos
+                        # En contabilidad: (208,961) = -208,961
+                        original_match = match
+                        if '(' in original_match and ')' in original_match:
+                            clean_number = '-' + re.sub(r'[^\d.]', '', clean_number)
+                        else:
+                            clean_number = re.sub(r'[^\d.-]', '', clean_number)
+                        
+                        # Validar que no esté vacío
+                        if clean_number and clean_number not in ['-', '.', '-.']:
+                            number = float(clean_number)
+                            
+                            # NUEVO: Filtrar valores absurdos (fechas, códigos)
+                            if abs(number) < 10000000:  # Máximo 10M en miles de EUR
+                                values.append(number)
+                            
+                    except (ValueError, AttributeError):
                         continue
-            extracted_data[category] = values
+            
+            # NUEVO: Eliminar duplicados manteniendo orden
+            seen = set()
+            unique_values = []
+            for v in values:
+                if v not in seen:
+                    seen.add(v)
+                    unique_values.append(v)
+            
+            # Top 3 valores por categoría (evita ruido)
+            extracted_data[category] = unique_values[:3]
         
         return extracted_data
+
+    def _extract_table_data(self, page) -> Dict[str, Any]:
+        """
+        Extrae datos tabulares del Statement of Cash Flows usando page.extract_tables().
+        Complementa _extract_financial_numbers() capturando estructura tabular.
+        """
+        tables = page.extract_tables()
+        financial_values = {}
+        
+        if not tables:
+            return financial_values
+        
+        for table in tables:
+            if not table:
+                continue
+            
+            for row in table:
+                if not row:
+                    continue
+                
+                # Convertir None a string para evitar errores
+                row_text = ' '.join([str(cell) if cell else '' for cell in row]).lower()
+                
+                # CATEGORÍA 1: Operating Activities
+                if 'net cash' in row_text and 'operating' in row_text:
+                    for cell in row[1:]:  # Saltar columna de labels
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    financial_values.setdefault('operating_cash', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+                
+                # CATEGORÍA 2: Investing Activities
+                elif 'investing' in row_text and ('activities' in row_text or 'cash' in row_text):
+                    for cell in row[1:]:
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    # Manejar paréntesis como negativos
+                                    if '(' in str(cell) and ')' in str(cell):
+                                        value = -abs(value)
+                                    financial_values.setdefault('investing_cash', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+                
+                # CATEGORÍA 3: Financing Activities
+                elif 'financing' in row_text and ('activities' in row_text or 'cash' in row_text):
+                    for cell in row[1:]:
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    if '(' in str(cell) and ')' in str(cell):
+                                        value = -abs(value)
+                                    financial_values.setdefault('financing_cash', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+                
+                # CATEGORÍA 4: Net Change in Cash
+                elif ('net' in row_text and 'increase' in row_text and 'cash' in row_text) or \
+                     ('net' in row_text and 'change' in row_text and 'cash' in row_text):
+                    for cell in row[1:]:
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    financial_values.setdefault('net_change_cash', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+                
+                # CATEGORÍA 5: Cash at Beginning
+                elif 'cash' in row_text and ('beginning' in row_text or 'inicio' in row_text):
+                    for cell in row[1:]:
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    financial_values.setdefault('cash_beginning', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+                
+                # CATEGORÍA 6: Cash at End
+                elif 'cash' in row_text and ('end' in row_text or 'final' in row_text):
+                    for cell in row[1:]:
+                        if cell and re.search(r'\d', str(cell)):
+                            try:
+                                clean_value = re.sub(r'[^\d.-]', '', str(cell))
+                                if clean_value and clean_value not in ['-', '.']:
+                                    value = float(clean_value)
+                                    financial_values.setdefault('cash_ending', []).append(value)
+                            except (ValueError, AttributeError):
+                                pass
+        
+        return financial_values
+
     
     def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
-        """⚡ NUEVO: Divide texto en chunks para procesamiento con embeddings"""
+        """Divide texto en chunks para procesamiento con embeddings"""
         if not text:
             return []
         
@@ -563,12 +785,44 @@ class ValidateCashflowQualityTool:
                 quality_score += 15
                 validation_details.append(" Efectivo y equivalentes encontrados")
             
-            # NUEVO: Bonificaciones por datos financieros específicos encontrados
+            # Bonificaciones por datos financieros específicos encontrados
             if financial_data:
-                data_bonus = min(10, len(financial_data) * 2)  # Máximo 10 puntos extra
-                quality_score += data_bonus
-                validation_details.append(f" Datos financieros específicos: {len(financial_data)} categorías")
-            
+                operating = financial_data.get('operating_cash', [])
+                investing = financial_data.get('investing_cash', [])
+                financing = financial_data.get('financing_cash', [])
+                net_change = financial_data.get('net_change_cash', [])
+                
+                # Bonus por datos numéricos encontrados
+                if operating:
+                    quality_score += 10
+                    validation_details.append(f"✓ Flujos operativos: {operating[0]:,.0f}")
+                
+                if investing:
+                    quality_score += 10
+                    validation_details.append(f"✓ Flujos de inversión: {investing[0]:,.0f}")
+                
+                if financing:
+                    quality_score += 10
+                    validation_details.append(f"✓ Flujos de financiación: {financing[0]:,.0f}")
+                
+                # Validar consistencia matemática
+                if operating and investing and net_change:
+                    try:
+                        calculated_net = operating[0] + investing[0]
+                        if financing:
+                            calculated_net += financing[0]
+                        
+                        actual_net = net_change[0]
+                        diff_pct = abs(calculated_net - actual_net) / abs(actual_net) * 100
+                        
+                        if diff_pct < 5:
+                            quality_score += 15
+                            validation_details.append("✓ Validación matemática: Consistente")
+                        else:
+                            validation_details.append(f"Discrepancia: {diff_pct:.1f}%")
+                    except:
+                        pass
+
             # Determinar calidad
             if quality_score >= 80:
                 quality = "excellent"
@@ -736,7 +990,6 @@ class CashFlowsREACTAgent:
             tools_ctx = {
                 "pdfpath": str(pdf_file),
                 "outputdir": str(output_dir),
-                "anchorpage": 8,  # Página más probable para flujos de efectivo
                 "lastanalysis": {},
                 "lastextraction": {},
                 "lastvalidation": {}
@@ -750,7 +1003,7 @@ class CashFlowsREACTAgent:
             print(f" Iniciando CashFlows Agent MEJORADO para {pdf_file.name}")
             print(f" PDF: {pdf_file}")
             print(f" Output: {output_dir}")
-            print(f" Anchor page: {tools_ctx['anchorpage']}")
+            #print(f" Anchor page: {tools_ctx['anchorpage']}")
             
             while not finished and steps < self.max_steps:
                 steps += 1
@@ -842,9 +1095,9 @@ class CashFlowsREACTAgent:
             if tool_name == "analyzecashflowstructure":
                 params = {
                     "pdf_path": tools_ctx["pdfpath"],
-                    "anchor_page": tools_ctx.get("anchorpage", 8),
-                    "max_pages": 25,
-                    "extend": 3  # MEJORADO: Búsqueda más amplia
+                    "anchor_page": None,
+                    "max_pages": None,
+                    "extend": None  
                 }
                 
             elif tool_name == "extractcashflowstatement":

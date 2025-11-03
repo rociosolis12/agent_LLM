@@ -537,3 +537,48 @@
   color: #666;
   margin-bottom: 30px;
 }
+
+/* Estilos adicionales para PredictionCharts */
+.charts-container {
+  padding: 1rem;
+}
+
+.chart-section {
+  margin-bottom: 2rem;
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.no-charts {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #6c757d;
+  margin: 1rem;
+}
+
+.no-charts .info-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.no-charts h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.no-charts p {
+  font-size: 0.95rem;
+  margin: 0;
+}

@@ -1,6 +1,5 @@
 """
 Agente Extractor BBVA - Estados Financieros
-Páginas 54-60 únicamente - VERSIÓN CORREGIDA
 """
 
 import os
@@ -19,7 +18,7 @@ class PDFExtractorAgent:
         Método principal - Compatible con arquitectura async
         """
         try:
-            print(f"🔄 {self.agent_name} iniciando...")
+            print(f" {self.agent_name} iniciando...")
             
             # Configurar rutas
             input_file = os.path.join(
@@ -49,7 +48,7 @@ class PDFExtractorAgent:
                 validation = self._validate_extraction(output_file)
                 result.update(validation)
             
-            print(f"✅ {self.agent_name} completado")
+            print(f" {self.agent_name} completado")
             return result
             
         except Exception as e:
@@ -59,7 +58,7 @@ class PDFExtractorAgent:
                 "agent": self.agent_name,
                 "timestamp": datetime.now().isoformat()
             }
-            print(f"❌ {self.agent_name} falló: {str(e)}")
+            print(f" {self.agent_name} falló: {str(e)}")
             return error_result
 
     def _extract_pdf_sync(self, input_file, output_file):
@@ -103,29 +102,43 @@ class PDFExtractorAgent:
         }
 
     def _validate_extraction(self, output_file):
-        """Validar que la extracción fue exitosa"""
+        """Validar que la extracción incluya los 4 estados financieros"""
         try:
             reader = PdfReader(output_file)
             pages_count = len(reader.pages)
-            expected_pages = len(self.pdf_config['pages_to_extract'])
             
-            validation_result = {
-                "validation": {
-                    "pages_count": pages_count,
-                    "expected_pages": expected_pages,
-                    "validation_passed": pages_count == expected_pages,
-                    "file_readable": True,
-                    "contains_financial_statements": True  # Asumimos que sí por las páginas
-                }
+            # Validar keywords obligatorias
+            required_statements = {
+                'balance': False,
+                'income': False,
+                'cashflow': False,
+                'equity': False
             }
-            return validation_result
-        except Exception as e:
+            
+            for page in reader.pages:
+                text = page.extract_text().lower()
+                if 'statement of financial position' in text:
+                    required_statements['balance'] = True
+                if 'statement of comprehensive income' in text:
+                    required_statements['income'] = True
+                if 'statement of cash flows' in text:
+                    required_statements['cashflow'] = True
+                if 'statement of changes in equity' in text:
+                    required_statements['equity'] = True
+            
+            all_found = all(required_statements.values())
+            
             return {
                 "validation": {
-                    "validation_passed": False,
-                    "error": str(e)
+                    "pages_count": pages_count,
+                    "validation_passed": all_found,
+                    "statements_found": required_statements,
+                    "missing_statements": [k for k, v in required_statements.items() if not v]
                 }
             }
+        except Exception as e:
+            return {"validation": {"validation_passed": False, "error": str(e)}}
+
 
     def is_ready(self):
         """Verificar si el agente está listo para funcionar"""

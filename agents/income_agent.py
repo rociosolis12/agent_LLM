@@ -283,141 +283,216 @@ def convert_string_to_float(value_str: str) -> Optional[float]:
         return None
 
 def extract_comprehensive_income_data(text: str) -> Dict[str, List[float]]:
-    """FUNCIÓN CORREGIDA: Extrae datos financieros con patrones mejorados y conversión segura"""
+    """
+    FUNCIÓN MEJORADA: Extrae datos financieros con patrones específicos y validación robusta
     
-    # PATRONES MEJORADOS más específicos para documentos bancarios españoles
-    patterns = {
-        'net_interest_income': [
-            r'margen.*intereses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'net.*interest.*income.*€?\s*([0-9.,]+)\s*(?:miles|million)',
-            r'ingresos.*netos.*intereses.*€?\s*([0-9.,]+)',
-            r'margen.*de.*intereses.*([0-9.,]+)',
-            r'€\s*([0-9.,]+).*margen.*intereses',
-            # Patrones adicionales sin € al inicio
-            r'margen.*intereses.*([0-9.,]+)\s*(?:miles|millones?)',
-            r'ingresos.*intereses.*([0-9.,]+)\s*(?:miles|millones?)',
-            # Patrones más específicos para BBVA
-            r'margen.*de.*intereses\s*([0-9.,]+)',
-            r'intereses.*y.*rendimientos.*similares.*([0-9.,]+)',
-            r'ingresos.*por.*intereses.*([0-9.,]+)'
-        ],
-        'fee_commission_income': [
-            r'comisiones.*netas.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'ingresos.*comisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'fee.*commission.*€?\s*([0-9.,]+)',
-            r'comisiones.*([0-9.,]+)\s*(?:miles|millones?)',
-            r'€\s*([0-9.,]+).*comisiones',
-            # Patrones adicionales para BBVA
-            r'comisiones.*([0-9.,]+)',
-            r'ingresos.*por.*comisiones.*([0-9.,]+)',
-            r'comisiones.*netas.*([0-9.,]+)',
-            r'fee.*and.*commission.*income.*([0-9.,]+)'
-        ],
-        'operating_expenses': [
-            r'gastos.*explotación.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'gastos.*operativos.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'operating.*expenses.*€?\s*([0-9.,]+)',
-            r'gastos.*de.*explotación.*([0-9.,]+)',
-            r'€\s*([0-9.,]+).*gastos.*operativ',
-            r'gastos.*administración.*([0-9.,]+)',
-            r'total.*gastos.*operativos.*([0-9.,]+)',
-            r'gastos.*generales.*administración.*([0-9.,]+)'
-        ],
-        'staff_costs': [
-            r'gastos.*personal.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'staff.*costs.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'personnel.*expenses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'€\s*([0-9.,]+).*gastos.*personal',
-            r'€\s*([0-9.,]+).*staff.*costs',
-            r'gastos.*de.*personal.*([0-9.,]+)',
-            r'sueldos.*salarios.*([0-9.,]+)'
-        ],
-        'provisions': [
-            r'dotaciones.*provisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'loan.*loss.*provisions.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'impairment.*losses.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'provisiones.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'€\s*([0-9.,]+).*provisiones',
-            r'€\s*([0-9.,]+).*provisions',
-            r'dotaciones.*para.*insolvencias.*([0-9.,]+)',
-            r'provisiones.*para.*riesgos.*([0-9.,]+)'
-        ],
-        'net_profit': [
-            r'beneficio.*neto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'resultado.*neto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'net.*profit.*€?\s*([0-9.,]+)',
-            r'beneficio.*neto.*([0-9.,]+)',
-            r'resultado.*del.*ejercicio.*([0-9.,]+)',
-            r'€\s*([0-9.,]+).*beneficio.*neto',
-            r'beneficio.*atribuido.*([0-9.,]+)',
-            r'resultado.*atribuido.*al.*grupo.*([0-9.,]+)'
-        ],
-        'total_income': [
-            r'margen.*bruto.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'ingresos.*totales.*€?\s*([0-9.,]+)\s*(?:miles|millones?)',
-            r'total.*income.*€?\s*([0-9.,]+)',
-            r'margen.*bruto.*([0-9.,]+)',
-            r'total.*ingresos.*([0-9.,]+)',
-            r'ingresos.*operativos.*([0-9.,]+)',
-            r'margen.*de.*intermediación.*([0-9.,]+)',
-            # Patrón más general para números grandes
-            r'([0-9]{2,3}(?:[.,][0-9]{3})*)\s*(?:miles|millones?)'
-        ]
+    Mejoras implementadas:
+    - Patrones más específicos que evitan capturar años o índices
+    - Validación de valores mínimos (>10) para filtrar ruido
+    - Mejor manejo de formatos numéricos europeos
+    - Priorización de patrones (los más específicos primero)
+    """
+    
+    # Estructura de datos con todas las categorías
+    extracted_data = {
+        'years_found': [],
+        'net_interest_income': [],
+        'interest_income': [],
+        'interest_expense': [],
+        'fee_commission_income': [],
+        'commission_income': [],
+        'commission_expense': [],
+        'operating_expenses': [],
+        'staff_costs': [],
+        'provisions': [],
+        'net_profit': [],
+        'total_income': [],
+        'net_trading_income': [],
     }
     
-    extracted_data = {}
-    
-    # Buscar años específicos
+    # Buscar años específicos (sin confundirlos con valores financieros)
     years = re.findall(r'\b(20\d{2})\b', text)
     extracted_data['years_found'] = list(set(years))
+    print(f"DEBUG: Años encontrados: {sorted(extracted_data['years_found'])}")
     
-    print(f"🔍 DEBUG: Años encontrados: {extracted_data['years_found']}")
+    # PATRONES MEJORADOS Y PRIORITIZADOS
+    # Los patrones están ordenados de más específico a más general
+    # El primero que coincida se usa (con break)
     
-    # Extraer datos por categoría CON CONVERSIÓN SEGURA
+    patterns = {
+        'interest_income': [
+            # Patrón 1: Más específico - con "and similar"
+            r'interest\s+and\s+similar\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            # Patrón 2: Con contexto de miles/millones
+            r'interest\s+income\s+(\d{1,3}(?:[.,]\d{3})*)\s*(?:miles|thousand|million)',
+            # Patrón 3: Español
+            r'ingresos\s+por\s+intereses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'intereses\s+y\s+rendimientos\s+similares[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            # Patrón 4: General pero con límite (al menos 3 dígitos)
+            r'interest\s+income[:\s]+(\d{3,}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'interest_expense': [
+            r'interest\s+and\s+similar\s+expense[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'interest\s+expense[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+por\s+intereses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'interest\s+and\s+similar\s+charges[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'net_interest_income': [
+            r'net\s+interest\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'margen\s+(?:de\s+)?intereses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'margen\s+neto\s+(?:de\s+)?intereses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'commission_income': [
+            r'fee\s+and\s+commission\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'commission\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'ingresos\s+por\s+comisiones[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'commission_expense': [
+            r'fee\s+and\s+commission\s+expense[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'commission\s+expense[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+por\s+comisiones[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'fee_commission_income': [
+            # Alias para commission_income (se combinarán después)
+            r'comisiones\s+netas[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'fee.*commission.*income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'net_trading_income': [
+            r'net\s+trading\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'trading\s+income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'ingresos\s+por\s+operaciones\s+financieras[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'operating_expenses': [
+            r'operating\s+expenses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+(?:de\s+)?explotaci[oó]n[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+operativos[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'administrative\s+expenses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+(?:generales\s+)?(?:de\s+)?administraci[oó]n[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'staff_costs': [
+            r'staff\s+costs[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'personnel\s+expenses[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'gastos\s+de\s+personal[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'sueldos\s+y\s+salarios[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'provisions': [
+            r'(?:provisions?|dotaciones?)\s+(?:for\s+)?(?:credit\s+)?(?:losses?|provisiones?)[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'loan\s+loss\s+provisions?[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'impairment\s+losses?[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'expected\s+credit\s+losses?[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'dotaciones?\s+(?:para\s+)?(?:insolvencias?|provisiones?)[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'net_profit': [
+            r'(?:net\s+)?profit\s+(?:for\s+the\s+year|after\s+tax)[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'net\s+profit[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'beneficio\s+neto[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'resultado\s+(?:neto|del\s+ejercicio)[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'beneficio\s+atribuido[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+        
+        'total_income': [
+            r'total\s+(?:operating\s+)?income[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'total\s+revenue[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'(?:ingresos?|margen)\s+(?:totales?|bruto)[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+            r'margen\s+(?:de\s+)?intermediaci[oó]n[:\s]+(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)',
+        ],
+    }
+    
+    # EXTRACCIÓN CON VALIDACIÓN MEJORADA
     for category, pattern_list in patterns.items():
         values = []
         raw_matches = []
         
         for pattern in pattern_list:
-            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE | re.DOTALL)
-            for match in matches:
-                raw_matches.append(match)
-                try:
-                    # CONVERSIÓN MEJORADA Y SEGURA
-                    clean_number = convert_string_to_float(match)
-                    if clean_number is not None and clean_number > 0:
-                        values.append(clean_number)
-                except Exception as e:
-                    print(f" Error convirtiendo '{match}': {e}")
-                    continue
+            matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
+            
+            if matches:
+                raw_matches.extend(matches[:5])  # Guardar primeros 5 para debug
+                
+                for match in matches:
+                    try:
+                        # Conversión segura
+                        clean_number = convert_string_to_float(match)
+                        
+                        # 🆕 VALIDACIÓN CRÍTICA: Filtrar valores pequeños
+                        if clean_number is not None:
+                            # Solo aceptar valores >= 50 (evita años, índices, porcentajes)
+                            if clean_number >= 50:
+                                values.append(clean_number)
+                            else:
+                                print(f"  Valor descartado ({category}): {clean_number} (demasiado pequeño)")
+                    
+                    except Exception as e:
+                        print(f"  Error convirtiendo '{match}' para {category}: {e}")
+                        continue
+                
+                # Si encontró valores válidos con este patrón, no probar los siguientes
+                if values:
+                    break
         
         # Remover duplicados manteniendo orden
         unique_values = []
+        seen = set()
         for v in values:
-            if v not in unique_values:
+            if v not in seen:
                 unique_values.append(v)
+                seen.add(v)
         
         extracted_data[category] = unique_values
         
+        # Debug mejorado
         if raw_matches:
-            print(f"🔍 DEBUG {category}: raw_matches = {raw_matches[:3]}, converted = {unique_values[:3]}")
+            print(f"🔍 DEBUG {category}:")
+            print(f"   Raw matches: {raw_matches[:3]}")
+            print(f"   Converted: {unique_values[:3]}")
+            print(f"   Total valid: {len(unique_values)}")
+    
+    # COMBINACIÓN DE CATEGORÍAS RELACIONADAS
+    # Combinar commission_income y fee_commission_income
+    if extracted_data['commission_income'] or extracted_data['fee_commission_income']:
+        all_commissions = extracted_data['commission_income'] + extracted_data['fee_commission_income']
+        unique_commissions = list(set(all_commissions))
+        extracted_data['fee_commission_income'] = unique_commissions
+        extracted_data['commission_income'] = unique_commissions
+    
+    # Resumen de categorías extraídas
+    categories_with_data = sum(1 for v in extracted_data.values() if v and isinstance(v, list) and len(v) > 0)
+    print(f"\n{'='*60}")
+    print(f" RESUMEN DE EXTRACCIÓN")
+    print(f"{'='*60}")
+    print(f"Categorías con datos: {categories_with_data}/12")
+    
+    for cat, vals in extracted_data.items():
+        if vals and cat != 'years_found':
+            print(f"   {cat}: {len(vals)} valores - {vals[:2]}")
+    print(f"{'='*60}\n")
     
     return extracted_data
 
+
 def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]:
-    """FUNCIÓN CORREGIDA: Calcular ratios con validación de tipos segura"""
+    """FUNCIÓN MEJORADA: Calcular ratios con validación de tipos segura + alertas de anomalías"""
     
     ratios = {}
     
     if not data or not isinstance(data, dict):
         return ratios
     
-    # Función auxiliar para obtener valor máximo seguro
+    # Función auxiliar para obtener valor máximo seguro (SIN CAMBIOS)
     def get_max_value_safe(values_list):
         if not values_list or not isinstance(values_list, list):
             return 0.0
         try:
-            # Asegurar que todos sean floats
             float_values = []
             for v in values_list:
                 if isinstance(v, (int, float)):
@@ -431,7 +506,7 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
         except Exception:
             return 0.0
     
-    # Obtener valores principales SEGUROS
+    # Obtener valores principales SEGUROS (SIN CAMBIOS)
     net_profit = get_max_value_safe(data.get('net_profit', []))
     total_income = get_max_value_safe(data.get('total_income', []))
     operating_expenses = get_max_value_safe(data.get('operating_expenses', []))
@@ -440,7 +515,12 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
     fee_commission = get_max_value_safe(data.get('fee_commission_income', []))
     provisions = get_max_value_safe(data.get('provisions', []))
     
-    print(f"🔍 DEBUG ratios - net_profit: {net_profit}, total_income: {total_income}")
+    # Extraer también interest_expense para calcular NIM
+    interest_income = get_max_value_safe(data.get('interest_income', []))
+    interest_expense = get_max_value_safe(data.get('interest_expense', []))
+    
+    print(f" DEBUG ratios - net_profit: {net_profit}, total_income: {total_income}")
+    print(f" DEBUG ratios - operating_expenses: {operating_expenses}")  # 🆕 NUEVO
     
     # Calcular ratios SI hay datos disponibles
     if total_income > 0:
@@ -450,6 +530,34 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
         if operating_expenses > 0:
             ratios['cost_income_ratio'] = (operating_expenses / total_income) * 100
             ratios['efficiency_ratio'] = (operating_expenses / total_income) * 100
+            
+            # VALIDACIÓN DE RATIOS ANÓMALOS
+            cir = ratios['cost_income_ratio']
+            
+            # Rangos típicos para bancos según investigación:
+            # - Óptimo: 45-60%
+            # - Aceptable: 60-75%
+            # - Problemático: >75%
+            if cir > 75:
+                print(f" ALERTA CRÍTICA: Cost-income ratio muy alto ({cir:.1f}%)")
+                print(f"   Operating expenses: €{operating_expenses:,.0f}")
+                print(f"   Total income: €{total_income:,.0f}")
+                print(f"    Esto indica baja eficiencia operativa (>75% es problemático)")
+                ratios['cost_income_ratio_flag'] = 'HIGH'  # Flag para análisis posterior
+                
+            elif cir > 60:
+                print(f" ADVERTENCIA: Cost-income ratio por encima del óptimo ({cir:.1f}%)")
+                print(f"   Rango óptimo para bancos: 45-60%")
+                ratios['cost_income_ratio_flag'] = 'ABOVE_OPTIMAL'
+                
+            elif cir < 30:
+                print(f" ALERTA: Cost-income ratio inusualmente bajo ({cir:.1f}%)")
+                print(f"   Verificar si los datos de gastos están completos")
+                ratios['cost_income_ratio_flag'] = 'SUSPICIOUSLY_LOW'
+                
+            else:
+                print(f" Cost-income ratio en rango óptimo ({cir:.1f}%)")
+                ratios['cost_income_ratio_flag'] = 'OPTIMAL'
             
         if net_interest_income > 0:
             ratios['interest_income_ratio'] = (net_interest_income / total_income) * 100
@@ -463,11 +571,33 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
         if provisions > 0:
             ratios['provision_ratio'] = (provisions / total_income) * 100
     
-    # Calcular variaciones SEGURAS si hay múltiples valores
+    # Calcular Net Interest Margin (NIM) - crítico para bancos
+    if interest_income > 0 and interest_expense >= 0:
+        nim = interest_income - interest_expense
+        if nim > 0 and total_income > 0:
+            ratios['net_interest_margin_pct'] = (nim / total_income) * 100
+            print(f" Net Interest Margin calculado: {ratios['net_interest_margin_pct']:.2f}%")
+            print(f"   Interest income: €{interest_income:,.0f}")
+            print(f"   Interest expense: €{interest_expense:,.0f}")
+            print(f"   NIM: €{nim:,.0f}")
+    
+    # Validar profit margin
+    if 'net_profit_margin' in ratios:
+        npm = ratios['net_profit_margin']
+        if npm > 50:
+            print(f" ALERTA: Net profit margin muy alto ({npm:.1f}%) - verificar datos")
+            ratios['net_profit_margin_flag'] = 'SUSPICIOUSLY_HIGH'
+        elif npm < 0:
+            print(f" Pérdidas detectadas: Net profit margin negativo ({npm:.1f}%)")
+            ratios['net_profit_margin_flag'] = 'NEGATIVE'
+        elif npm > 20:
+            print(f" Rentabilidad excelente: Net profit margin {npm:.1f}%")
+            ratios['net_profit_margin_flag'] = 'EXCELLENT'
+    
+    # Calcular variaciones SEGURAS si hay múltiples valores (SIN CAMBIOS)
     for category, values in data.items():
         if isinstance(values, list) and len(values) >= 2:
             try:
-                # Asegurar que sean números
                 float_values = []
                 for v in values:
                     if isinstance(v, (int, float)):
@@ -478,7 +608,6 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
                             float_values.append(converted)
                 
                 if len(float_values) >= 2 and float_values[0] != 0:
-                    # CÁLCULO SEGURO DE CRECIMIENTO
                     growth = ((float_values[-1] - float_values[0]) / abs(float_values[0])) * 100
                     ratios[f'{category}_growth'] = growth
                     
@@ -486,8 +615,15 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
                 print(f" Error calculando growth para {category}: {e}")
                 continue
     
-    print(f" DEBUG: Ratios calculados: {list(ratios.keys())}")
+    print(f"DEBUG: Ratios calculados: {list(ratios.keys())}")
+    
+    # Resumen de validaciones
+    flags_found = [k for k in ratios.keys() if k.endswith('_flag')]
+    if flags_found:
+        print(f" Flags de validación generados: {flags_found}")
+    
     return ratios
+
 
 # ===== CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME =====
 
@@ -507,7 +643,7 @@ class IncomeREACTAgent:
     def run_final_financial_extraction_agent(self, pdf_path: str, question: str = None) -> Dict[str, Any]:
         """Ejecuta la extracción de cuenta de resultados con wrapper autónomo"""
         try:
-            print(f"🔧 IncomeREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
+            print(f"IncomeREACTAgent AUTÓNOMO iniciando extracción para: {pdf_path}")
             
             pdf_file = Path(pdf_path)
             output_dir = Path("data/salida")
@@ -532,8 +668,39 @@ class IncomeREACTAgent:
             # VALIDACIÓN MEJORADA
             validation_result = self.validate_income_data_enhanced(extraction_result)
             
-            # GUARDAR RESULTADOS MEJORADOS
-            save_result = self.save_income_results_enhanced(pdf_file, output_dir, extraction_result, validation_result)
+            # Validación cruzada con Balance Agent 
+            cross_validation_result = None
+            try:
+                balance_file = output_dir / f"balance_{pdf_file.stem}_summary.json"
+                if balance_file.exists():
+                    import json
+                    with open(balance_file, 'r', encoding='utf-8') as f:
+                        balance_result = json.load(f)
+                        balance_data = balance_result.get('financial_data', {})
+                    
+                    if balance_data:
+                        income_data = extraction_result.get("financial_data", {})
+                        cross_validation_result = self.cross_validate_with_balance(income_data, balance_data)
+                        
+                        print(f"\n Validación cruzada completada:")
+                        print(f"   Estado: {'Consistente' if cross_validation_result['consistent'] else '❌ Inconsistente'}")
+                        print(f"   Ratios calculados: {list(cross_validation_result['ratios_calculated'].keys())}")
+                    else:
+                        print(f"Archivo balance encontrado pero sin datos financieros")
+                else:
+                    print(f"No se encontró archivo de balance: {balance_file}")
+                    print(f"   Saltando validación cruzada (ejecutar Balance Agent primero)")
+            
+            except Exception as e:
+                print(f" Error en validación cruzada: {e}")
+                import traceback
+                traceback.print_exc()
+            
+            # Guardar resultados 
+            save_result = self.save_income_results_enhanced(
+                pdf_file, output_dir, extraction_result, validation_result,
+                cross_validation_result  
+            )
             
             # GENERAR RESPUESTA ESPECÍFICA MEJORADA CON DEBUGGING
             print(f" DEBUG: Iniciando generación de respuesta específica...")
@@ -560,6 +727,7 @@ class IncomeREACTAgent:
                 "extraction_summary": {
                     "total_characters": extraction_result.get("total_characters", 0),
                     "financial_data_categories": len(extraction_result.get("financial_data", {})),
+                    "cross_validation": cross_validation_result,
                     "confidence": validation_result.get("confidence", 0.8),
                     "quality": validation_result.get("quality", "unknown")
                 }
@@ -580,7 +748,7 @@ class IncomeREACTAgent:
     def extract_income_data_enhanced(self, pdf_file: Path) -> Dict[str, Any]:
         """NUEVA FUNCIÓN: Extracción mejorada de datos de cuenta de resultados con búsqueda semántica"""
         try:
-            print(f"📊 Extrayendo cuenta de resultados de: {pdf_file}")
+            print(f"Extrayendo cuenta de resultados de: {pdf_file}")
             
             # Páginas más probables para cuenta de resultados en documentos bancarios
             target_pages = [1, 2, 3, 4, 5, 6, 7, 8]  # Ampliar búsqueda
@@ -592,16 +760,19 @@ class IncomeREACTAgent:
             all_text_chunks = []  # NUEVO: Para búsqueda semántica
             
             with fitz.open(pdf_file) as pdf:
-                for page_num in range(min(len(pdf), 15)):  # Buscar en primeras 15 páginas
-                    page = pdf[page_num]
-                    text = page.get_text()
-                    text_lower = normalize_text(text)
-                    
-                    # Detectar relevancia para cuenta de resultados
-                    relevance_score = 0
-                    
-                    # Buscar títulos específicos
-                    title_indicators = INCOME_TITLES_EN + INCOME_TITLES_ES
+                for page_num in range(len(pdf)):  # Procesar todo el documento
+                # O implementar búsqueda inteligente:
+                    if page_num < 20 or relevance_score > 5:  # Primeras 20 + páginas relevantes
+                # procesar página
+                        page = pdf[page_num]
+                        text = page.get_text()
+                        text_lower = normalize_text(text)
+                        
+                        # Detectar relevancia para cuenta de resultados
+                        relevance_score = 0
+                        
+                        # Buscar títulos específicos
+                        title_indicators = INCOME_TITLES_EN + INCOME_TITLES_ES
                     for indicator in title_indicators:
                         if normalize_text(indicator) in text_lower:
                             relevance_score += 10
@@ -730,11 +901,21 @@ class IncomeREACTAgent:
                         # Prefijar al texto original
                         extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
             
-            # NUEVA: Extracción total mejorada
-            total_extracted = 0
-            if financial_data:
-                total_extracted = sum(len(values) for values in financial_data.values() if values)
-                print(f"💰 Total extraído: {total_extracted} entradas financieras")
+            # Integrar transacciones con partes relacionadas
+            related_party_data = self.extract_related_party_transactions(pdf_file)
+            if related_party_data:
+                print(f"Datos de partes relacionadas extraídos: {sum(len(v) for v in related_party_data.values())} valores")
+                # Combinar con financial_data
+                for key, values in related_party_data.items():
+                    if key in financial_data:
+                        financial_data[key].extend(values)
+                    else:
+                        financial_data[key] = values
+
+                total_extracted = 0
+                if financial_data:
+                    total_extracted = sum(len(values) for values in financial_data.values() if values)
+                    print(f"Total extraído: {total_extracted} entradas financieras")
             
             confidence = 1.0 if total_chars > 3000 else 0.8 if total_chars > 1500 else 0.6
             
@@ -757,7 +938,89 @@ class IncomeREACTAgent:
             
         except Exception as e:
             print(f"❌ Error en extract_income_data_enhanced: {e}")
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)}    
+
+    def extract_related_party_transactions(self, pdf_file: Path) -> Dict[str, Any]:
+        """
+        Extrae transacciones con partes relacionadas de la Nota 2
+        Específico para documentos como GarantiBank que detallan estas transacciones
+        """
+        try:
+            related_party_data = {
+                'interest_income': [],
+                'interest_expense': [],
+                'commission_income': [],
+                'commission_expense': [],
+            }
+            
+            with fitz.open(pdf_file) as pdf:
+                for page_num in range(len(pdf)):
+                    page = pdf[page_num]
+                    text = page.get_text()
+                    text_lower = normalize_text(text)
+                    
+                    # Buscar sección de Related Party Disclosures
+                    if 'related party' in text_lower or 'partes vinculadas' in text_lower:
+                        
+                        # ========== PATRONES MEJORADOS (NUEVO) ==========
+                        
+                        # Interest income
+                        interest_income_patterns = [
+                            r'interest\s+and\s+similar\s+income\s+([0-9.,]+)',
+                            r'interest\s+income\s+([0-9.,]+)',
+                            r'ingresos\s+por\s+intereses\s+([0-9.,]+)',
+                        ]
+                        for pattern in interest_income_patterns:
+                            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+                            for match in matches:
+                                value = convert_string_to_float(match)
+                                if value and value > 0:
+                                    related_party_data['interest_income'].append(value)
+                        
+                        # Interest expense
+                        interest_expense_patterns = [
+                            r'interest\s+and\s+similar\s+expense\s+([0-9.,]+)',
+                            r'interest\s+expense\s+([0-9.,]+)',
+                            r'gastos\s+por\s+intereses\s+([0-9.,]+)',
+                        ]
+                        for pattern in interest_expense_patterns:
+                            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+                            for match in matches:
+                                value = convert_string_to_float(match)
+                                if value and value > 0:
+                                    related_party_data['interest_expense'].append(value)
+                        
+                        # Commission income
+                        commission_income_patterns = [
+                            r'fee\s+and\s+commission\s+income\s+([0-9.,]+)',
+                            r'commission\s+income\s+([0-9.,]+)',
+                            r'ingresos\s+por\s+comisiones\s+([0-9.,]+)',
+                        ]
+                        for pattern in commission_income_patterns:
+                            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+                            for match in matches:
+                                value = convert_string_to_float(match)
+                                if value and value > 0:
+                                    related_party_data['commission_income'].append(value)
+                        
+                        # Commission expense
+                        commission_expense_patterns = [
+                            r'fee\s+and\s+commission\s+expense\s+([0-9.,]+)',
+                            r'commission\s+expense\s+([0-9.,]+)',
+                            r'gastos\s+por\s+comisiones\s+([0-9.,]+)',
+                        ]
+                        for pattern in commission_expense_patterns:
+                            matches = re.findall(pattern, text_lower, re.IGNORECASE)
+                            for match in matches:
+                                value = convert_string_to_float(match)
+                                if value and value > 0:
+                                    related_party_data['commission_expense'].append(value)
+            
+            return related_party_data
+            
+        except Exception as e:
+            print(f"Error extrayendo transacciones con partes relacionadas: {e}")
+            return {}
 
     def _split_text_into_chunks(self, text: str, chunk_size: int = 1000) -> List[str]:
         """
@@ -796,82 +1059,475 @@ class IncomeREACTAgent:
         
         return chunks
 
-
     def validate_income_data_enhanced(self, extraction: Dict[str, Any]) -> Dict[str, Any]:
-        """NUEVA FUNCIÓN: Validación mejorada de datos de cuenta de resultados"""
+        """FUNCIÓN MEJORADA: Validación avanzada de datos de cuenta de resultados con scoring granular"""
         try:
             text = extraction.get("text", "")
             confidence = extraction.get("confidence", 0.0)
             financial_data = extraction.get("financial_data", {})
             
-            # Criterios de validación mejorados
+            # Sistema de scoring más granular y específico
             quality_score = 0
+            max_possible_score = 130  # Aumentado para incluir nuevas categorías
             validation_details = []
             
             text_lower = normalize_text(text)
             
-            # Verificar secciones principales (peso variable)
+            # ========== CATEGORÍAS PRINCIPALES (Peso: 80 puntos) ==========
+            
+            # 1. Ingresos por intereses (15 puntos)
             if any(normalize_text(term) in text_lower for term in ["interest income", "margen intereses", "ingresos intereses"]):
-                quality_score += 20
+                quality_score += 15
                 validation_details.append(" Ingresos por intereses encontrados")
             
+            # 2. Gastos por intereses (10 puntos) - crítico para NIM
+            if any(normalize_text(term) in text_lower for term in ["interest expense", "gastos intereses", "interest charges"]):
+                quality_score += 10
+                validation_details.append(" Gastos por intereses encontrados")
+            
+            # 3. Comisiones (15 puntos)
             if any(normalize_text(term) in text_lower for term in ["commission", "comisiones", "fee income"]):
                 quality_score += 15
                 validation_details.append(" Ingresos por comisiones encontrados")
             
+            # 4. Gastos operativos (20 puntos) - muy importante
             if any(normalize_text(term) in text_lower for term in ["operating expenses", "gastos explotación", "gastos operativos"]):
                 quality_score += 20
                 validation_details.append(" Gastos operativos encontrados")
             
+            # 5. Gastos de personal (15 puntos)
             if any(normalize_text(term) in text_lower for term in ["staff costs", "gastos personal", "personnel expenses"]):
                 quality_score += 15
                 validation_details.append(" Gastos de personal encontrados")
             
+            # 6. Provisiones (10 puntos)
             if any(normalize_text(term) in text_lower for term in ["provisions", "provisiones", "impairment"]):
                 quality_score += 10
                 validation_details.append(" Provisiones encontradas")
             
+            # 7. Beneficio neto (15 puntos)
             if any(normalize_text(term) in text_lower for term in ["net profit", "beneficio neto", "net income"]):
                 quality_score += 15
                 validation_details.append(" Beneficio neto encontrado")
             
-            # NUEVA: Bonificaciones por datos financieros específicos
+            # ========== DATOS FINANCIEROS ESPECÍFICOS (Peso: 20 puntos) ==========
+            
+            categories_with_data = 0
             if financial_data:
                 categories_with_data = sum(1 for values in financial_data.values() if values)
-                data_bonus = min(15, categories_with_data * 2)  # Máximo 15 puntos extra
+                
+                # Bonificación progresiva por categorías con datos
+                if categories_with_data >= 6:
+                    data_bonus = 20
+                    validation_details.append(f" Excelente cobertura de datos: {categories_with_data} categorías")
+                elif categories_with_data >= 4:
+                    data_bonus = 15
+                    validation_details.append(f" Buena cobertura de datos: {categories_with_data} categorías")
+                elif categories_with_data >= 2:
+                    data_bonus = 10
+                    validation_details.append(f" Cobertura moderada de datos: {categories_with_data} categorías")
+                else:
+                    data_bonus = 5
+                    validation_details.append(f" Cobertura limitada de datos: {categories_with_data} categorías")
+                
                 quality_score += data_bonus
-                validation_details.append(f" Datos financieros específicos: {categories_with_data} categorías")
             
-            # Determinar calidad final
-            if quality_score >= 80:
+            # ========== BONIFICACIONES ADICIONALES (Peso: 30 puntos) ==========
+            
+            # 8. Datos multi-año (20 puntos) - muy valioso para análisis comparativo
+            has_multi_year = False
+            multi_year_categories = 0
+            
+            if financial_data:
+                for category, values in financial_data.items():
+                    if isinstance(values, list) and len(values) >= 2:
+                        # Verificar que los valores sean diferentes (no duplicados)
+                        unique_values = set(values)
+                        if len(unique_values) >= 2:
+                            multi_year_categories += 1
+                
+                if multi_year_categories >= 3:
+                    quality_score += 20
+                    has_multi_year = True
+                    validation_details.append(f"Datos comparativos multi-año: {multi_year_categories} categorías con múltiples períodos")
+                elif multi_year_categories >= 1:
+                    quality_score += 10
+                    has_multi_year = True
+                    validation_details.append(f"Datos parciales multi-año: {multi_year_categories} categorías")
+            
+            # Transacciones con partes relacionadas (10 puntos)
+            has_related_party_data = False
+            if any(normalize_text(term) in text_lower for term in ["related party", "partes vinculadas", "partes relacionadas"]):
+                quality_score += 10
+                has_related_party_data = True
+                validation_details.append("Información de partes relacionadas detectada")
+            
+            # ========== CÁLCULO DE DATA COMPLETENESS ==========
+            
+            # Calcular completitud de datos como porcentaje
+            data_completeness = quality_score / max_possible_score
+            
+            # ========== VALIDACIÓN DE RATIOS Y PENALIZACIONES ==========
+            
+            # 🆕 NUEVO: Calcular ratios y aplicar penalizaciones por anomalías
+            ratios_penalty = 0
+            has_ratio_warnings = False
+            
+            if financial_data:
+                try:
+                    # Importar la función de cálculo de ratios
+                    ratios = calculate_financial_ratios(financial_data)
+                    
+                    # Verificar flags de ratios anómalos
+                    if ratios.get('cost_income_ratio_flag') == 'HIGH':
+                        ratios_penalty += 15  # Penalización fuerte
+                        has_ratio_warnings = True
+                        validation_details.append("Cost-income ratio anormalmente alto (>75%)")
+                        
+                    elif ratios.get('cost_income_ratio_flag') == 'SUSPICIOUSLY_LOW':
+                        ratios_penalty += 10
+                        has_ratio_warnings = True
+                        validation_details.append("Cost-income ratio sospechosamente bajo (<30%)")
+                    
+                    if ratios.get('net_profit_margin_flag') == 'SUSPICIOUSLY_HIGH':
+                        ratios_penalty += 10
+                        has_ratio_warnings = True
+                        validation_details.append("Margen de beneficio sospechosamente alto (>50%)")
+                    
+                    # Aplicar penalización
+                    quality_score = max(0, quality_score - ratios_penalty)
+                    
+                    if ratios_penalty > 0:
+                        validation_details.append(f"🔻 Penalización por ratios anómalos: -{ratios_penalty} puntos")
+                    
+                except Exception as e:
+                    print(f"No se pudieron calcular ratios para validación: {e}")
+            
+            # ========== DETERMINACIÓN DE CALIDAD ==========
+            
+            # Ajustar umbrales considerando el nuevo max_possible_score
+            quality_percentage = (quality_score / max_possible_score) * 100
+            
+            if quality_percentage >= 70:
                 quality = "excellent"
-            elif quality_score >= 60:
+            elif quality_percentage >= 55:
                 quality = "good"
-            elif quality_score >= 40:
+            elif quality_percentage >= 35:
                 quality = "fair"
             else:
                 quality = "poor"
             
-            final_confidence = min(confidence + (quality_score / 100 * 0.3), 1.0)
+            # ========== CÁLCULO DE CONFIANZA FINAL MEJORADO ==========
             
-            print(f" Validación completada: {quality} (puntuación: {quality_score}/100, confianza: {final_confidence:.3f})")
+            # Fórmula ponderada más sofisticada
+            # - 40% confianza base del agente (basada en embeddings/relevancia)
+            # - 60% completitud de datos (basada en scoring)
+            
+            base_confidence = confidence
+            completeness_factor = data_completeness
+            
+            # Componente de completitud ponderado
+            weighted_completeness = completeness_factor * 0.6
+            
+            # Componente de confianza base ponderado
+            weighted_base = base_confidence * 0.4
+            
+            # Confianza combinada
+            combined_confidence = weighted_base + weighted_completeness
+            
+            # Bonificaciones adicionales a la confianza
+            confidence_bonuses = 0.0
+            
+            if has_multi_year:
+                confidence_bonuses += 0.05  # +5% por datos comparativos
+                
+            if has_related_party_data:
+                confidence_bonuses += 0.03  # +3% por datos de partes relacionadas
+            
+            # Penalizaciones a la confianza
+            confidence_penalties = 0.0
+            
+            if has_ratio_warnings:
+                confidence_penalties += 0.15  # -15% si hay ratios anómalos
+            
+            if categories_with_data < 3:
+                confidence_penalties += 0.10  # -10% si hay muy pocas categorías
+            
+            # Aplicar bonificaciones y penalizaciones
+            final_confidence = combined_confidence + confidence_bonuses - confidence_penalties
+            
+            # Asegurar que esté en rango [0, 1]
+            final_confidence = max(0.0, min(1.0, final_confidence))
+            
+            # ========== LOGGING DETALLADO ==========
+            
+            print(f"\n{'='*60}")
+            print(f"VALIDACIÓN DE DATOS - INCOME STATEMENT")
+            print(f"{'='*60}")
+            print(f"Calidad: {quality.upper()} ({quality_percentage:.1f}% de completitud)")
+            print(f"Puntuación: {quality_score}/{max_possible_score} puntos")
+            print(f"Confianza base: {base_confidence:.3f}")
+            print(f"Completitud de datos: {completeness_factor:.3f}")
+            print(f"Categorías con datos: {categories_with_data}")
+            
+            if confidence_bonuses > 0:
+                print(f"Bonificaciones aplicadas: +{confidence_bonuses:.3f}")
+            
+            if confidence_penalties > 0:
+                print(f"Penalizaciones aplicadas: -{confidence_penalties:.3f}")
+            
+            print(f"Confianza final: {final_confidence:.3f}")
+            print(f"{'='*60}\n")
+            
+            # ========== RETURN MEJORADO ==========
             
             return {
                 "success": True,
                 "quality": quality,
                 "confidence": final_confidence,
                 "score": quality_score,
+                "max_score": max_possible_score,
+                "quality_percentage": quality_percentage,
                 "details": validation_details,
-                "financial_categories_found": len([k for k, v in financial_data.items() if v]) if financial_data else 0
+                "financial_categories_found": categories_with_data,
+                "data_completeness": completeness_factor,
+                "has_comparative_data": has_multi_year,
+                "has_related_party_info": has_related_party_data,
+                "has_ratio_warnings": has_ratio_warnings,
+                "confidence_breakdown": {
+                    "base": base_confidence,
+                    "completeness": completeness_factor,
+                    "bonuses": confidence_bonuses,
+                    "penalties": confidence_penalties,
+                    "final": final_confidence
+                },
+                "multi_year_categories": multi_year_categories,
+                "ratios_penalty_applied": ratios_penalty
             }
             
         except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    def save_income_results_enhanced(self, pdf_file: Path, output_dir: Path, extraction: Dict, validation: Dict) -> Dict[str, Any]:
+            print(f"Error en validación: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "success": False,
+                "error": str(e),
+                "quality": "poor",
+                "confidence": 0.0,
+                "score": 0
+            }
+        
+    def cross_validate_with_balance(self, income_data: Dict, balance_data: Dict) -> Dict:
+        """
+        Valida consistencia entre cuenta de resultados y balance
+        
+        Args:
+            income_data: Diccionario con datos financieros del Income Agent
+                        Formato esperado: {'net_profit': [1250], 'total_income': [5000], ...}
+            balance_data: Diccionario con datos del Balance Agent
+                         Formato esperado: {'total_assets': [62562], 'total_liabilities': [9458], ...}
+        
+        Returns:
+            Diccionario con resultados de validación cruzada
+        """
+        validation_results = {
+            'consistent': True,
+            'warnings': [],
+            'cross_checks': [],
+            'ratios_calculated': {}
+        }
+        
+        print(f"\n{'='*60}")
+        print(f"🔄 VALIDACIÓN CRUZADA: Income Statement ↔ Balance Sheet")
+        print(f"{'='*60}")
+        
+        try:
+            # Función auxiliar para obtener valor máximo seguro
+            def get_safe_value(data_dict, key):
+                if not data_dict or key not in data_dict:
+                    return None
+                values = data_dict[key]
+                if not values or not isinstance(values, list):
+                    return None
+                # Obtener el valor más reciente (último en la lista)
+                return max(values) if values else None
+            
+            # ========== CHECK 1: ROA (Return on Assets) ==========
+            total_assets = get_safe_value(balance_data, 'total_assets')
+            net_profit = get_safe_value(income_data, 'net_profit')
+            
+            if total_assets and net_profit:
+                if net_profit > total_assets:
+                    validation_results['warnings'].append(
+                        f"⚠️ CRÍTICO: Beneficio neto (€{net_profit:,.0f}) > Activos totales (€{total_assets:,.0f})"
+                    )
+                    validation_results['consistent'] = False
+                    print(f"❌ Inconsistencia detectada: profit > assets")
+                else:
+                    roa = (net_profit / total_assets) * 100
+                    validation_results['ratios_calculated']['ROA'] = roa
+                    validation_results['cross_checks'].append(
+                        f"✅ ROA calculado: {roa:.2f}%"
+                    )
+                    print(f"✅ ROA: {roa:.2f}%")
+                    
+                    # Validar rango razonable de ROA para bancos (típicamente 0.5-2%)
+                    if roa < 0:
+                        validation_results['warnings'].append(
+                            f"⚠️ ROA negativo ({roa:.2f}%) - banco en pérdidas"
+                        )
+                    elif roa > 3:
+                        validation_results['warnings'].append(
+                            f"⚠️ ROA muy alto ({roa:.2f}%) - verificar datos"
+                        )
+            else:
+                missing = []
+                if not total_assets:
+                    missing.append("total_assets")
+                if not net_profit:
+                    missing.append("net_profit")
+                validation_results['warnings'].append(
+                    f"⚠️ No se puede calcular ROA - faltan: {', '.join(missing)}"
+                )
+                print(f"⚠️ ROA no calculado - datos insuficientes")
+            
+            # ========== CHECK 2: ROE (Return on Equity) ==========
+            total_equity = get_safe_value(balance_data, 'total_equity')
+            
+            if total_equity and net_profit:
+                if net_profit > total_equity * 2:  # Muy inusual
+                    validation_results['warnings'].append(
+                        f"⚠️ Beneficio neto muy alto vs patrimonio - verificar"
+                    )
+                
+                roe = (net_profit / total_equity) * 100
+                validation_results['ratios_calculated']['ROE'] = roe
+                validation_results['cross_checks'].append(
+                    f"✅ ROE calculado: {roe:.2f}%"
+                )
+                print(f"✅ ROE: {roe:.2f}%")
+                
+                # Validar rango razonable de ROE para bancos (típicamente 8-15%)
+                if roe < 0:
+                    validation_results['warnings'].append(
+                        f"⚠️ ROE negativo ({roe:.2f}%) - rentabilidad negativa"
+                    )
+                elif roe > 25:
+                    validation_results['warnings'].append(
+                        f"⚠️ ROE muy alto ({roe:.2f}%) - verificar datos"
+                    )
+            
+            # ========== CHECK 3: Net Interest Margin vs Earning Assets ==========
+            net_interest_income = get_safe_value(income_data, 'net_interest_income')
+            loans_to_customers = get_safe_value(balance_data, 'loans_to_customers')
+            
+            if net_interest_income and loans_to_customers and loans_to_customers > 0:
+                nim_on_loans = (net_interest_income / loans_to_customers) * 100
+                validation_results['ratios_calculated']['NIM_on_loans'] = nim_on_loans
+                validation_results['cross_checks'].append(
+                    f"✅ NIM sobre préstamos: {nim_on_loans:.2f}%"
+                )
+                print(f"✅ NIM/Loans: {nim_on_loans:.2f}%")
+                
+                # Validar rango razonable (típicamente 2-5% para bancos)
+                if nim_on_loans > 10:
+                    validation_results['warnings'].append(
+                        f"⚠️ NIM sobre préstamos muy alto ({nim_on_loans:.2f}%) - verificar"
+                    )
+                elif nim_on_loans < 0:
+                    validation_results['warnings'].append(
+                        f"⚠️ NIM sobre préstamos negativo - posible error"
+                    )
+            
+            # ========== CHECK 4: Provisiones vs Préstamos ==========
+            provisions = get_safe_value(income_data, 'provisions')
+            
+            if provisions and loans_to_customers and loans_to_customers > 0:
+                provision_ratio = (provisions / loans_to_customers) * 100
+                validation_results['ratios_calculated']['provision_ratio'] = provision_ratio
+                validation_results['cross_checks'].append(
+                    f"✅ Ratio de provisiones sobre préstamos: {provision_ratio:.2f}%"
+                )
+                print(f"✅ Provisions/Loans: {provision_ratio:.2f}%")
+                
+                # Validar rango razonable (típicamente <2% en condiciones normales)
+                if provision_ratio > 5:
+                    validation_results['warnings'].append(
+                        f"⚠️ Provisiones muy altas ({provision_ratio:.2f}%) - alta morosidad"
+                    )
+            
+            # ========== CHECK 5: Leverage Ratio ==========
+            total_liabilities = get_safe_value(balance_data, 'total_liabilities')
+            
+            if total_assets and total_equity and total_equity > 0:
+                leverage_ratio = total_assets / total_equity
+                validation_results['ratios_calculated']['leverage_ratio'] = leverage_ratio
+                validation_results['cross_checks'].append(
+                    f"✅ Ratio de apalancamiento: {leverage_ratio:.2f}x"
+                )
+                print(f"✅ Leverage: {leverage_ratio:.2f}x")
+                
+                # Validar rango razonable para bancos (típicamente 10-20x)
+                if leverage_ratio > 30:
+                    validation_results['warnings'].append(
+                        f"⚠️ Apalancamiento muy alto ({leverage_ratio:.2f}x) - riesgo elevado"
+                    )
+                elif leverage_ratio < 5:
+                    validation_results['warnings'].append(
+                        f"⚠️ Apalancamiento muy bajo ({leverage_ratio:.2f}x) - verificar datos"
+                    )
+            
+            # ========== CHECK 6: Ecuación Contable Fundamental ==========
+            if total_assets and total_liabilities and total_equity:
+                expected_assets = total_liabilities + total_equity
+                difference = abs(total_assets - expected_assets)
+                tolerance = total_assets * 0.01  # 1% de tolerancia
+                
+                if difference > tolerance:
+                    validation_results['warnings'].append(
+                        f"⚠️ CRÍTICO: Ecuación contable no balancea - "
+                        f"Activos: €{total_assets:,.0f}, Pasivos+Patrimonio: €{expected_assets:,.0f}"
+                    )
+                    validation_results['consistent'] = False
+                    print(f"❌ Balance sheet no cuadra: diferencia de €{difference:,.0f}")
+                else:
+                    validation_results['cross_checks'].append(
+                        f"✅ Ecuación contable validada (Activos = Pasivos + Patrimonio)"
+                    )
+                    print(f"✅ Balance sheet cuadra correctamente")
+            
+            # ========== RESUMEN FINAL ==========
+            print(f"\n{'='*60}")
+            print(f"📊 RESUMEN DE VALIDACIÓN CRUZADA")
+            print(f"{'='*60}")
+            print(f"Estado general: {'✅ CONSISTENTE' if validation_results['consistent'] else '❌ INCONSISTENTE'}")
+            print(f"Checks realizados: {len(validation_results['cross_checks'])}")
+            print(f"Advertencias: {len(validation_results['warnings'])}")
+            print(f"Ratios calculados: {len(validation_results['ratios_calculated'])}")
+            
+            if validation_results['warnings']:
+                print(f"\n⚠️ ADVERTENCIAS:")
+                for warning in validation_results['warnings']:
+                    print(f"  {warning}")
+            
+            print(f"{'='*60}\n")
+            
+        except Exception as e:
+            error_msg = f"Error en validación cruzada: {e}"
+            validation_results['warnings'].append(error_msg)
+            validation_results['consistent'] = False
+            print(f"❌ {error_msg}")
+            import traceback
+            traceback.print_exc()
+        
+        return validation_results
+    
+    def save_income_results_enhanced(self, pdf_file: Path, output_dir: Path, 
+                                    extraction: Dict, validation: Dict,
+                                    cross_validation: Dict = None) -> Dict[str, Any]:  
         """NUEVA FUNCIÓN: Guardar resultados mejorados"""
         try:
-            base_name = pdf_file.stem
+            basename = pdf_file.stem
             files_created = 0
             
             # 1. Guardar resumen JSON extendido
@@ -881,25 +1537,28 @@ class IncomeREACTAgent:
                     "pages_processed": extraction.get("pages_processed", []),
                     "financial_data": extraction.get("financial_data", {}),
                     "confidence": extraction.get("confidence", 0.8),
-                    "language": extraction.get("language", "unknown")
+                    "language": extraction.get("language", "unknown"),
+                    "has_related_party_data": extraction.get("has_related_party_data", False),  
                 },
                 "validation": validation,
-                "processing_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "cross_validation": cross_validation, 
+                "processing_timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
                 "quality_metrics": {
                     "data_categories_found": validation.get("financial_categories_found", 0),
                     "quality_score": validation.get("score", 0),
-                    "final_confidence": validation.get("confidence", 0.8)
+                    "final_confidence": validation.get("confidence", 0.8),
+                    "has_ratio_warnings": validation.get("has_ratio_warnings", False),  
                 }
             }
             
-            summary_file = output_dir / f"{base_name}_income_summary.json"
-            with open(summary_file, "w", encoding="utf-8") as f:
+            summary_file = output_dir / f"{basename}_income_summary.json"
+            with open(summary_file, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2, ensure_ascii=False)
             files_created += 1
             
             # 2. Guardar datos financieros específicos
             if extraction.get("financial_data"):
-                financial_data_file = output_dir / f"{base_name}_financial_data.json"
+                financial_data_file = output_dir / f"{basename}_financial_data.json"
                 with open(financial_data_file, "w", encoding="utf-8") as f:
                     json.dump(extraction["financial_data"], f, indent=2, ensure_ascii=False)
                 files_created += 1
@@ -933,7 +1592,7 @@ MÉTRICAS DE CALIDAD:
 - Recomendación: {'Análisis confiable' if validation.get('score', 0) >= 60 else 'Requiere revisión manual'}
 """
             
-            quality_file = output_dir / f"{base_name}_income_quality.txt"
+            quality_file = output_dir / f"{basename}_income_quality.txt"
             with open(quality_file, "w", encoding="utf-8") as f:
                 f.write(quality_report)
             files_created += 1
@@ -990,36 +1649,74 @@ MÉTRICAS DE CALIDAD:
             # ANÁLISIS SIMPLIFICADO PRIMERO (para debugging)
             try:
                 print(" DEBUG: Intentando análisis con LLM...")
-                
-                # Prompt más conciso para evitar problemas
+
                 analysis_prompt = f"""
-Eres un analista financiero especializado en banca. 
+                Eres un analista financiero senior especializado en banca con experiencia en análisis de subsidiarias internacionales.
 
-Analiza esta cuenta de resultados de BBVA:
+                CONTEXTO DEL DOCUMENTO:
+                - Entidad: GarantiBank International N.V. (subsidiaria 100% de BBVA a través de Garanti BBVA)
+                - Tipo de documento: Estados Financieros Individuales (no consolidados)
+                - Periodo: Ejercicio 2023 con comparativa 2022
 
-DATOS EXTRAÍDOS:
-{text[:2500]}
+                DATOS FINANCIEROS EXTRAÍDOS:
+                {json.dumps(financial_data, indent=2) if financial_data else "Datos en procesamiento"}
 
-DATOS FINANCIEROS ENCONTRADOS:
-{json.dumps(financial_data, indent=2) if financial_data else "No se identificaron cifras específicas"}
+                RATIOS CALCULADOS:
+                {json.dumps(ratios, indent=2) if ratios else "No disponibles"}
 
-RATIOS CALCULADOS:
-{json.dumps(ratios, indent=2) if ratios else "No se pudieron calcular ratios"}
+                FRAGMENTOS DE TEXTO CLAVE (primeros 3000 caracteres):
+                {text[:3000]}
 
-Proporciona un análisis detallado de 600-800 palabras que incluya:
+                INSTRUCCIONES PARA EL ANÁLISIS:
 
-1. **Análisis de ingresos principales** (margen de intereses, comisiones)
-2. **Evaluación de gastos operativos** y eficiencia
-3. **Análisis de rentabilidad** y márgenes
-4. **Comparaciones** con año anterior si disponible
-5. **Conclusiones** y recomendaciones estratégicas
+                1. **Estructura de Ingresos** (150-200 palabras):
+                - Margen de intereses: Analiza ingresos vs gastos por intereses
+                - Comisiones: Evalúa ingresos por servicios bancarios
+                - Otros ingresos: Trading income, dividendos, etc.
+                - Calcula Net Interest Margin si es posible
+                - Identifica fuentes principales de ingresos
 
-IMPORTANTE: 
-- Usa SOLO los datos presentes en el texto
-- NO inventes cifras que no aparezcan
-- Cita cifras exactas cuando las encuentres
-- Formato profesional con secciones claras
-"""
+                2. **Análisis de Gastos y Eficiencia** (150-200 palabras):
+                - Gastos operativos: Personal + Administrativos
+                - Cost-to-income ratio y su interpretación
+                - Eficiencia operativa vs benchmarks sectoriales (45-60% típico)
+                - Identifica áreas de mayor gasto
+
+                3. **Calidad Crediticia y Provisiones** (100-150 palabras):
+                - Dotaciones para provisiones crediticias
+                - Pérdidas esperadas (ECL)
+                - Ratio de cobertura de morosidad
+                - Impacto en rentabilidad
+
+                4. **Rentabilidad y Márgenes** (150-200 palabras):
+                - Beneficio neto y evolución
+                - ROE (si se puede calcular con patrimonio)
+                - ROA (si se puede calcular con activos)
+                - Net profit margin
+                - Comparación con ejercicio anterior
+
+                5. **Conclusiones Estratégicas** (100-150 palabras):
+                - Fortalezas identificadas
+                - Áreas de mejora
+                - Posicionamiento competitivo
+                - Recomendaciones para inversores/management
+
+                REGLAS CRÍTICAS:
+                ✅ USA SOLO cifras presentes en los datos proporcionados
+                ✅ Si un dato no está disponible, indícalo explícitamente
+                ✅ Cita cifras exactas cuando las menciones (ej: "€4,157 miles")
+                ✅ Compara 2023 vs 2022 cuando ambos años estén disponibles
+                ✅ Interpreta ratios en contexto bancario (no industrial)
+                ✅ Formato profesional con secciones numeradas y bullets
+                ❌ NO inventes cifras que no aparecen en los datos
+                ❌ NO uses datos de tu conocimiento general sobre BBVA
+                ❌ NO hagas suposiciones sin evidencia en el texto
+
+                NOTA IMPORTANTE: Esta es una subsidiaria del grupo Garanti BBVA, no el grupo consolidado BBVA S.A.
+
+                Genera un análisis de 600-800 palabras siguiendo esta estructura.
+                """
+
                 
                 # Llamada al LLM con manejo de errores mejorado
                 try:

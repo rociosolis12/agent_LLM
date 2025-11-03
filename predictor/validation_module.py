@@ -36,29 +36,34 @@ class WalkForwardValidator:
     
     
     def walk_forward_validate(
-        self, 
-        data: pd.Series, 
-        metric_name: str, 
-        n_splits: int = 8, 
-        min_train_size: int = 8
+        self,
+        data: pd.Series,
+        metric_name: str,
+        n_splits: int = None,  # Ahora adaptativo
+        min_train_size: int = None  # Ahora adaptativo
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
-        VALIDACIÓN ROBUSTA: Walk-forward validation temporal
-        
-        Args:
-            data: Serie temporal con datos históricos
-            metric_name: Nombre de la métrica ('ROA', 'ratio_solvencia', etc.)
-            n_splits: Número de splits para validación
-            min_train_size: Tamaño mínimo de entrenamiento
-        
-        Returns:
-            Tuple con (validation_summary, validation_results)
+        VALIDACIÓN ADAPTADA: Walk-forward para series cortas (5 años anuales)
         """
         logger.info(f" Iniciando validación walk-forward para {metric_name}")
         
-        if len(data) < min_train_size + 2:
-            logger.warning(f" Datos insuficientes para validación de {metric_name}")
+        # NUEVO: Configuración adaptativa según longitud de datos
+        data_length = len(data)
+        
+        if data_length < 5:
+            logger.error(f" Datos insuficientes: {data_length} < 5 años mínimo")
             return self._create_dummy_validation(), {}
+        
+        # Ajustar parámetros según datos disponibles
+        if n_splits is None:
+            # Para 5 años: máximo 3 splits (entrenar 2→validar 1, entrenar 3→validar 1, entrenar 4→validar 1)
+            n_splits = min(3, data_length - 2)
+        
+        if min_train_size is None:
+            # Mínimo 2 años para entrenar con datos anuales
+            min_train_size = max(2, data_length // 2)
+        
+        logger.info(f" Configuración adaptativa: {data_length} años → {n_splits} splits, train_size={min_train_size}")
         
         results = {
             'prophet_predictions': [],
@@ -68,88 +73,84 @@ class WalkForwardValidator:
             'dates': [],
             'errors': {
                 'prophet_mae': [],
-                'xgboost_mae': [], 
+                'xgboost_mae': [],
                 'ensemble_mae': []
             }
         }
         
-        # Configuración de ventanas temporales
-        max_splits = min(n_splits, len(data) - min_train_size - 1)
-        step_size = max(1, (len(data) - min_train_size) // max_splits)
-        
-        for i in range(0, max_splits):
+        # Validación con expanding window (no rolling) para datos cortos
+        for i in range(n_splits):
             try:
-                # Define ventanas de entrenamiento y test
-                train_end = min_train_size + (i * step_size)
-                test_idx = min(train_end, len(data) - 1)
+                # Expanding window: siempre entrena desde el inicio
+                train_end = min_train_size + i
+                test_idx = train_end
                 
-                if test_idx >= len(data) - 1:
+                if test_idx >= len(data):
                     break
                 
-                # Datos de entrenamiento y test
-                train_data = data.iloc[:test_idx]
+                train_data = data.iloc[:train_end]
                 actual_value = data.iloc[test_idx]
                 test_date = data.index[test_idx]
                 
-                logger.info(f"   Ventana {i+1}: entrenando con {len(train_data)} obs, "
-                           f"validando período {test_date}")
+                logger.info(f" Ventana {i+1}/{n_splits}: entrenar {len(train_data)} años → validar {test_date.year}")
                 
-                # Prepara datos para modelos
+                # Preparar datos con frecuencia anual
                 df = self.predictor.prepare_data_for_prophet(
-                    train_data, None, metric_name
+                    train_data, None, metric_name, frequency='Y'
                 )
                 
-                if len(df) < 6:  # Mínimo para entrenar
+                if len(df) < 2:
+                    logger.warning(f" Ventana {i+1} sin datos suficientes")
                     continue
                 
-                # Predicción Prophet
+                # Predicción Prophet (1 año adelante)
                 prophet_results = self.predictor.prophet_prediction(
-                    df, metric_name, periods=1
+                    df, metric_name, periods=1, frequency='Y'
                 )
-                prophet_pred = (prophet_results['predictions'][0] 
-                              if prophet_results['predictions'] else actual_value)
+                prophet_pred = (prophet_results['predictions'][0]
+                            if prophet_results['predictions'] else actual_value)
                 
-                # Predicción XGBoost
-                xgboost_results = self.predictor.xgboost_prediction(
-                    df, metric_name, periods=1
-                )
-                xgb_pred = (xgboost_results['predictions'][0] 
-                          if xgboost_results['predictions'] else actual_value)
+                # Predicción XGBoost (con fallback para pocas observaciones)
+                if len(df) >= 3:
+                    xgboost_results = self.predictor.xgboost_prediction(
+                        df, metric_name, periods=1
+                    )
+                    xgb_pred = (xgboost_results['predictions'][0]
+                            if xgboost_results['predictions'] else actual_value)
+                else:
+                    # Fallback: usar tendencia lineal simple
+                    xgb_pred = prophet_pred
                 
-                # Predicción Ensemble
+                # Ensemble
                 ensemble_results = self.predictor.ensemble_prediction(
-                    prophet_results, xgboost_results
+                    prophet_results, {'predictions': [xgb_pred]}
                 )
-                ensemble_pred = (ensemble_results['predictions'][0] 
-                               if ensemble_results['predictions'] else actual_value)
+                ensemble_pred = (ensemble_results['predictions'][0]
+                                if ensemble_results['predictions'] else actual_value)
                 
-                # Almacena resultados
+                # Almacenar resultados
                 results['prophet_predictions'].append(prophet_pred)
                 results['xgboost_predictions'].append(xgb_pred)
                 results['ensemble_predictions'].append(ensemble_pred)
                 results['actual_values'].append(actual_value)
                 results['dates'].append(test_date)
                 
-                # Calcula errores punto a punto
+                # Errores
                 results['errors']['prophet_mae'].append(abs(prophet_pred - actual_value))
                 results['errors']['xgboost_mae'].append(abs(xgb_pred - actual_value))
                 results['errors']['ensemble_mae'].append(abs(ensemble_pred - actual_value))
                 
             except Exception as e:
-                logger.warning(f"⚠️ Error en validación paso {i}: {e}")
+                logger.warning(f" Error en validación paso {i+1}: {e}")
                 continue
         
-        # Calcula métricas finales
+        # Calcular métricas finales
         validation_summary = self._calculate_validation_metrics(results)
         
         logger.info(f" Validación completada: {len(results['actual_values'])} períodos validados")
-
-        best_model = validation_summary['best_model']
-        model_key = f'{best_model}_mae'
-        logger.info(f"(MAE: {validation_summary.get(model_key, 0):.4f})")
-
+        
         return validation_summary, results
-    
+
     
     def _calculate_validation_metrics(self, results: Dict) -> Dict[str, Any]:
         """

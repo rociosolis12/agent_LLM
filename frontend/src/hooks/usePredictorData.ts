@@ -5,10 +5,11 @@ import { predictorApi } from '../services/predictorApi';
 import type { PredictionData, PipelineStatus, Recommendations } from '../types/predictor.types';
 
 export const usePredictorData = (autoLoad: boolean = true) => {
+  // ✅ CAMBIO CRÍTICO: loading comienza en true para evitar render antes de datos
   const [predictions, setPredictions] = useState<PredictionData | null>(null);
   const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendations | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(true); // ⚠️ CAMBIO: true en lugar de false
   const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -17,7 +18,7 @@ export const usePredictorData = (autoLoad: boolean = true) => {
     setError(null);
 
     try {
-      // Cargar datos en paralelo
+      // Cargar datos en paralelo con manejo individual de errores
       const [predsData, statusData, recsData] = await Promise.all([
         predictorApi.getLatestPredictions().catch((err) => {
           console.log('ℹ️ No predictions data available yet:', err.message);
@@ -39,16 +40,21 @@ export const usePredictorData = (autoLoad: boolean = true) => {
         recommendations: recsData ? 'loaded' : 'null'
       });
 
+      // ✅ Actualizar estados de forma atómica
       setPredictions(predsData);
       setPipelineStatus(statusData);
       setRecommendations(recsData);
-      
+
       console.log('✅ State updated successfully');
 
     } catch (err: any) {
       console.error('❌ Error loading data:', err);
-      // No establecer error aquí para evitar mostrar mensaje en carga inicial
+      // Mantener estados como null pero definidos
+      setPredictions(null);
+      setPipelineStatus(null);
+      setRecommendations(null);
     } finally {
+      // ✅ Solo marcar loading false cuando TODO esté listo
       setLoading(false);
     }
   }, []);
@@ -79,18 +85,17 @@ export const usePredictorData = (autoLoad: boolean = true) => {
       if (result.status === 'success') {
         console.log('✅ Analysis completed successfully');
         console.log('📊 Analysis result:', result);
-        
-        // IMPORTANTE: Esperar un momento antes de recargar
+
+        // ✅ IMPORTANTE: Aumentar el tiempo de espera a 3 segundos
         // para que los archivos JSON se escriban completamente
-        console.log('⏳ Waiting 2 seconds before loading results...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+        console.log('⏳ Waiting 3 seconds before loading results...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
         // Recargar datos desde los archivos JSON generados
         console.log('🔄 Loading fresh data from server...');
         await loadData();
-        
         console.log('✅ Data refresh completed');
-        
+
         return result;
       } else {
         throw new Error(result.message || 'Analysis failed');
@@ -101,7 +106,6 @@ export const usePredictorData = (autoLoad: boolean = true) => {
       const errorMessage = err.message || 'Error ejecutando análisis';
       setError(errorMessage);
       throw err;
-
     } finally {
       setLoading(false);
     }
