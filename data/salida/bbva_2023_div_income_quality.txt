@@ -2,24 +2,22 @@
 REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
 ==================================================
 PDF: bbva_2023_div.pdf
-Fecha: 2025-11-03 16:52:30
+Fecha: 2025-11-03 17:27:38
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: excellent
-- Puntuación: 95/100
-- Confianza final: 0.838
-- Categorías financieras: 9
+- Puntuación: 110/100
+- Confianza final: 0.908
+- Categorías financieras: 7
 
 DETALLES DE VALIDACIÓN:
  Gastos por intereses encontrados
  Ingresos por comisiones encontrados
  Gastos operativos encontrados
  Beneficio neto encontrado
- Excelente cobertura de datos: 9 categorías
-Datos comparativos multi-año: 7 categorías con múltiples períodos
+ Excelente cobertura de datos: 7 categorías
+Datos comparativos multi-año: 4 categorías con múltiples períodos
 Información de partes relacionadas detectada
-Cost-income ratio anormalmente alto (>75%)
-🔻 Penalización por ratios anómalos: -15 puntos
 
 EXTRACCIÓN DETALLADA:
 - Caracteres procesados: 20028
@@ -40,57 +38,47 @@ EXTRACCIÓN DETALLADA:
     "2022",
     "2023",
     "2022",
+    "2022",
+    "2021",
     "2023",
     "2019",
-    "2022",
     "2020",
-    "2021",
     "2023",
     "2022"
   ],
-  "net_interest_income": [
-    2.0,
-    8.0
-  ],
-  "fee_commission_income": [
-    2.0,
-    8.0
-  ],
-  "operating_expenses": [
-    8.0
-  ],
-  "staff_costs": [],
-  "provisions": [],
-  "net_profit": [
-    3.0
-  ],
-  "total_income": [
-    2.0,
-    8.0,
-    3.0
-  ],
-  "interest_expense": [
-    2.0,
-    8.0,
-    504.0
-  ],
+  "net_interest_income": [],
   "interest_income": [
     4157.0,
     754.0,
     135.0
   ],
+  "interest_expense": [
+    504.0
+  ],
+  "fee_commission_income": [
+    622.0,
+    122.0,
+    69.0
+  ],
   "commission_income": [
     622.0,
-    622.0,
-    69.0,
     122.0,
-    69.0,
-    122.0
+    69.0
   ],
-  "commission_expense": []
+  "commission_expense": [],
+  "operating_expenses": [],
+  "staff_costs": [],
+  "provisions": [
+    65.0
+  ],
+  "net_profit": [],
+  "total_income": [],
+  "net_trading_income": [
+    101.0
+  ]
 }
 
 MÉTRICAS DE CALIDAD:
 - Cobertura de secciones: Completa
-- Precisión de extracción: 83.8%
+- Precisión de extracción: 90.8%
 - Recomendación: Análisis confiable

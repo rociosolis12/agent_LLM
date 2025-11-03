@@ -488,7 +488,7 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
     if not data or not isinstance(data, dict):
         return ratios
     
-    # Función auxiliar para obtener valor máximo seguro (SIN CAMBIOS)
+    # Función auxiliar para obtener valor máximo seguro
     def get_max_value_safe(values_list):
         if not values_list or not isinstance(values_list, list):
             return 0.0
@@ -506,7 +506,7 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
         except Exception:
             return 0.0
     
-    # Obtener valores principales SEGUROS (SIN CAMBIOS)
+    # Obtener valores principales SEGUROS
     net_profit = get_max_value_safe(data.get('net_profit', []))
     total_income = get_max_value_safe(data.get('total_income', []))
     operating_expenses = get_max_value_safe(data.get('operating_expenses', []))
@@ -520,30 +520,64 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
     interest_expense = get_max_value_safe(data.get('interest_expense', []))
     
     print(f" DEBUG ratios - net_profit: {net_profit}, total_income: {total_income}")
-    print(f" DEBUG ratios - operating_expenses: {operating_expenses}")  # 🆕 NUEVO
+    print(f" DEBUG ratios - operating_expenses: {operating_expenses}")
     
-    # Calcular ratios SI hay datos disponibles
+    # ========== CALCULAR VALORES FALTANTES SI ES POSIBLE ==========
+    print(f"\n{'='*60}")
+    print(f" CALCULANDO VALORES FALTANTES")
+    print(f"{'='*60}")
+    
+    # 1. Calcular net_interest_income si falta
+    if net_interest_income == 0 and interest_income > 0:
+        net_interest_income = interest_income - interest_expense
+        print(f" Net Interest Income calculado: €{net_interest_income:,.0f}")
+        print(f"   (Interest income €{interest_income:,.0f} - Interest expense €{interest_expense:,.0f})")
+    
+    # 2. Calcular total_income si falta
+    if total_income == 0:
+        trading_income = get_max_value_safe(data.get('net_trading_income', []))
+        total_income = net_interest_income + fee_commission + trading_income
+        
+        if total_income > 0:
+            print(f" Total Income estimado: €{total_income:,.0f}")
+            print(f"   Componentes:")
+            print(f"   - Net Interest Income: €{net_interest_income:,.0f}")
+            print(f"   - Fee & Commission: €{fee_commission:,.0f}")
+            print(f"   - Trading Income: €{trading_income:,.0f}")
+        else:
+            print(f" No se puede calcular Total Income (datos insuficientes)")
+    else:
+        print(f" Total Income extraído del documento: €{total_income:,.0f}")
+    
+    # 3. Mensaje sobre operating_expenses
+    if operating_expenses == 0:
+        print(f" Operating Expenses no encontrado en el documento")
+        print(f"   (No es crítico para análisis de partes relacionadas)")
+    else:
+        print(f" Operating Expenses extraído: €{operating_expenses:,.0f}")
+    
+    print(f"{'='*60}\n")
+    
+    # ========== CALCULAR RATIOS SI HAY DATOS DISPONIBLES ==========
     if total_income > 0:
+        # 1. Net Profit Margin
         if net_profit > 0:
             ratios['net_profit_margin'] = (net_profit / total_income) * 100
-            
+        
+        # 2. Cost-Income Ratio y Efficiency Ratio
         if operating_expenses > 0:
             ratios['cost_income_ratio'] = (operating_expenses / total_income) * 100
             ratios['efficiency_ratio'] = (operating_expenses / total_income) * 100
             
-            # VALIDACIÓN DE RATIOS ANÓMALOS
+            # Validación de Cost-Income Ratio
             cir = ratios['cost_income_ratio']
             
-            # Rangos típicos para bancos según investigación:
-            # - Óptimo: 45-60%
-            # - Aceptable: 60-75%
-            # - Problemático: >75%
             if cir > 75:
                 print(f" ALERTA CRÍTICA: Cost-income ratio muy alto ({cir:.1f}%)")
                 print(f"   Operating expenses: €{operating_expenses:,.0f}")
                 print(f"   Total income: €{total_income:,.0f}")
                 print(f"    Esto indica baja eficiencia operativa (>75% es problemático)")
-                ratios['cost_income_ratio_flag'] = 'HIGH'  # Flag para análisis posterior
+                ratios['cost_income_ratio_flag'] = 'HIGH'
                 
             elif cir > 60:
                 print(f" ADVERTENCIA: Cost-income ratio por encima del óptimo ({cir:.1f}%)")
@@ -558,30 +592,47 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
             else:
                 print(f" Cost-income ratio en rango óptimo ({cir:.1f}%)")
                 ratios['cost_income_ratio_flag'] = 'OPTIMAL'
-            
+        
+        # 3. Interest Income Ratio
         if net_interest_income > 0:
             ratios['interest_income_ratio'] = (net_interest_income / total_income) * 100
-            
+        
+        # 4. Staff Cost Ratio
         if staff_costs > 0:
             ratios['staff_cost_ratio'] = (staff_costs / total_income) * 100
-            
+        
+        # 5. Fee Commission Ratio
         if fee_commission > 0:
             ratios['fee_commission_ratio'] = (fee_commission / total_income) * 100
-            
+        
+        # 6. Provision Ratio
         if provisions > 0:
             ratios['provision_ratio'] = (provisions / total_income) * 100
     
-    # Calcular Net Interest Margin (NIM) - crítico para bancos
+    # ========== CALCULAR NET INTEREST MARGIN (NIM) ==========
     if interest_income > 0 and interest_expense >= 0:
         nim = interest_income - interest_expense
         if nim > 0 and total_income > 0:
-            ratios['net_interest_margin_pct'] = (nim / total_income) * 100
-            print(f" Net Interest Margin calculado: {ratios['net_interest_margin_pct']:.2f}%")
-            print(f"   Interest income: €{interest_income:,.0f}")
-            print(f"   Interest expense: €{interest_expense:,.0f}")
-            print(f"   NIM: €{nim:,.0f}")
+            nim_pct = (nim / total_income) * 100
+            
+            # Validación de NIM
+            if nim_pct > 100:
+                print(f" ALERTA CRÍTICA: NIM anormalmente alto ({nim_pct:.2f}%)")
+                print(f"   Esto indica error en extracción de datos:")
+                print(f"   - Interest income: €{interest_income:,.0f}")
+                print(f"   - Interest expense: €{interest_expense:,.0f}")
+                print(f"   - Total income: €{total_income:,.0f} ← VERIFICAR")
+                print(f"   NIM típico para bancos: 2-5%")
+                # No guardar el ratio si es anómalo
+            elif nim_pct > 10:
+                print(f" NIM alto pero posible: {nim_pct:.2f}%")
+                ratios['net_interest_margin_pct'] = nim_pct
+                ratios['net_interest_margin_flag'] = 'HIGH'
+            else:
+                ratios['net_interest_margin_pct'] = nim_pct
+                print(f" Net Interest Margin calculado: {nim_pct:.2f}%")
     
-    # Validar profit margin
+    # ========== VALIDAR PROFIT MARGIN ==========
     if 'net_profit_margin' in ratios:
         npm = ratios['net_profit_margin']
         if npm > 50:
@@ -594,7 +645,7 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
             print(f" Rentabilidad excelente: Net profit margin {npm:.1f}%")
             ratios['net_profit_margin_flag'] = 'EXCELLENT'
     
-    # Calcular variaciones SEGURAS si hay múltiples valores (SIN CAMBIOS)
+    # ========== CALCULAR VARIACIONES (GROWTH RATES) ==========
     for category, values in data.items():
         if isinstance(values, list) and len(values) >= 2:
             try:
@@ -612,10 +663,11 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
                     ratios[f'{category}_growth'] = growth
                     
             except Exception as e:
-                print(f" Error calculando growth para {category}: {e}")
+                print(f"⚠️ Error calculando growth para {category}: {e}")
                 continue
     
-    print(f"DEBUG: Ratios calculados: {list(ratios.keys())}")
+    # ========== RESUMEN FINAL ==========
+    print(f" DEBUG: Ratios calculados: {list(ratios.keys())}")
     
     # Resumen de validaciones
     flags_found = [k for k in ratios.keys() if k.endswith('_flag')]
@@ -623,6 +675,7 @@ def calculate_financial_ratios(data: Dict[str, List[float]]) -> Dict[str, float]
         print(f" Flags de validación generados: {flags_found}")
     
     return ratios
+
 
 
 # ===== CLASE WRAPPER AUTÓNOMA PARA SISTEMA MULTI-AGENTE - INCOME =====
@@ -805,7 +858,7 @@ class IncomeREACTAgent:
                             for chunk in page_chunks
                         ])
                         
-                        print(f"✅ Página {page_num + 1}: {len(text)} caracteres extraídos (relevance: {relevance_score})")
+                        print(f" Página {page_num + 1}: {len(text)} caracteres extraídos (relevance: {relevance_score})")
                         
                         # NUEVA: Extracción de datos financieros específicos
                         page_financial_data = extract_comprehensive_income_data(text)
@@ -816,7 +869,7 @@ class IncomeREACTAgent:
             
             # Si no se encontró contenido relevante, extraer páginas por defecto
             if total_chars < 1000:
-                print("⚠️ Poco contenido relevante encontrado, extrayendo páginas por defecto...")
+                print(" Poco contenido relevante encontrado, extrayendo páginas por defecto...")
                 with fitz.open(pdf_file) as pdf:
                     for page_num in range(min(10, len(pdf))):
                         page = pdf[page_num]
@@ -831,7 +884,10 @@ class IncomeREACTAgent:
                             for chunk in page_chunks
                         ])
             
-            print(f"📄 Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+            print(f" Texto total extraído: {total_chars} caracteres de {len(relevant_pages)} páginas")
+
+            confidence = 0.8  # Valor por defecto
+            language = detect_language(extracted_text) if extracted_text else "unknown"
             
             # ===== BÚSQUEDA SEMÁNTICA OPTIMIZADA CON BATCH EMBEDDINGS =====
             semantic_results = {}
@@ -904,22 +960,32 @@ class IncomeREACTAgent:
             # Integrar transacciones con partes relacionadas
             related_party_data = self.extract_related_party_transactions(pdf_file)
             if related_party_data:
-                print(f"Datos de partes relacionadas extraídos: {sum(len(v) for v in related_party_data.values())} valores")
-                # Combinar con financial_data
+                print(f" Datos de partes relacionadas extraídos exitosamente")
+                
+                # Combinar con financial_data existente eliminando duplicados
                 for key, values in related_party_data.items():
-                    if key in financial_data:
-                        financial_data[key].extend(values)
-                    else:
-                        financial_data[key] = values
+                    if values:  # Solo si hay valores
+                        if key in financial_data:
+                            # Convertir a set para detectar duplicados
+                            existing_set = set(financial_data[key])
+                            new_values = [v for v in values if v not in existing_set]
+                            
+                            if new_values:
+                                financial_data[key].extend(new_values)
+                                print(f"   {key}: +{len(new_values)} valores nuevos agregados")
+                                print(f"      Total ahora: {len(financial_data[key])} valores únicos")
+                            else:
+                                print(f"   {key}: todos los valores ya existían (duplicados omitidos)")
+                        else:
+                            # Nueva categoría
+                            financial_data[key] = values
+                            print(f"   {key}: {len(values)} valores nuevos")
 
-                total_extracted = 0
-                if financial_data:
-                    total_extracted = sum(len(values) for values in financial_data.values() if values)
-                    print(f"Total extraído: {total_extracted} entradas financieras")
+            else:
+                print(f" No se encontraron datos de partes relacionadas")
+
             
-            confidence = 1.0 if total_chars > 3000 else 0.8 if total_chars > 1500 else 0.6
-            
-            # NUEVO: Ajustar confianza si se encontraron resultados semánticos
+            # Ajustar confianza si se encontraron resultados semánticos
             if semantic_results:
                 confidence = min(1.0, confidence + 0.1)  # Bonus por búsqueda semántica exitosa
             
@@ -930,14 +996,14 @@ class IncomeREACTAgent:
                 "pages_processed": relevant_pages,
                 "financial_data": financial_data,
                 "confidence": confidence,
-                "language": detect_language(extracted_text),
-                "semantic_results": semantic_results,  # NUEVO
+                "language": language,
+                "semantic_results": semantic_results,  
                 "semantic_categories_found": len(semantic_results),  # NUEVO
                 "total_chunks_analyzed": len(all_text_chunks)  # NUEVO
             }
             
         except Exception as e:
-            print(f"❌ Error en extract_income_data_enhanced: {e}")
+            print(f" Error en extract_income_data_enhanced: {e}")
             return {"success": False, "error": str(e)}    
 
     def extract_related_party_transactions(self, pdf_file: Path) -> Dict[str, Any]:
@@ -1338,7 +1404,7 @@ class IncomeREACTAgent:
         }
         
         print(f"\n{'='*60}")
-        print(f"🔄 VALIDACIÓN CRUZADA: Income Statement ↔ Balance Sheet")
+        print(f"VALIDACIÓN CRUZADA: Income Statement ↔ Balance Sheet")
         print(f"{'='*60}")
         
         try:
@@ -1359,26 +1425,26 @@ class IncomeREACTAgent:
             if total_assets and net_profit:
                 if net_profit > total_assets:
                     validation_results['warnings'].append(
-                        f"⚠️ CRÍTICO: Beneficio neto (€{net_profit:,.0f}) > Activos totales (€{total_assets:,.0f})"
+                        f" CRÍTICO: Beneficio neto (€{net_profit:,.0f}) > Activos totales (€{total_assets:,.0f})"
                     )
                     validation_results['consistent'] = False
-                    print(f"❌ Inconsistencia detectada: profit > assets")
+                    print(f" Inconsistencia detectada: profit > assets")
                 else:
                     roa = (net_profit / total_assets) * 100
                     validation_results['ratios_calculated']['ROA'] = roa
                     validation_results['cross_checks'].append(
-                        f"✅ ROA calculado: {roa:.2f}%"
+                        f" ROA calculado: {roa:.2f}%"
                     )
-                    print(f"✅ ROA: {roa:.2f}%")
+                    print(f" ROA: {roa:.2f}%")
                     
                     # Validar rango razonable de ROA para bancos (típicamente 0.5-2%)
                     if roa < 0:
                         validation_results['warnings'].append(
-                            f"⚠️ ROA negativo ({roa:.2f}%) - banco en pérdidas"
+                            f" ROA negativo ({roa:.2f}%) - banco en pérdidas"
                         )
                     elif roa > 3:
                         validation_results['warnings'].append(
-                            f"⚠️ ROA muy alto ({roa:.2f}%) - verificar datos"
+                            f" ROA muy alto ({roa:.2f}%) - verificar datos"
                         )
             else:
                 missing = []
@@ -1387,9 +1453,9 @@ class IncomeREACTAgent:
                 if not net_profit:
                     missing.append("net_profit")
                 validation_results['warnings'].append(
-                    f"⚠️ No se puede calcular ROA - faltan: {', '.join(missing)}"
+                    f"No se puede calcular ROA - faltan: {', '.join(missing)}"
                 )
-                print(f"⚠️ ROA no calculado - datos insuficientes")
+                print(f" ROA no calculado - datos insuficientes")
             
             # ========== CHECK 2: ROE (Return on Equity) ==========
             total_equity = get_safe_value(balance_data, 'total_equity')
@@ -1397,24 +1463,24 @@ class IncomeREACTAgent:
             if total_equity and net_profit:
                 if net_profit > total_equity * 2:  # Muy inusual
                     validation_results['warnings'].append(
-                        f"⚠️ Beneficio neto muy alto vs patrimonio - verificar"
+                        f" Beneficio neto muy alto vs patrimonio - verificar"
                     )
                 
                 roe = (net_profit / total_equity) * 100
                 validation_results['ratios_calculated']['ROE'] = roe
                 validation_results['cross_checks'].append(
-                    f"✅ ROE calculado: {roe:.2f}%"
+                    f" ROE calculado: {roe:.2f}%"
                 )
-                print(f"✅ ROE: {roe:.2f}%")
+                print(f" ROE: {roe:.2f}%")
                 
                 # Validar rango razonable de ROE para bancos (típicamente 8-15%)
                 if roe < 0:
                     validation_results['warnings'].append(
-                        f"⚠️ ROE negativo ({roe:.2f}%) - rentabilidad negativa"
+                        f" ROE negativo ({roe:.2f}%) - rentabilidad negativa"
                     )
                 elif roe > 25:
                     validation_results['warnings'].append(
-                        f"⚠️ ROE muy alto ({roe:.2f}%) - verificar datos"
+                        f" ROE muy alto ({roe:.2f}%) - verificar datos"
                     )
             
             # ========== CHECK 3: Net Interest Margin vs Earning Assets ==========
@@ -1425,18 +1491,18 @@ class IncomeREACTAgent:
                 nim_on_loans = (net_interest_income / loans_to_customers) * 100
                 validation_results['ratios_calculated']['NIM_on_loans'] = nim_on_loans
                 validation_results['cross_checks'].append(
-                    f"✅ NIM sobre préstamos: {nim_on_loans:.2f}%"
+                    f" NIM sobre préstamos: {nim_on_loans:.2f}%"
                 )
-                print(f"✅ NIM/Loans: {nim_on_loans:.2f}%")
+                print(f" NIM/Loans: {nim_on_loans:.2f}%")
                 
                 # Validar rango razonable (típicamente 2-5% para bancos)
                 if nim_on_loans > 10:
                     validation_results['warnings'].append(
-                        f"⚠️ NIM sobre préstamos muy alto ({nim_on_loans:.2f}%) - verificar"
+                        f" NIM sobre préstamos muy alto ({nim_on_loans:.2f}%) - verificar"
                     )
                 elif nim_on_loans < 0:
                     validation_results['warnings'].append(
-                        f"⚠️ NIM sobre préstamos negativo - posible error"
+                        f" NIM sobre préstamos negativo - posible error"
                     )
             
             # ========== CHECK 4: Provisiones vs Préstamos ==========
@@ -1446,14 +1512,14 @@ class IncomeREACTAgent:
                 provision_ratio = (provisions / loans_to_customers) * 100
                 validation_results['ratios_calculated']['provision_ratio'] = provision_ratio
                 validation_results['cross_checks'].append(
-                    f"✅ Ratio de provisiones sobre préstamos: {provision_ratio:.2f}%"
+                    f" Ratio de provisiones sobre préstamos: {provision_ratio:.2f}%"
                 )
-                print(f"✅ Provisions/Loans: {provision_ratio:.2f}%")
+                print(f" Provisions/Loans: {provision_ratio:.2f}%")
                 
                 # Validar rango razonable (típicamente <2% en condiciones normales)
                 if provision_ratio > 5:
                     validation_results['warnings'].append(
-                        f"⚠️ Provisiones muy altas ({provision_ratio:.2f}%) - alta morosidad"
+                        f" Provisiones muy altas ({provision_ratio:.2f}%) - alta morosidad"
                     )
             
             # ========== CHECK 5: Leverage Ratio ==========
@@ -1463,18 +1529,18 @@ class IncomeREACTAgent:
                 leverage_ratio = total_assets / total_equity
                 validation_results['ratios_calculated']['leverage_ratio'] = leverage_ratio
                 validation_results['cross_checks'].append(
-                    f"✅ Ratio de apalancamiento: {leverage_ratio:.2f}x"
+                    f" Ratio de apalancamiento: {leverage_ratio:.2f}x"
                 )
-                print(f"✅ Leverage: {leverage_ratio:.2f}x")
+                print(f" Leverage: {leverage_ratio:.2f}x")
                 
                 # Validar rango razonable para bancos (típicamente 10-20x)
                 if leverage_ratio > 30:
                     validation_results['warnings'].append(
-                        f"⚠️ Apalancamiento muy alto ({leverage_ratio:.2f}x) - riesgo elevado"
+                        f" Apalancamiento muy alto ({leverage_ratio:.2f}x) - riesgo elevado"
                     )
                 elif leverage_ratio < 5:
                     validation_results['warnings'].append(
-                        f"⚠️ Apalancamiento muy bajo ({leverage_ratio:.2f}x) - verificar datos"
+                        f" Apalancamiento muy bajo ({leverage_ratio:.2f}x) - verificar datos"
                     )
             
             # ========== CHECK 6: Ecuación Contable Fundamental ==========
@@ -1485,28 +1551,28 @@ class IncomeREACTAgent:
                 
                 if difference > tolerance:
                     validation_results['warnings'].append(
-                        f"⚠️ CRÍTICO: Ecuación contable no balancea - "
+                        f" CRÍTICO: Ecuación contable no balancea - "
                         f"Activos: €{total_assets:,.0f}, Pasivos+Patrimonio: €{expected_assets:,.0f}"
                     )
                     validation_results['consistent'] = False
-                    print(f"❌ Balance sheet no cuadra: diferencia de €{difference:,.0f}")
+                    print(f" Balance sheet no cuadra: diferencia de €{difference:,.0f}")
                 else:
                     validation_results['cross_checks'].append(
-                        f"✅ Ecuación contable validada (Activos = Pasivos + Patrimonio)"
+                        f" Ecuación contable validada (Activos = Pasivos + Patrimonio)"
                     )
-                    print(f"✅ Balance sheet cuadra correctamente")
+                    print(f" Balance sheet cuadra correctamente")
             
             # ========== RESUMEN FINAL ==========
             print(f"\n{'='*60}")
-            print(f"📊 RESUMEN DE VALIDACIÓN CRUZADA")
+            print(f" RESUMEN DE VALIDACIÓN CRUZADA")
             print(f"{'='*60}")
-            print(f"Estado general: {'✅ CONSISTENTE' if validation_results['consistent'] else '❌ INCONSISTENTE'}")
+            print(f"Estado general: {' CONSISTENTE' if validation_results['consistent'] else '❌ INCONSISTENTE'}")
             print(f"Checks realizados: {len(validation_results['cross_checks'])}")
             print(f"Advertencias: {len(validation_results['warnings'])}")
             print(f"Ratios calculados: {len(validation_results['ratios_calculated'])}")
             
             if validation_results['warnings']:
-                print(f"\n⚠️ ADVERTENCIAS:")
+                print(f"\n ADVERTENCIAS:")
                 for warning in validation_results['warnings']:
                     print(f"  {warning}")
             
