@@ -2,17 +2,21 @@
 REPORTE DE CALIDAD - CAMBIOS EN PATRIMONIO
 ==========================================
 PDF: data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-11-03 17:59:04
+Fecha: 2025-11-03 19:20:55
 
 RESULTADOS DE VALIDACIÓN:
-- Calidad: poor
-- Confianza: 0.170
-- Puntuación: 0/100
+- Calidad: fair
+- Confianza: 0.729
+- Puntuación: 65/100
 
 DETALLES:
-
+✅ Reserva legal encontrada
+✅ Software desarrollado internamente encontrado
+⚠️ Cobertura limitada: 2 categorías
+ Datos comparativos: 2 categorías multi-año
+ Texto completo extraído (5449 caracteres)
 
 EXTRACCIÓN:
-- Caracteres procesados: 0
-- Páginas procesadas: []
-- Chunks generados: 0
+- Caracteres procesados: 5395
+- Páginas procesadas: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+- Chunks generados: 7

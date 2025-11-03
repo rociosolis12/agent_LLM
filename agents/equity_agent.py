@@ -365,41 +365,32 @@ class AnalyzeEquityStructureTool:
             return {"success": False, "error": str(e)}
 
 @dataclass
+@dataclass
 class ExtractEquityStatementTool:
     """
     Herramienta para extraer texto del estado de cambios en patrimonio.
-    Versión mejorada con keywords ampliadas y umbral reducido.
+    Versión con EXTRACCIÓN TOTAL (sin filtro de keywords).
     """
     
     def run(self, pdf_path: str, analysis_json: Dict = None, extract_semantic_chunks: bool = True, **kwargs) -> Dict[str, Any]:
         try:
-            pages_to_process = analysis_json.get("pages_selected", [6, 7, 8, 9, 10]) if analysis_json else [6, 7, 8, 9, 10]
-            print(f" Extrayendo páginas: {pages_to_process}")
+            pages_to_process = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            print(f"📄 Extrayendo páginas: {pages_to_process}")
             
             extracted_text = ""
             total_chars = 0
             all_text_chunks = []
             financial_data = {}
             
-            # ===== EXTRACCIÓN PRINCIPAL =====
+            # ===== EXTRACCIÓN PRINCIPAL (TOTAL - SIN FILTRO) =====
             with pdfplumber.open(pdf_path) as pdf:
                 for page_num in pages_to_process:
                     if page_num <= len(pdf.pages):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         
-                        # KEYWORDS AMPLIADAS 
-                        text_lower = text.lower()
-                        equity_keywords = [
-                            "share", "capital", "reserves", "equity", "patrimonio",
-                            "dividends", "dividend", "retained", "earnings", "resultado",
-                            "comprehensive", "revaluation", "oci", "legal", "statutory",
-                            "accumulated", "profit", "loss", "surplus", "distribution",
-                            "shareholders", "accionistas", "total", "balance"
-                        ]
-                        
-                        # EXTRAE SI CONTIENE ALGUNA KEYWORD
-                        if any(keyword in text_lower for keyword in equity_keywords):
+                        # ✅ EXTRACCIÓN TOTAL: Solo verificar que tenga contenido mínimo
+                        if text.strip() and len(text) > 100:  # Reducido de 200 a 100 para mayor cobertura
                             print(f"   ✓ Página {page_num}: {len(text)} caracteres")
                             extracted_text += f"\n=== PÁGINA {page_num} ===\n{text}"
                             total_chars += len(text)
@@ -422,26 +413,24 @@ class ExtractEquityStatementTool:
                                 financial_data[key].extend(new_values)
             
             # ===== FALLBACK EXTENDIDO =====
-            # Se activa SOLO si la extracción inicial fue insuficiente
             if not extracted_text or total_chars < 500:
-                print(f" Extracción insuficiente ({total_chars} caracteres). Aplicando fallback extendido...")
-                print(f"    Páginas originales procesadas: {pages_to_process}")
+                print(f"⚠️ Extracción insuficiente ({total_chars} caracteres). Aplicando fallback extendido...")
+                print(f"   📋 Páginas originales procesadas: {pages_to_process}")
                 
                 with pdfplumber.open(pdf_path) as pdf:
-                    # Determinar rango de fallback (máximo 50 páginas o total del documento)
                     max_fallback_pages = min(50, len(pdf.pages))
-                    print(f"    Escaneando páginas 1-{max_fallback_pages}...")
+                    print(f"   🔍 Escaneando páginas 1-{max_fallback_pages}...")
                     
                     for page_num in range(1, max_fallback_pages + 1):
                         page = pdf.pages[page_num - 1]
                         text = page.extract_text() or ""
                         
-                        #  En fallback, extraer TODO (sin filtro de keywords)
-                        if text.strip():  # Solo verificar que no esté vacío
+                        # En fallback, extraer TODO
+                        if text.strip():
                             extracted_text += f"\n=== PÁGINA {page_num} (FALLBACK) ===\n{text}"
                             total_chars += len(text)
                             
-                            # Extraer datos financieros también en fallback
+                            # Extraer datos financieros
                             page_financial_data = extract_comprehensive_equity_data(text)
                             for key, values in page_financial_data.items():
                                 if key not in financial_data:
@@ -450,14 +439,13 @@ class ExtractEquityStatementTool:
                                 new_values = [v for v in values if v not in existing_set]
                                 financial_data[key].extend(new_values)
                     
-                    # Información final del fallback
                     fallback_entries = sum(len(v) for v in financial_data.values() if isinstance(v, list))
-                    print(f"    Fallback completado: {total_chars} caracteres, {fallback_entries} entradas")
+                    print(f"   ✅ Fallback completado: {total_chars} caracteres, {fallback_entries} entradas")
 
             # ===== BÚSQUEDA SEMÁNTICA CON EMBEDDINGS =====
             semantic_results = {}
             if all_text_chunks and extract_semantic_chunks:
-                print(f" Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
+                print(f"🔍 Aplicando búsqueda semántica con embeddings ({len(all_text_chunks)} chunks)...")
                 
                 chunk_texts = [item['chunk'] for item in all_text_chunks]
                 
@@ -480,8 +468,7 @@ class ExtractEquityStatementTool:
                         
                         relevant_chunks = []
                         for idx, score, chunk_text in similar_sections:
-                            # UMBRAL REDUCIDO de 0.65 → 0.50
-                            if score > 0.50:
+                            if score > 0.50:  # Umbral reducido
                                 chunk_info = all_text_chunks[idx]
                                 relevant_chunks.append({
                                     'score': score,
@@ -494,20 +481,20 @@ class ExtractEquityStatementTool:
                             semantic_results[category] = relevant_chunks
                     
                     except Exception as e:
-                        print(f"    Error en búsqueda semántica para {category}: {e}")
+                        print(f"   ⚠️ Error en búsqueda semántica para {category}: {e}")
                 
                 # Enriquecer texto con resultados semánticos
                 if semantic_results:
-                    print(f" Categorías encontradas con embeddings: {len(semantic_results)}")
+                    print(f"✅ Categorías encontradas con embeddings: {len(semantic_results)}")
                     enriched_text = "\n\n=== SECCIONES RELEVANTES (BÚSQUEDA SEMÁNTICA) ===\n"
                     
                     for category, chunks in semantic_results.items():
                         enriched_text += f"\n--- {category.upper()} ---\n"
-                        for chunk_data in chunks[:2]:  # Top 2 por categoría
+                        for chunk_data in chunks[:2]:
                             enriched_text += f"[Página {chunk_data['page']}, Score: {chunk_data['score']:.2f}]\n"
                             enriched_text += chunk_data['text'][:500] + "...\n\n"
                     
-                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRADO ===\n" + extracted_text[:5000]
+                    extracted_text = enriched_text + "\n\n=== TEXTO COMPLETO EXTRAÍDO ===\n" + extracted_text[:5000]
             
             # ===== RESULTADOS FINALES =====
             chunks = []
@@ -522,7 +509,7 @@ class ExtractEquityStatementTool:
                 confidence = min(1.0, confidence + 0.1)
             
             total_entries = sum(len(v) for v in financial_data.values() if isinstance(v, list))
-            print(f" Total extraído: {total_entries} entradas financieras")
+            print(f"📊 Total extraído: {total_entries} entradas financieras")
             
             return {
                 "success": True,
