@@ -9,10 +9,12 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 from openai import AzureOpenAI
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+load_dotenv()
 
 class RegulatoryConfigAgent:
     """
@@ -112,7 +114,8 @@ class RegulatoryConfigAgent:
         """Construye prompt para obtener umbrales regulatorios"""
         
         return f"""
-        Proporciona los umbrales regulatorios aplicables para análisis financiero bancario con estos parámetros:
+        Proporciona los umbrales regulatorios aplicables 
+        para análisis financiero bancario con estos parámetros:
         
         CONTEXTO:
         - Banco: {bank_symbol}
@@ -159,11 +162,10 @@ class RegulatoryConfigAgent:
         1. Usa valores EXACTOS de la regulación vigente en {reference_date}
         2. Si el banco es G-SIB, aplica surcharges adicionales
         3. Para jurisdicción EU: considera CRR II/CRD V
-        4. Para US: considera Dodd-Frank y Fed requirements
-        5. Para TR (Turquía): considera regulación BRSA (Basel III turco)  # ← AÑADE ESTA LÍNEA
-        6. Para filiales internacionales: aplica regulación local, no de matriz  # ← AÑADE ESTA LÍNEA
-        7. Proporciona valores numéricos en porcentaje (ej: 4.5 para 4.5%)
-        8. Incluye fuentes regulatorias específicas en metadata
+        4. Para TR (Turquía): considera regulación BRSA (Basel III turco) 
+        5. Para filiales internacionales: aplica regulación local, no de matriz  
+        6. Proporciona valores numéricos en porcentaje (ej: 4.5 para 4.5%)
+        7. Incluye fuentes regulatorias específicas en metadata
         
         Responde ÚNICAMENTE con el JSON, sin texto adicional.
         """

@@ -1,5 +1,5 @@
 {
-  "pdf": "data\\entrada\\output\\bbva_2023_div.pdf",
+  "pdf": "C:\\Users\\rocio.solis\\OneDrive - Accenture\\Desktop\\Rocio\\TFM\\data\\entrada\\output\\bbva_2023_div.pdf",
   "type": "balance",
   "version": "bbva_div_optimized_v1.0_multiagent_AUTONOMOUS",
   "analysis": {
@@ -49,7 +49,7 @@
       "equity": true
     }
   },
-  "generated_at": "2025-11-03 19:59:05",
+  "generated_at": "2025-11-03 21:55:14",
   "api_config": {
     "groq_embeddings": true,
     "azure_openai": true,

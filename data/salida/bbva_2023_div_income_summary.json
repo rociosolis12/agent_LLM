@@ -1,14 +1,13 @@
 {
   "extraction": {
-    "total_characters": 11075,
+    "total_characters": 7875,
     "pages_processed": [
       1,
       2,
       3,
       4,
       5,
-      6,
-      7
+      6
     ],
     "financial_data": {
       "years_found": [
@@ -22,9 +21,7 @@
         "2023",
         "2022",
         "2023",
-        "2022",
-        "2023",
-        "2024"
+        "2022"
       ],
       "net_interest_income": [
         170475.0
@@ -93,7 +90,7 @@
     "ratios_penalty_applied": 10
   },
   "cross_validation": null,
-  "processing_timestamp": "2025-11-03 20:07:13",
+  "processing_timestamp": "2025-11-03 22:00:15",
   "quality_metrics": {
     "data_categories_found": 7,
     "quality_score": 120,

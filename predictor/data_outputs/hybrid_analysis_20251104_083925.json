@@ -1,0 +1,150 @@
+{
+  "regulatory_config": {
+    "capital_ratios": {
+      "cet1_minimum": 4.5,
+      "cet1_with_buffers": 10.5,
+      "tier1_minimum": 6.0,
+      "total_capital_minimum": 8.0,
+      "leverage_ratio_minimum": 3.0
+    },
+    "liquidity_ratios": {
+      "lcr_minimum": 100.0,
+      "nsfr_minimum": 100.0
+    },
+    "performance_benchmarks": {
+      "roa_healthy": 1.0,
+      "roa_warning": 0.5,
+      "roe_healthy": 10.0,
+      "roe_warning": 5.0
+    },
+    "risk_thresholds": {
+      "solvency_critical": 3.0,
+      "solvency_warning": 5.0,
+      "liquidity_critical": 80.0,
+      "liquidity_warning": 90.0
+    },
+    "metadata": {
+      "regulation_framework": "Basel III/IV",
+      "effective_date": "2025-11-04",
+      "source": "BRSA (Banking Regulation and Supervision Agency of Turkey)",
+      "notes": "Applies Basel III standards as adapted by BRSA for Turkey.",
+      "retrieval_timestamp": "2025-11-04T08:39:04.367843"
+    }
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-11-04T08:39:25.354971",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "regulatory_config": {
+      "capital_ratios": {
+        "cet1_minimum": 4.5,
+        "cet1_with_buffers": 10.5,
+        "tier1_minimum": 6.0,
+        "total_capital_minimum": 8.0,
+        "leverage_ratio_minimum": 3.0
+      },
+      "liquidity_ratios": {
+        "lcr_minimum": 100.0,
+        "nsfr_minimum": 100.0
+      },
+      "performance_benchmarks": {
+        "roa_healthy": 1.0,
+        "roa_warning": 0.5,
+        "roe_healthy": 10.0,
+        "roe_warning": 5.0
+      },
+      "risk_thresholds": {
+        "solvency_critical": 3.0,
+        "solvency_warning": 5.0,
+        "liquidity_critical": 80.0,
+        "liquidity_warning": 90.0
+      },
+      "metadata": {
+        "regulation_framework": "Basel III/IV",
+        "effective_date": "2025-11-04",
+        "source": "BRSA (Banking Regulation and Supervision Agency of Turkey)",
+        "notes": "Applies Basel III standards as adapted by BRSA for Turkey.",
+        "retrieval_timestamp": "2025-11-04T08:39:04.367843"
+      }
+    },
+    "qualitative_insights": {
+      "balance_insights": {},
+      "income_insights": {},
+      "cashflow_insights": {},
+      "equity_insights": {}
+    },
+    "ml_predictions": [
+      {
+        "metric": "ROA",
+        "periodo": 1,
+        "prediction": 1.301729736848229,
+        "lower_bound": 1.2366432500058175,
+        "upper_bound": 1.3668162236906407
+      },
+      {
+        "metric": "ROA",
+        "periodo": 2,
+        "prediction": 1.438245802463459,
+        "lower_bound": 1.3663335123402862,
+        "upper_bound": 1.5101580925866318
+      },
+      {
+        "metric": "ROA",
+        "periodo": 3,
+        "prediction": 1.5747618680786888,
+        "lower_bound": 1.4960237746747542,
+        "upper_bound": 1.6534999614826231
+      },
+      {
+        "metric": "ROA",
+        "periodo": 4,
+        "prediction": 1.7112779336939188,
+        "lower_bound": 1.625714037009223,
+        "upper_bound": 1.796841830378615
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 1,
+        "prediction": 12.027520037660093,
+        "lower_bound": 11.426144035777089,
+        "upper_bound": 12.628896039543095
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 2,
+        "prediction": 12.10809373828262,
+        "lower_bound": 11.502689051368488,
+        "upper_bound": 12.713498425196752
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 3,
+        "prediction": 12.188667438905153,
+        "lower_bound": 11.579234066959891,
+        "upper_bound": 12.798100810850409
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 4,
+        "prediction": 12.26924113952768,
+        "lower_bound": 11.655779082551296,
+        "upper_bound": 12.882703196504066
+      }
+    ],
+    "validation_results": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "Regulatory",
+          "insight": "CET1 minimum: 4.5%",
+          "priority": "critical",
+          "category": "compliance"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    }
+  }
+}

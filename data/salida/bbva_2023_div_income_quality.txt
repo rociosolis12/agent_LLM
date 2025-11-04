@@ -2,7 +2,7 @@
 REPORTE DE CALIDAD EXTENDIDO - CUENTA DE RESULTADOS
 ==================================================
 PDF: bbva_2023_div.pdf
-Fecha: 2025-11-03 20:07:13
+Fecha: 2025-11-03 22:00:15
 
 RESULTADOS DE VALIDACIÓN:
 - Calidad: excellent
@@ -24,8 +24,8 @@ Margen de beneficio sospechosamente alto (>50%)
 🔻 Penalización por ratios anómalos: -10 puntos
 
 EXTRACCIÓN DETALLADA:
-- Caracteres procesados: 11075
-- Páginas procesadas: [1, 2, 3, 4, 5, 6, 7]
+- Caracteres procesados: 7875
+- Páginas procesadas: [1, 2, 3, 4, 5, 6]
 - Idioma detectado: en
 - Datos financieros extraídos:
 {
@@ -40,9 +40,7 @@ EXTRACCIÓN DETALLADA:
     "2023",
     "2022",
     "2023",
-    "2022",
-    "2023",
-    "2024"
+    "2022"
   ],
   "net_interest_income": [
     170475.0

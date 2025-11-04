@@ -1,0 +1,212 @@
+{
+  "timestamp": "2025-11-04T08:49:25.130921",
+  "pipeline_status": "completed",
+  "ml_predictions": [
+    {
+      "metric": "ROA",
+      "periodo": 1,
+      "prediction": 1.2488617140058829,
+      "lower_bound": 1.1864186283055886,
+      "upper_bound": 1.311304799706177
+    },
+    {
+      "metric": "ROA",
+      "periodo": 2,
+      "prediction": 1.3485018091702183,
+      "lower_bound": 1.2810767187117074,
+      "upper_bound": 1.4159268996287293
+    },
+    {
+      "metric": "ROA",
+      "periodo": 3,
+      "prediction": 1.448141904334553,
+      "lower_bound": 1.3757348091178252,
+      "upper_bound": 1.5205489995512809
+    },
+    {
+      "metric": "ROA",
+      "periodo": 4,
+      "prediction": 1.5477819994988882,
+      "lower_bound": 1.4703928995239437,
+      "upper_bound": 1.6251710994738326
+    },
+    {
+      "metric": "ratio_solvencia",
+      "periodo": 1,
+      "prediction": 12.519284779705652,
+      "lower_bound": 11.893320540720367,
+      "upper_bound": 13.145249018690935
+    },
+    {
+      "metric": "ratio_solvencia",
+      "periodo": 2,
+      "prediction": 13.281883177540763,
+      "lower_bound": 12.617789018663725,
+      "upper_bound": 13.945977336417801
+    },
+    {
+      "metric": "ratio_solvencia",
+      "periodo": 3,
+      "prediction": 14.044481575375869,
+      "lower_bound": 13.342257496607075,
+      "upper_bound": 14.746705654144662
+    },
+    {
+      "metric": "ratio_solvencia",
+      "periodo": 4,
+      "prediction": 14.807079973210977,
+      "lower_bound": 14.066725974550426,
+      "upper_bound": 15.547433971871527
+    }
+  ],
+  "validation_results": {},
+  "advanced_validation": {
+    "overall_summary": {
+      "total_metrics": 0,
+      "avg_ensemble_mae": 0.0,
+      "avg_ensemble_r2": 0.0,
+      "avg_ensemble_mape": 0.0,
+      "best_performing_metric": "",
+      "worst_performing_metric": "",
+      "metrics_validated": []
+    },
+    "detailed_results": {},
+    "recommendations": [
+      {
+        "level": "SUCCESS",
+        "message": "Excelente precisión de predicción (MAE: 0.0000). El modelo es altamente confiable."
+      },
+      {
+        "level": "WARNING",
+        "message": "Capacidad explicativa limitada (R²: 0.0000). Considerar variables adicionales o modelos alternativos."
+      }
+    ],
+    "timestamp": "2025-11-04T08:49:25.129749"
+  },
+  "hybrid_analysis": {
+    "metadata": {
+      "analysis_date": "2025-11-04T08:49:25.116933",
+      "bank_symbol": "GARAN.IS",
+      "methodology": "Hybrid LLM + ML (Prophet + XGBoost)"
+    },
+    "regulatory_config": {
+      "capital_ratios": {
+        "cet1_minimum": 4.5,
+        "cet1_with_buffers": 7.0,
+        "tier1_minimum": 6.0,
+        "total_capital_minimum": 8.0,
+        "leverage_ratio_minimum": 3.0
+      },
+      "liquidity_ratios": {
+        "lcr_minimum": 100.0,
+        "nsfr_minimum": 100.0
+      },
+      "performance_benchmarks": {
+        "roa_healthy": 1.0,
+        "roa_warning": 0.5,
+        "roe_healthy": 10.0,
+        "roe_warning": 5.0
+      },
+      "risk_thresholds": {
+        "solvency_critical": 3.0,
+        "solvency_warning": 5.0,
+        "liquidity_critical": 80.0,
+        "liquidity_warning": 90.0
+      },
+      "metadata": {
+        "regulation_framework": "Basel III/IV",
+        "effective_date": "2025-11-04",
+        "source": "BRSA (Banking Regulation and Supervision Agency of Turkey)",
+        "notes": "Applies Basel III standards as adapted by BRSA for Turkey.",
+        "retrieval_timestamp": "2025-11-04T08:49:18.043564"
+      }
+    },
+    "qualitative_insights": {
+      "balance_insights": {},
+      "income_insights": {},
+      "cashflow_insights": {},
+      "equity_insights": {}
+    },
+    "ml_predictions": [
+      {
+        "metric": "ROA",
+        "periodo": 1,
+        "prediction": 1.2488617140058829,
+        "lower_bound": 1.1864186283055886,
+        "upper_bound": 1.311304799706177
+      },
+      {
+        "metric": "ROA",
+        "periodo": 2,
+        "prediction": 1.3485018091702183,
+        "lower_bound": 1.2810767187117074,
+        "upper_bound": 1.4159268996287293
+      },
+      {
+        "metric": "ROA",
+        "periodo": 3,
+        "prediction": 1.448141904334553,
+        "lower_bound": 1.3757348091178252,
+        "upper_bound": 1.5205489995512809
+      },
+      {
+        "metric": "ROA",
+        "periodo": 4,
+        "prediction": 1.5477819994988882,
+        "lower_bound": 1.4703928995239437,
+        "upper_bound": 1.6251710994738326
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 1,
+        "prediction": 12.519284779705652,
+        "lower_bound": 11.893320540720367,
+        "upper_bound": 13.145249018690937
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 2,
+        "prediction": 13.281883177540765,
+        "lower_bound": 12.617789018663723,
+        "upper_bound": 13.9459773364178
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 3,
+        "prediction": 14.044481575375867,
+        "lower_bound": 13.342257496607075,
+        "upper_bound": 14.746705654144662
+      },
+      {
+        "metric": "ratio_solvencia",
+        "periodo": 4,
+        "prediction": 14.807079973210977,
+        "lower_bound": 14.066725974550426,
+        "upper_bound": 15.547433971871529
+      }
+    ],
+    "validation_results": {},
+    "integrated_recommendations": {
+      "strategic": [
+        {
+          "source": "Regulatory",
+          "insight": "CET1 minimum: 4.5%",
+          "priority": "critical",
+          "category": "compliance"
+        }
+      ],
+      "tactical": [],
+      "risk_mitigation": []
+    }
+  },
+  "integrated_recommendations": {},
+  "agent_results_processed": false,
+  "summary": {
+    "total_predictions": 8,
+    "total_recommendations": 0,
+    "validation_periods": 0,
+    "best_model": "ensemble",
+    "ensemble_mae": null,
+    "ensemble_r2": null
+  }
+}

@@ -1,19 +1,21 @@
 
 REPORTE DE CALIDAD - CAMBIOS EN PATRIMONIO
 ==========================================
-PDF: data\entrada\output\bbva_2023_div.pdf
-Fecha: 2025-11-03 20:17:45
+PDF: C:\Users\rocio.solis\OneDrive - Accenture\Desktop\Rocio\TFM\data\entrada\output\bbva_2023_div.pdf
+Fecha: 2025-11-03 22:54:06
 
 RESULTADOS DE VALIDACIÓN:
-- Calidad: poor
-- Confianza: 0.314
-- Puntuación: 15/100
+- Calidad: fair
+- Confianza: 0.657
+- Puntuación: 60/100
 
 DETALLES:
-⚠️ Cobertura limitada: 1 categorías
- Texto parcial extraído (4756 caracteres)
+✅ Reserva de revaluación encontrada
+✅ Otro resultado integral (OCI) encontrado
+⚠️ Cobertura limitada: 2 categorías
+ Texto completo extraído (6379 caracteres)
 
 EXTRACCIÓN:
-- Caracteres procesados: 4720
-- Páginas procesadas: [6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-- Chunks generados: 6
+- Caracteres procesados: 6307
+- Páginas procesadas: [3, 5, 6, 7]
+- Chunks generados: 8
