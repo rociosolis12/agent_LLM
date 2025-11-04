@@ -174,7 +174,9 @@ class FinancialCoordinator:
         # 🔥 PESOS ESPECÍFICOS ACTUALIZADOS
         specific_weights = {
             # Balance Sheet terms
-            'total activos': ('balance', 3.5),
+            'activos': ('balance', 4.0),  
+            'total activos': ('balance', 5.0),  
+            'total de activos': ('balance', 5.0),  
             'total assets': ('balance', 3.5),
             'patrimonio neto': ('balance', 3.0),
             'total patrimonio': ('balance', 3.5),
@@ -350,6 +352,7 @@ class FinancialCoordinator:
                 "timestamp": datetime.now().isoformat()
             }
 
+    
     async def process_question(self, question: str, pdf_path: Optional[str] = None) -> Dict[str, Any]:
         """🔥 ACTUALIZADO: Procesar pregunta específica con PDF extraído"""
         self.logger.info(f"❓ Procesando pregunta: {question}")
@@ -949,3 +952,30 @@ class FinancialCoordinator:
         except Exception as e:
             self.logger.error(f"❌ Error verificando readiness: {e}")
             return False
+            
+    def debug_routing(self, question: str):
+        """Debug: Mostrar puntuación de todos los agentes"""
+        question_lower = question.lower()
+        print(f"\n🔍 DEBUGGING ROUTING PARA: '{question}'")
+        
+        scores = {}
+        specific_weights = {
+            'activos': ('balance', 4.0),
+            'total activos': ('balance', 5.0),
+            'ingresos': ('income', 3.5),
+            'flujos': ('cashflows', 3.0),
+            'capital': ('equity', 3.0),
+        }
+        
+        for term, (agent, weight) in specific_weights.items():
+            if term in question_lower:
+                scores[agent] = scores.get(agent, 0) + weight
+                print(f"  ✓ '{term}' encontrado → {agent} (+{weight})")
+        
+        print(f"\n📊 Puntuaciones finales:")
+        for agent, score in sorted(scores.items(), key=lambda x: x[1], reverse=True):
+            print(f"  {agent}: {score}")
+        
+        selected_agent, confidence = self.route_question_improved(question)
+        print(f"\n🎯 Agente seleccionado: {selected_agent} (confianza: {confidence:.2f})\n")
+

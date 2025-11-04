@@ -10,7 +10,11 @@ from datetime import datetime, timedelta
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import Dict, Any, Optional  
+from typing import Dict, Any, Optional
+import json  
+import re
+
+logger = logging.getLogger(__name__)
 
 
 # Cargar .env desde el directorio raíz del proyecto
@@ -43,6 +47,9 @@ class EvolutionaryPredictorAgent:
         """
         Predictor Agent Evolucionado con Prophet + XGBoost + APIs externas
         """
+        self.logger = logging.getLogger(__name__)  
+        self.logger.info("Inicializando EvolutionaryPredictorAgent...")
+
         # Alpha Vantage API (opcional - funciona sin ella)
         self.alpha_vantage_key = alpha_vantage_key or os.getenv('ALPHA_VANTAGE_KEY', 'demo')
 
@@ -354,148 +361,395 @@ class EvolutionaryPredictorAgent:
         
         return results
 
-    def extract_financial_data_from_agents(self, agent_results: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Extrae series temporales desde los agentes financieros mejorados
+   
+   
+    def extract_financial_data_from_agents(self, agent_results):
+        """Extraer datos financieros - Carga desde archivos con ENCODING UTF-8"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
         
-        Args:
-            agent_results: Diccionario con resultados de balance, income, cashflows, equity
-            
-        Returns:
-            DataFrame con series temporales por año
-        """
-        logger.info(" Extrayendo datos financieros de agentes...")
+        logger.info("\n" + "="*80)
+        logger.info("📊 EXTRAYENDO DATOS FINANCIEROS - CARGA DESDE ARCHIVOS")
+        logger.info("="*80)
+        
+        import json
+        from pathlib import Path
         
         financial_data = {}
         
-        # 1. Balance Agent - Ratios de solvencia y liquidez
-        if 'balance' in agent_results:
-            balance = agent_results['balance']
-            financial_data.update(self._extract_balance_metrics(balance))
+        files_to_load = {
+            'balance': 'data/salida/bbva_2023_div_balance_summary.json',
+            'income': 'data/salida/bbva_2023_div_income_summary.json',
+        }
+        
+        for agent_name, file_path in files_to_load.items():
+            logger.info(f"\n📍 Intentando cargar {agent_name} desde: {file_path}")
             
-        # 2. Income Agent - ROA, ROE, márgenes
-        if 'income' in agent_results:
-            income = agent_results['income']
-            financial_data.update(self._extract_income_metrics(income))
+            path = Path(file_path)
             
-        # 3. CashFlows Agent - Liquidez operativa
-        if 'cashflows' in agent_results:
-            cashflows = agent_results['cashflows']
-            financial_data.update(self._extract_cashflow_metrics(cashflows))
-            
-        # 4. Equity Agent - Capitalización y dividendos
-        if 'equity' in agent_results:
-            equity = agent_results['equity']
-            financial_data.update(self._extract_equity_metrics(equity))
+            if path.exists():
+                try:
+                    # 🔥 CRÍTICO: Abrir con encoding UTF-8
+                    with open(path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # Extraer metrics
+                    if agent_name == 'balance':
+                        metrics = self._parse_balance_json(data)
+                    elif agent_name == 'income':
+                        metrics = self._parse_income_json(data)
+                    else:
+                        metrics = {}
+                    
+                    if metrics:
+                        financial_data.update(metrics)
+                        logger.info(f"✅ {agent_name}: {len(metrics)} métricas extraídas")
+                    else:
+                        logger.warning(f"⚠️ {agent_name}: sin métricas")
+                        
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ Error JSON en {agent_name}: {e}")
+                except UnicodeDecodeError as e:
+                    # 🔥 Si UTF-8 falla, intentar con encoding alternativo
+                    logger.warning(f"⚠️ UTF-8 falló, intentando 'latin-1'...")
+                    try:
+                        with open(path, 'r', encoding='latin-1') as f:
+                            data = json.load(f)
+                        if agent_name == 'balance':
+                            metrics = self._parse_balance_json(data)
+                        elif agent_name == 'income':
+                            metrics = self._parse_income_json(data)
+                        else:
+                            metrics = {}
+                        if metrics:
+                            financial_data.update(metrics)
+                            logger.info(f"✅ {agent_name}: {len(metrics)} métricas (encoding latin-1)")
+                    except Exception as e2:
+                        logger.error(f"❌ Error con latin-1: {e2}")
+                except Exception as e:
+                    logger.error(f"❌ Error cargando {agent_name}: {e}")
+            else:
+                logger.warning(f"⚠️ Archivo no encontrado: {file_path}")
         
         # Convertir a DataFrame
+        logger.info("\n" + "="*80)
+        logger.info("📊 CONSOLIDACIÓN FINAL")
+        logger.info("="*80)
+        
         if not financial_data:
-            logger.warning(" No se extrajeron datos de los agentes")
+            logger.error("❌ No se extrajeron datos")
             return pd.DataFrame()
-            
-        df = pd.DataFrame(financial_data)
         
-        # Asegurar columna de periodo si no existe
-        if 'periodo' not in df.columns and len(df) > 0:
-            current_year = datetime.now().year
-            df['periodo'] = range(current_year - len(df) + 1, current_year + 1)
-            
-        logger.info(f" Datos extraídos: {len(df)} periodos, {len(df.columns)} métricas")
-        return df
-    
-    def _extract_balance_metrics(self, balance_data: Dict) -> Dict:
-        """Extrae métricas del Balance Agent"""
+        logger.info(f"✅ Total de métricas: {len(financial_data)}")
+        
+        try:
+            df = pd.DataFrame([financial_data])
+            logger.info(f"✅ DataFrame creado: {df.shape}")
+            return df
+        except Exception as e:
+            logger.error(f"❌ Error creando DataFrame: {e}")
+            return pd.DataFrame()
+
+    def _parse_balance_json(self, data: Dict) -> Dict:
+        """Parsear JSON del balance - MÉTODO ROBUSTO"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
         metrics = {}
         
-        # Buscar ratios de solvencia históricos (prueba diferentes keys)
-        if 'solvency_ratios' in balance_data:
-            metrics['ratio_solvencia'] = balance_data['solvency_ratios']
-        elif 'capital_ratio' in balance_data:
-            metrics['ratio_solvencia'] = balance_data['capital_ratio']
-        elif 'solvency_ratio' in balance_data:
-            metrics['ratio_solvencia'] = balance_data['solvency_ratio']
+        try:
+            # Obtener el text - puede estar en diferentes niveles
+            extraction = data.get('extraction', {})
             
-        # Liquidez
-        if 'liquidity_ratio' in balance_data:
-            metrics['liquidez'] = balance_data['liquidity_ratio']
-        elif 'lcr' in balance_data:
-            metrics['liquidez'] = balance_data['lcr']
-        elif 'liquidity' in balance_data:
-            metrics['liquidez'] = balance_data['liquidity']
+            # Intento 1: extraction.text
+            text = extraction.get('text', '')
             
-        # CET1 (capital tier 1)
-        if 'cet1_ratio' in balance_data:
-            metrics['cet1'] = balance_data['cet1_ratio']
-        elif 'cet1' in balance_data:
-            metrics['cet1'] = balance_data['cet1']
+            # Intento 2: data.text (si no existe extraction)
+            if not text:
+                text = data.get('text', '')
             
-        logger.info(f"  ✓ Balance: {len(metrics)} métricas extraídas")
-        return metrics
-    
-    def _extract_income_metrics(self, income_data: Dict) -> Dict:
-        """Extrae métricas del Income Agent"""
+            # Intento 3: Buscar en cualquier lugar
+            if not text:
+                for key, value in data.items():
+                    if isinstance(value, dict) and 'text' in value:
+                        text = value['text']
+                        break
+            
+            if not text:
+                logger.warning("⚠️ No hay 'text' en ninguna parte del JSON")
+                return {}
+            
+            logger.debug(f"✅ Texto encontrado: {len(text)} caracteres")
+            
+            # PARSEAR CON REGEX
+            import re
+            
+            patterns = {
+                'total_assets': {
+                    'regex': r'Total Assets[:\s]+(\d+(?:,\d{3})*)[:\s]+(\d+(?:,\d{3})*)',
+                    'year_2023': 0,
+                    'year_2022': 1
+                },
+                'total_liabilities': {
+                    'regex': r'Total Liabilities[:\s]+(\d+(?:,\d{3})*)[:\s]+(\d+(?:,\d{3})*)',
+                    'year_2023': 0,
+                    'year_2022': 1
+                },
+                'total_equity': {
+                    'regex': r'Total Equity.*?[:\s]+(\d+(?:,\d{3})*)[:\s]+(\d+(?:,\d{3})*)',
+                    'year_2023': 0,
+                    'year_2022': 1
+                },
+            }
+            
+            for metric_name, pattern_info in patterns.items():
+                regex = pattern_info['regex']
+                match = re.search(regex, text, re.IGNORECASE | re.DOTALL)
+                
+                if match:
+                    try:
+                        value_2023_str = match.group(1).replace(',', '')
+                        value_2022_str = match.group(2).replace(',', '')
+                        
+                        metrics[f'{metric_name}_2023'] = float(value_2023_str)
+                        metrics[f'{metric_name}_2022'] = float(value_2022_str)
+                        
+                        logger.debug(f"✅ {metric_name}_2023: {metrics[f'{metric_name}_2023']:,.0f}")
+                    except:
+                        pass
+            
+            # Agregar confidence
+            metrics['extraction_confidence'] = extraction.get('confidence', 1.0)
+            
+            return metrics
+            
+        except Exception as e:
+            logger.error(f"❌ Error parseando balance: {e}")
+            return {}
+
+    def _parse_income_json(self, data: Dict) -> Dict:
+        """Parsear JSON del income"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
         metrics = {}
         
-        # ROA
-        if 'roa' in income_data:
-            metrics['ROA'] = income_data['roa']
-        elif 'return_on_assets' in income_data:
-            metrics['ROA'] = income_data['return_on_assets']
+        try:
+            extraction = data.get('extraction', {})
+            text = extraction.get('text', '') or data.get('text', '')
             
-        # ROE
-        if 'roe' in income_data:
-            metrics['ROE'] = income_data['roe']
-        elif 'return_on_equity' in income_data:
-            metrics['ROE'] = income_data['return_on_equity']
+            if not text:
+                return {}
             
-        # Margen de interés neto
-        if 'nim' in income_data:
-            metrics['margen_interes'] = income_data['nim']
-        elif 'net_interest_margin' in income_data:
-            metrics['margen_interes'] = income_data['net_interest_margin']
-        elif 'interest_margin' in income_data:
-            metrics['margen_interes'] = income_data['interest_margin']
+            import re
             
-        logger.info(f"  ✓ Income: {len(metrics)} métricas extraídas")
-        return metrics
+            # Buscar net income
+            match = re.search(r'(?:Net Profit|Net Income)[:\s]+(\d+(?:,\d{3})*)', text, re.IGNORECASE)
+            if match:
+                metrics['net_income_2023'] = float(match.group(1).replace(',', ''))
+            
+            # Buscar total revenue/income
+            match = re.search(r'(?:Total Income|Total Revenue)[:\s]+(\d+(?:,\d{3})*)', text, re.IGNORECASE)
+            if match:
+                metrics['total_revenue_2023'] = float(match.group(1).replace(',', ''))
+            
+            return metrics
+            
+        except Exception as e:
+            logger.debug(f"⚠️ Error en income: {e}")
+            return {}
+
+    def _parse_cashflows_json(self, data: Dict) -> Dict:
+        """Parsear JSON del cashflows"""
+        return {}  # Placeholder - agregar cuando tengas archivo
+
+    def _parse_equity_json(self, data: Dict) -> Dict:
+        """Parsear JSON del equity"""
+        return {}  # Placeholder - agregar cuando tengas archivo
+
     
-    def _extract_cashflow_metrics(self, cashflow_data: Dict) -> Dict:
-        """Extrae métricas del CashFlows Agent"""
+    def _extract_balance_metrics(self, balance_data) -> Dict:
+        """Extraer métricas del Balance Agent - Estructura CORRECTA"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
+        
+        logger.info("\n" + "="*80)
+        logger.info("🔍 EXTRAYENDO BALANCE - ESTRUCTURA CORRECTA")
+        logger.info("="*80)
+        
+        if balance_data is None or not isinstance(balance_data, dict):
+            logger.error(f"❌ balance_data inválido: {type(balance_data)}")
+            return {}
+        
         metrics = {}
         
-        # Flujo de caja operativo
-        if 'operating_cashflow' in cashflow_data:
-            metrics['flujo_operativo'] = cashflow_data['operating_cashflow']
-        elif 'operating_cash_flow' in cashflow_data:
-            metrics['flujo_operativo'] = cashflow_data['operating_cash_flow']
+        try:
+            # 🔥 ESTRUCTURA REAL: balance_data.extraction.text (NO balance_data.data.extraction)
+            extraction = balance_data.get('extraction', {})
+            text = extraction.get('text', '')
             
-        # Ratio de conversión de efectivo
-        if 'cash_conversion_ratio' in cashflow_data:
-            metrics['conversion_efectivo'] = cashflow_data['cash_conversion_ratio']
-        elif 'cash_conversion' in cashflow_data:
-            metrics['conversion_efectivo'] = cashflow_data['cash_conversion']
+            if not text:
+                logger.error("❌ No hay 'text' en extraction")
+                logger.debug(f"Keys disponibles en balance_data: {list(balance_data.keys())}")
+                return {}
             
-        logger.info(f"  ✓ CashFlows: {len(metrics)} métricas extraídas")
-        return metrics
+            logger.info(f"✅ Texto extraído: {len(text)} caracteres")
+            
+            # PARSEAR EL TEXTO
+            lines = text.split('\n')
+            
+            # Buscar cada línea y extraer números
+            for i, line in enumerate(lines):
+                # Total Assets
+                if 'Total Assets' in line and 'Total Liabilities' not in line and 'Total Equity' not in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['total_assets_2023'] = float(numbers[0].replace(',', ''))
+                        metrics['total_assets_2022'] = float(numbers[1].replace(',', ''))
+                        logger.info(f"✅ Total Assets: 2023={metrics['total_assets_2023']:,.0f}, 2022={metrics['total_assets_2022']:,.0f}")
+                
+                # Total Liabilities
+                elif 'Total Liabilities' in line and 'Total Equity' not in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['total_liabilities_2023'] = float(numbers[0].replace(',', ''))
+                        metrics['total_liabilities_2022'] = float(numbers[1].replace(',', ''))
+                        logger.info(f"✅ Total Liabilities: 2023={metrics['total_liabilities_2023']:,.0f}")
+                
+                # Total Equity
+                elif 'Total Equity attributable' in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['total_equity_2023'] = float(numbers[0].replace(',', ''))
+                        metrics['total_equity_2022'] = float(numbers[1].replace(',', ''))
+                        logger.info(f"✅ Total Equity: 2023={metrics['total_equity_2023']:,.0f}")
+                
+                # Cash and balances
+                elif 'Cash and balances with central banks' in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['cash_balances_2023'] = float(numbers[-2].replace(',', ''))
+                        metrics['cash_balances_2022'] = float(numbers[-1].replace(',', ''))
+                
+                # Loans to customers
+                elif 'Loans and advances to customers' in line and 'Total' not in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['loans_customers_2023'] = float(numbers[-2].replace(',', ''))
+                        metrics['loans_customers_2022'] = float(numbers[-1].replace(',', ''))
+                
+                # Deposits from customers
+                elif 'Deposits from customers' in line and 'Total' not in line:
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['deposits_customers_2023'] = float(numbers[-2].replace(',', ''))
+                        metrics['deposits_customers_2022'] = float(numbers[-1].replace(',', ''))
+            
+            # Agregar confianza
+            metrics['extraction_confidence'] = extraction.get('confidence', 1.0)
+            
+            logger.info("\n" + "="*80)
+            logger.info(f"✅ MÉTRICAS EXTRAÍDAS: {len(metrics)}")
+            logger.info("="*80)
+            for key, value in metrics.items():
+                if isinstance(value, float) and key != 'extraction_confidence':
+                    logger.info(f"  {key}: {value:,.0f}")
+            
+            return metrics
+            
+        except Exception as e:
+            logger.error(f"❌ EXCEPCIÓN: {str(e)}")
+            logger.exception("Traceback:")
+            return {}
+
     
-    def _extract_equity_metrics(self, equity_data: Dict) -> Dict:
-        """Extrae métricas del Equity Agent"""
+    def _extract_income_metrics(self, income_data) -> Dict:
+        """Extraer métricas del Income Agent"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
         metrics = {}
         
-        # Ratio de pago de dividendos
-        if 'dividend_payout_ratio' in equity_data:
-            metrics['payout_ratio'] = equity_data['dividend_payout_ratio']
-        elif 'payout_ratio' in equity_data:
-            metrics['payout_ratio'] = equity_data['payout_ratio']
+        try:
+            # Estructura: income_data.extraction.text
+            extraction = income_data.get('extraction', {}) if isinstance(income_data, dict) else {}
+            text = extraction.get('text', '')
             
-        # Book value per share
-        if 'book_value_per_share' in equity_data:
-            metrics['valor_libro_accion'] = equity_data['book_value_per_share']
-        elif 'book_value' in equity_data:
-            metrics['valor_libro_accion'] = equity_data['book_value']
+            if not text:
+                logger.warning("⚠️ Income: sin text")
+                return {}
             
-        logger.info(f"  ✓ Equity: {len(metrics)} métricas extraídas")
+            lines = text.split('\n')
+            
+            for line in lines:
+                if 'Net interest income' in line and 'interest expense' not in line.lower():
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['net_interest_income_2023'] = float(numbers[0].replace(',', ''))
+                
+                elif 'Total income' in line and 'other' not in line.lower():
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['total_income_2023'] = float(numbers[0].replace(',', ''))
+                
+                elif 'Net Income' in line and 'other' not in line.lower():
+                    numbers = re.findall(r'(\d+(?:,\d{3})*)', line)
+                    if len(numbers) >= 2:
+                        metrics['net_income_2023'] = float(numbers[0].replace(',', ''))
+                        logger.info(f"✅ Net Income 2023: {metrics['net_income_2023']:,.0f}")
+            
+            return metrics
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Error en income: {e}")
+            return {}
+
+    def _extract_cashflows_metrics(self, cashflows_data):
+        """Extraer métricas del Cashflows Agent"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
+        metrics = {}
+        
+        try:
+            extraction = cashflows_data.get('extraction', {}) if isinstance(cashflows_data, dict) else {}
+            text = extraction.get('text', '')
+            
+            patterns = {
+                'operating_cash_flow_2023': (r'Operating cash flow\s+(\d+(?:,\d{3})*)', 0),
+                'investing_cash_flow_2023': (r'Investing cash flow\s+(-?\d+(?:,\d{3})*)', 0),
+                'financing_cash_flow_2023': (r'Financing cash flow\s+(-?\d+(?:,\d{3})*)', 0),
+            }
+            
+            for metric_name, (pattern, _) in patterns.items():
+                match = re.search(pattern, text)
+                if match:
+                    value_str = match.group(1).replace(',', '')
+                    metrics[metric_name] = float(value_str)
+                    logger.debug(f"✅ {metric_name}: {metrics[metric_name]}")
+            
+        except Exception as e:
+            logger.debug(f"⚠️ Error en cashflows: {e}")
+        
         return metrics
+    
+    def _extract_equity_metrics(self, equity_data):
+        """Extraer métricas del Equity Agent"""
+        logger = getattr(self, 'logger', logging.getLogger(__name__))
+        metrics = {}
+        
+        try:
+            extraction = equity_data.get('extraction', {}) if isinstance(equity_data, dict) else {}
+            text = extraction.get('text', '')
+            
+            patterns = {
+                'shareholder_equity_2023': (r'Shareholder equity\s+(\d+(?:,\d{3})*)', 0),
+                'retained_earnings_2023': (r'Retained earnings\s+(\d+(?:,\d{3})*)', 0),
+                'capital_stock_2023': (r'Capital stock\s+(\d+(?:,\d{3})*)', 0),
+            }
+            
+            for metric_name, (pattern, _) in patterns.items():
+                match = re.search(pattern, text)
+                if match:
+                    value_str = match.group(1).replace(',', '')
+                    metrics[metric_name] = float(value_str)
+                    logger.debug(f"✅ {metric_name}: {metrics[metric_name]}")
+            
+        except Exception as e:
+            logger.debug(f"⚠️ Error en equity: {e}")
+        
+        return metrics
+
 
 # Test rápido
 def test_evolutionary_predictor():

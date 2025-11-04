@@ -18,8 +18,8 @@
         "2023",
         "2022",
         "2023",
-        "2023",
         "2022",
+        "2023",
         "2023",
         "2022"
       ],
@@ -90,7 +90,7 @@
     "ratios_penalty_applied": 10
   },
   "cross_validation": null,
-  "processing_timestamp": "2025-11-03 22:00:15",
+  "processing_timestamp": "2025-11-04 13:20:13",
   "quality_metrics": {
     "data_categories_found": 7,
     "quality_score": 120,

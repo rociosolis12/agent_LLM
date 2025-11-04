@@ -4,7 +4,7 @@ import './App.css';
 import Dashboard from './components/Dashboard/Dashboard';
 import { HybridPredictorDashboard } from './components/predictor/HybridPredictorDashboard';
 
-function App() {
+export default function App() {
   const [systemStatus, setSystemStatus] = useState(null);
   const [currentSection, setCurrentSection] = useState('dashboard'); // 'dashboard' o 'predictor'
 
@@ -28,38 +28,35 @@ function App() {
 
   return (
     <div className="App">
-      {/* Dashboard Principal - Solo las 5 tarjetas de agentes */}
-      {currentSection === 'dashboard' && (
-        <Dashboard onNavigateToPredictor={() => setCurrentSection('predictor')} />
-      )}
-
-      {/* Predictor Híbrido */}
-      {currentSection === 'predictor' && (
-        <div>
-          <button 
+      <header className="app-header">
+        <h1>Financial Analysis System</h1>
+        <nav className="nav-tabs">
+          <button
+            className={currentSection === 'dashboard' ? 'tab active' : 'tab'}
             onClick={() => setCurrentSection('dashboard')}
-            style={{
-              position: 'fixed',
-              top: '20px',
-              left: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#6366f1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              zIndex: 1000,
-              fontWeight: 600,
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-            }}
           >
-            ← Volver al Dashboard
+            Dashboard
           </button>
-          <HybridPredictorDashboard />
+          <button
+            className={currentSection === 'predictor' ? 'tab active' : 'tab'}
+            onClick={() => setCurrentSection('predictor')}
+          >
+            Predictor
+          </button>
+        </nav>
+        <div className="status-indicator">
+          {systemStatus ? (
+            <span className="status-online">● Sistema en línea</span>
+          ) : (
+            <span className="status-offline">● Sistema offline</span>
+          )}
         </div>
-      )}
+      </header>
+
+      <main className="app-main">
+        {currentSection === 'dashboard' && <Dashboard />}
+        {currentSection === 'predictor' && <HybridPredictorDashboard />}
+      </main>
     </div>
   );
 }
-
-export default App;
